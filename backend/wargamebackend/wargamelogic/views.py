@@ -1,4 +1,7 @@
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
+
+def main_map(request):
+    return JsonResponse({"message": "Hello from Django view!"})
 
 def red_commander(request):
     return HttpResponse("Red Commander Page")
