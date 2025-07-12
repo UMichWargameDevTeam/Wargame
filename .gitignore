@@ -1,0 +1,17 @@
+# Ignore virtual environment
+backend/env/
+
+# Python cache and compiled files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# SQLite DB
+*.sqlite3
+
+# VSCode settings (optional)
+.vscode/
+
+# Environment variables file (optional)
+.env
