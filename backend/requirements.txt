@@ -1,0 +1,6 @@
+Django
+djangorestframework
+channels
+django-cors-headers
+asgiref
+daphne
