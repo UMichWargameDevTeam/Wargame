@@ -52,7 +52,7 @@ pip install -r requirements.txt
 To run the backend (ASGI server):
 
 ```bash
-make backend
+make back
 ```
 
 > Make sure you run this from the project root (`LongTermWargame/`).
@@ -70,7 +70,7 @@ npm run dev
 Or use:
 
 ```bash
-make frontend
+make front
 ```
 
 ---
@@ -78,7 +78,7 @@ make frontend
 ## ▶️ Run Both at Once (macOS/Linux only)
 
 ```bash
-make dev
+make both
 ```
 
 > This runs both the backend (Daphne) and frontend (Next.js) in parallel in one terminal.
@@ -125,4 +125,4 @@ make dev         # Run both in parallel (UNIX/macOS only)
 
 ## 📄 License
 
-MIT (or your preferred license)
+TBD
