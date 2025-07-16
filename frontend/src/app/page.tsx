@@ -22,24 +22,42 @@ export default function RoleSelectPage() {
     <div className="h-screen w-screen flex flex-col justify-center items-center bg-neutral-900 text-white space-y-6">
       <h1 className="text-5xl font-bold mb-4">Digital Wargames</h1>
       <h2 className="text-2xl font-bold mb-4">Select Your Role</h2>
-      <div className="space-x-4">
+      <div className="flex flex-wrap justify-center gap-4">
         <button
-          onClick={() => handleRoleSelect('commander')}
+          onClick={() => handleRoleSelect('Ops')}
           className="bg-blue-600 px-6 py-2 rounded hover:bg-blue-700"
         >
-          Commander
+          Ops
         </button>
         <button
-          onClick={() => handleRoleSelect('observer')}
+          onClick={() => handleRoleSelect('Logistics')}
           className="bg-green-600 px-6 py-2 rounded hover:bg-green-700"
         >
-          Observer
+          Logistics
         </button>
         <button
-          onClick={() => handleRoleSelect('field')}
-          className="bg-purple-600 px-6 py-2 rounded hover:bg-purple-700"
+          onClick={() => handleRoleSelect('USA-CC')}
+          className="bg-yellow-600 px-6 py-2 rounded hover:bg-yellow-700 text-black font-semibold"
         >
-          Field Unit
+          USA-CC
+        </button>
+        <button
+          onClick={() => handleRoleSelect('USAF-CC')}
+          className="bg-yellow-600 px-6 py-2 rounded hover:bg-yellow-700 text-black font-semibold"
+        >
+          USAF-CC
+        </button>
+        <button
+          onClick={() => handleRoleSelect('USN-CC')}
+          className="bg-yellow-600 px-6 py-2 rounded hover:bg-yellow-700 text-black font-semibold"
+        >
+          USN-CC
+        </button>
+        <button
+          onClick={() => handleRoleSelect('JTF-CC')}
+          className="bg-yellow-600 px-6 py-2 rounded hover:bg-yellow-700 text-black font-semibold"
+        >
+          JTF-CC
         </button>
       </div>
     </div>
