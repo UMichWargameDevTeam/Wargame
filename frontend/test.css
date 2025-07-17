@@ -1,97 +1,89 @@
-body {
-  background: #000000;
-  margin: 0;
-  padding: 0;
-  overflow: hidden;
-  user-select: none;
-  height: 100vh;
-  width: 100vw;
-}
+    body {
+      background-image: url(https://upload.wikimedia.org/wikipedia/commons/f/f4/Map_of_Philippines_%28en%29.png);
+      background-repeat: no-repeat;
+      background-position: center;
+      background-attachment: fixed;
+      background-size: contain;
+      background-color: #9dcfc9;
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
 
-.hex-grid {
-  position: absolute;
-  top: -50px;
-  left: -50px;
-  width: calc(100vw + 100px);
-  height: calc(100vh + 100px);
-}
+    .squares-grid {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+    }
 
-.hex-row {
-  display: flex;
-  position: absolute;
-  left: 0;
-}
+    .squares-row {
+      display: flex;
+      position: absolute;
+      left: 0;
+    }
 
-.hex {
-  width: 80px;
-  height: 80px;
-  background: #66c2ff;
-  clip-path: polygon(
-    50% 0%, 
-    100% 25%, 
-    100% 75%, 
-    50% 100%, 
-    0% 75%, 
-    0% 25%
-  );
-  position: relative;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-  margin-right: 5px; /* Horizontal spacing between hexes */
-}
+    .squares {
+      background: transparent;
+      border: 2px solid #000000;
+      position: relative;
+      cursor: pointer;
+      transition: background-color 0.2s ease;
+    }
 
-.hex:hover {
-  background: #4da6d9;
-}
+    .squares:hover {
+      background: rgba(77, 166, 217, 0.3);
+    }
 
-.hex.occupied {
-  background: #ffcc66;
-}
+    .squares.occupied {
+      background: rgba(255, 204, 102, 0.3);
+    }
 
-.hex.drag-over {
-  background: #90EE90;
-  transform: scale(1.05);
-}
+    .squares.drag-over {
+      background: rgba(144, 238, 144, 0.5);
+      transform: scale(1.05);
+    }
 
-.unit {
-  position: absolute;
-  width: 32px;
-  height: 32px;
-  top: 24px;
-  left: 24px;
-  font-size: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: grab;
-  z-index: 10;
-  transition: transform 0.1s ease;
-}
+    .unit {
+      position: absolute;
+      width: 32px;
+      height: 32px;
+      top: 24%;
+      left: 26%;
+      font-size: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: grab;
+      z-index: 10;
+      transition: transform 0.1s ease;
+    }
 
-.unit:hover {
-  transform: scale(1.1);
-}
+    .unit:hover {
+      transform: scale(1.1);
+    }
 
-.unit.dragging {
-  cursor: grabbing;
-  z-index: 1000;
-  transform: scale(1.2);
-  pointer-events: none;
-}
+    .unit.dragging {
+      cursor: grabbing;
+      z-index: 1000;
+      transform: scale(1.2);
+      pointer-events: none;
+    }
 
-.tank {
-  color: #333;
-}
+    .tank {
+      color: #333;
+    }
 
-.troop {
-  color: #666;
-}
+    .troop {
+      color: #666;
+    }
 
-.drag-preview {
-  position: fixed;
-  pointer-events: none;
-  z-index: 1001;
-  transform: translate(-50%, -50%);
-  opacity: 0.8;
-  font-size: 20px;
-}
+    .drag-preview {
+      position: fixed;
+      pointer-events: none;
+      z-index: 1001;
+      transform: translate(-50%, -50%);
+      opacity: 0.8;
+      font-size: 20px;
+    }
