@@ -1,136 +1,135 @@
-// === Honeycomb grid settings ===
-const hexWidth = 80;
-const hexHeight = 80;
-const hexSpacing = 5;
-const rowHeight = hexHeight * 0.8; // vertical step
-const colWidth = hexWidth + hexSpacing; // horizontal step
-const offsetX = colWidth * 0.5; // horizontal offset for staggered rows
+ // === Calculate square size based on vertical fit ===
+    const screenWidth = window.innerWidth;
+    const screenHeight = window.innerHeight;
 
-const screenWidth = window.innerWidth;
-const screenHeight = window.innerHeight;
+    const numRows = 15; // Choose how many rows you want
+    const squareSize = screenHeight / numRows; // Fit vertically
+    const numCols = Math.floor(screenWidth / squareSize); // Fill horizontally
 
-// Calculate number of rows and columns (+ extra for padding)
-const numRows = Math.ceil(screenHeight / rowHeight) + 3;
-const numCols = Math.ceil(screenWidth / colWidth) + 3;
+    const squaresGrid = document.getElementById('squaresGrid');
+    squaresGrid.innerHTML = '';
 
-const hexGrid = document.getElementById('hexGrid');
+    for (let row = 0; row < numRows; row++) {
+      const squaresRow = document.createElement('div');
+      squaresRow.className = 'squares-row';
+      squaresRow.style.top = (row * squareSize) + 'px';
 
-// === Create the grid ===
-for (let row = 0; row < numRows; row++) {
-  const hexRow = document.createElement('div');
-  hexRow.className = 'hex-row';
-  hexRow.style.top = (row * rowHeight) + 'px';
+      for (let col = 0; col < numCols; col++) {
+        const square = document.createElement('div');
+        square.className = 'squares';
+        square.style.width = squareSize + 'px';
+        square.style.height = squareSize + 'px';
+        square.setAttribute('data-row', row);
+        square.setAttribute('data-col', col);
 
-  if (row % 2 === 1) {
-    hexRow.style.left = offsetX + 'px';
-  }
+        // Optional: Random unit placement
+        if (Math.random() < 0.05) {
+          const unit = document.createElement('div');
+          unit.className = Math.random() < 0.5 ? 'unit tank' : 'unit troop';
+          unit.textContent = unit.classList.contains('tank') ? '🚛' : '👥';
+          unit.draggable = false;
+          square.appendChild(unit);
+          square.classList.add('occupied');
+        }
 
-  const colsInThisRow = row % 2 === 1 ? numCols - 1 : numCols;
+        squaresRow.appendChild(square);
+      }
 
-  for (let col = 0; col < colsInThisRow; col++) {
-    const hex = document.createElement('div');
-    hex.className = 'hex';
-    hex.setAttribute('data-row', row);
-    hex.setAttribute('data-col', col);
-
-    if (Math.random() < 0.05) {
-      const unit = document.createElement('div');
-      unit.className = Math.random() < 0.5 ? 'unit tank' : 'unit troop';
-      unit.textContent = unit.classList.contains('tank') ? '🚛' : '👥';
-      unit.draggable = false;
-      hex.appendChild(unit);
-      hex.classList.add('occupied');
+      squaresGrid.appendChild(squaresRow);
     }
 
-    hexRow.appendChild(hex);
-  }
+    // === Drag and drop logic ===
+    let isDragging = false;
+    let draggedUnit = null;
+    let draggedFrom = null;
+    let dragPreview = document.getElementById('dragPreview');
 
-  hexGrid.appendChild(hexRow);
-}
+    function setupEventListeners() {
+      document.querySelectorAll('.unit').forEach(unit => {
+        unit.addEventListener('mousedown', startDrag);
+      });
 
-// === Drag and drop logic ===
-let isDragging = false;
-let draggedUnit = null;
-let draggedFrom = null;
-const dragPreview = document.getElementById('dragPreview');
+      document.querySelectorAll('.squares').forEach(square => {
+        square.addEventListener('mouseenter', handleMouseEnter);
+        square.addEventListener('mouseleave', handleMouseLeave);
+      });
+    }
 
-function setupEventListeners() {
-  document.querySelectorAll('.unit').forEach(unit => {
-    unit.addEventListener('mousedown', startDrag);
-  });
+    document.addEventListener('mousemove', handleMouseMove);
+    document.addEventListener('mouseup', stopDrag);
 
-  document.querySelectorAll('.hex').forEach(hex => {
-    hex.addEventListener('mouseenter', handleMouseEnter);
-    hex.addEventListener('mouseleave', handleMouseLeave);
-  });
-}
+    function startDrag(e) {
+      e.preventDefault();
+      isDragging = true;
+      draggedUnit = e.target;
+      draggedFrom = e.target.parentElement;
 
-document.addEventListener('mousemove', handleMouseMove);
-document.addEventListener('mouseup', stopDrag);
+      draggedUnit.classList.add('dragging');
+      dragPreview.textContent = draggedUnit.textContent;
+      dragPreview.style.display = 'block';
 
-function startDrag(e) {
-  e.preventDefault();
-  isDragging = true;
-  draggedUnit = e.target;
-  draggedFrom = e.target.parentElement;
+      updateDragPreview(e);
+    }
 
-  draggedUnit.classList.add('dragging');
-  dragPreview.textContent = draggedUnit.textContent;
-  dragPreview.style.display = 'block';
+    function handleMouseMove(e) {
+      if (isDragging) updateDragPreview(e);
+    }
 
-  updateDragPreview(e);
-}
+    function updateDragPreview(e) {
+      dragPreview.style.left = e.clientX + 'px';
+      dragPreview.style.top = e.clientY + 'px';
+    }
 
-function handleMouseMove(e) {
-  if (isDragging) updateDragPreview(e);
-}
+    function handleMouseEnter(e) {
+      if (isDragging && e.target.classList.contains('squares') && !e.target.classList.contains('occupied')) {
+        e.target.classList.add('drag-over');
+      }
+    }
 
-function updateDragPreview(e) {
-  dragPreview.style.left = e.clientX + 'px';
-  dragPreview.style.top = e.clientY + 'px';
-}
+    function handleMouseLeave(e) {
+      if (e.target.classList.contains('squares')) {
+        e.target.classList.remove('drag-over');
+      }
+    }
 
-function handleMouseEnter(e) {
-  if (isDragging && e.target.classList.contains('hex') && !e.target.classList.contains('occupied')) {
-    e.target.classList.add('drag-over');
-  }
-}
+    function stopDrag(e) {
+      if (!isDragging) return;
 
-function handleMouseLeave(e) {
-  if (e.target.classList.contains('hex')) {
-    e.target.classList.remove('drag-over');
-  }
-}
+      dragPreview.style.display = 'none';
 
-function stopDrag(e) {
-  if (!isDragging) return;
+      let targetSquare = document.elementFromPoint(e.clientX, e.clientY);
+      while (targetSquare && !targetSquare.classList.contains('squares')) {
+        targetSquare = targetSquare.parentElement;
+      }
 
-  dragPreview.style.display = 'none';
+      if (
+        targetSquare &&
+        targetSquare.classList.contains('squares') &&
+        !targetSquare.classList.contains('occupied') &&
+        targetSquare !== draggedFrom
+      ) {
+        targetSquare.appendChild(draggedUnit);
+        targetSquare.classList.add('occupied');
+        draggedFrom.classList.remove('occupied');
 
-  let targetHex = document.elementFromPoint(e.clientX, e.clientY);
-  while (targetHex && !targetHex.classList.contains('hex')) {
-    targetHex = targetHex.parentElement;
-  }
+        draggedUnit.style.transform = 'scale(1.3)';
+        setTimeout(() => {
+          draggedUnit.style.transform = '';
+        }, 200);
+      }
 
-  if (targetHex && !targetHex.classList.contains('occupied') && targetHex !== draggedFrom) {
-    targetHex.appendChild(draggedUnit);
-    targetHex.classList.add('occupied');
-    draggedFrom.classList.remove('occupied');
+      draggedUnit.classList.remove('dragging');
+      document.querySelectorAll('.squares').forEach(square => {
+        square.classList.remove('drag-over');
+      });
 
-    draggedUnit.style.transform = 'scale(1.3)';
-    setTimeout(() => {
-      draggedUnit.style.transform = '';
-    }, 200);
-  }
+      isDragging = false;
+      draggedUnit = null;
+      draggedFrom = null;
+    }
 
-  draggedUnit.classList.remove('dragging');
-  document.querySelectorAll('.hex').forEach(hex => hex.classList.remove('drag-over'));
+    setupEventListeners();
 
-  isDragging = false;
-  draggedUnit = null;
-  draggedFrom = null;
-}
-
-// === Init ===
-setupEventListeners();
-window.addEventListener('resize', () => location.reload());
+    window.addEventListener('resize', () => {
+      location.reload();
+    });
