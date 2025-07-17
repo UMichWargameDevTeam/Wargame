@@ -4,9 +4,9 @@ import { useEffect, useState } from 'react';
 import MapSelector from '@/components/MapSelector';
 import AssetDisplay from '@/components/AssetDisplay';
 import FooterControls from '@/components/FooterControls';
-
-
-
+import AvailableAssets from '@/components/AvailableAssets';
+import ResourcePoints from '@/components/ResourcePoints';
+import CommandersIntent from '@/components/CommandersIntent';
 
 export default function MainMapPage() {
     const [socket, setSocket] = useState<WebSocket | null>(null);
@@ -56,10 +56,20 @@ export default function MainMapPage() {
         }
     };
 
+    const canViewRestrictedComponents = (role: string | null) => {
+        return role === 'Ops' || role === 'Logistics';
+    };
+
     return (
     <div className="flex h-screen w-screen bg-neutral-900 text-white p-4 space-x-4">
-        {/* Map + Footer */}
+        {/* Map + + Header + Footer */}
         <div className="flex flex-col w-[70%] h-full space-y-4">
+            {/* Header for USA/USAF/USN CC*/}
+            {['USA-CC', 'USAF-CC', 'USN-CC'].includes(role || '') && (
+                <>
+                    <CommandersIntent />
+                </>
+            )}
             <div className="flex-1 bg-neutral-800 rounded-lg overflow-hidden">
                 <img
                     src={mapSrc}
@@ -67,20 +77,38 @@ export default function MainMapPage() {
                     className="object-contain w-full h-full"
                 />
             </div>
-            <FooterControls />
+            {/* Footer for Ops/Logs */}
+            {canViewRestrictedComponents(role) && (
+                <>
+                    <FooterControls />
+                </>
+            )}
         </div>
 
         {/* Sidebar */}
         <div className="flex-1 h-full bg-neutral-800 rounded-lg p-4 overflow-y-auto">
             <h2 className="text-lg mb-2">Current Role: {role || 'Unknown'}</h2>
-            <MapSelector
-                initialMap={mapSrc}
-                onMapChange={(path) => {
-                    setMapSrc(path);
-                    sessionStorage.setItem('mapSrc', path);
-                }}
-            />
-            <AssetDisplay />
+            {/* Menu for Ops/Logs */}
+            {['Ops', 'Logistics'].includes(role || '')  && (
+                <>
+                    <MapSelector
+                        initialMap={mapSrc}
+                        onMapChange={(path) => {
+                            setMapSrc(path);
+                            sessionStorage.setItem('mapSrc', path);
+                        }}
+                    />
+                    <AssetDisplay />
+                </>
+            )}
+            {/* Menu for USA/USAF/USN CC*/}
+            {['USA-CC', 'USAF-CC', 'USN-CC'].includes(role || '') && (
+                <>
+                    <AvailableAssets />
+                    <ResourcePoints />
+                </>
+            )}
+
         </div>
     </div>
 );
