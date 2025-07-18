@@ -7,6 +7,8 @@ import FooterControls from '@/components/FooterControls';
 import AvailableAssets from '@/components/AvailableAssets';
 import ResourcePoints from '@/components/ResourcePoints';
 import CommandersIntent from '@/components/CommandersIntent';
+import BattlefieldGrid from '@/components/InteractiveMap';
+import InteractiveMap from '@/components/InteractiveMap';
 
 export default function MainMapPage() {
     const [socket, setSocket] = useState<WebSocket | null>(null);
@@ -70,13 +72,10 @@ export default function MainMapPage() {
                     <CommandersIntent />
                 </>
             )}
-            <div className="flex-1 bg-neutral-800 rounded-lg overflow-hidden">
-                <img
-                    src={mapSrc}
-                    alt="Map"
-                    className="object-contain w-full h-full"
-                />
+            <div className="w-full h-full bg-neutral-800 rounded-lg overflow-hidden">
+                <InteractiveMap mapSrc={mapSrc}/>
             </div>
+
             {/* Footer for Ops/Logs */}
             {canViewRestrictedComponents(role) && (
                 <>
