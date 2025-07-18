@@ -15,3 +15,6 @@ __pycache__/
 
 # Environment variables file (optional)
 .env
+
+# Finder (Mac) Indexing files
+.DS_Store
