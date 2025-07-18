@@ -25,7 +25,13 @@ export default function InteractiveMap({ mapSrc }: Props) {
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
     const [elementDragId, setElementDragId] = useState<string | null>(null);
     const [showGrid, setShowGrid] = useState(true);
-    const [elements, setElements] = useState<MapElement[]>([]);
+    // dummy elements
+    const [elements, setElements] = useState([
+        { id: 'unit1', x: 5, y: 10 },
+        { id: 'unit2', x: 15, y: 20 },
+        { id: 'unit3', x: 25, y: 5 },
+    ]);
+
 
     const gridWidth = GRID_COLS * CELL_SIZE;
     const gridHeight = GRID_ROWS * CELL_SIZE;
@@ -122,6 +128,8 @@ export default function InteractiveMap({ mapSrc }: Props) {
         setDragging(false);
         setElementDragId(null);
     };
+
+
 
     return (
         <div className="relative w-full h-full overflow-hidden">
