@@ -69,7 +69,7 @@ export default function MainMapPage() {
             {/* Header for USA/USAF/USN CC*/}
             {['USA-CC', 'USAF-CC', 'USN-CC'].includes(role || '') && (
                 <>
-                    <CommandersIntent />
+                    <CommandersIntent role={role} />
                 </>
             )}
             <div className="w-full h-full bg-neutral-800 rounded-lg overflow-hidden">
