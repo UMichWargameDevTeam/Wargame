@@ -3,9 +3,9 @@ from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-from .models.Aircraft import F18
-from .models.LandVehicles import Bradley
-from .models.Warships import Destroyer
+from .models.airforce import F18
+from .models.ground import Bradley
+from .models.navy import Destroyer
 
 from .serializers import F18Serializer, BradleySerializer, DestroyerSerializer
 

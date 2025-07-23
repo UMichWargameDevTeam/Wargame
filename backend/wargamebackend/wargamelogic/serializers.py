@@ -1,7 +1,7 @@
 from rest_framework import serializers
-from .models.Aircraft import F18
-from .models.LandVehicles import Bradley
-from .models.Warships import Destroyer
+from .models.airforce import F18
+from .models.ground import Bradley
+from .models.navy import Destroyer
 
 class F18Serializer(serializers.ModelSerializer):
     class Meta:
