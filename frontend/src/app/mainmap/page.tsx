@@ -10,6 +10,7 @@ import CommandersIntent from '@/components/CommandersIntent';
 import InteractiveMap from '@/components/InteractiveMap';
 import { Asset } from '@/lib/Types'
 import { BACKEND_URL, WS_URL } from '@/lib/utils';
+import JTFCCMenu from '@/components/JTFCCMenu/JTFCCMenu';
 
 export default function MainMapPage() {
     // const [socket, setSocket] = useState<WebSocket | null>(null);
@@ -115,6 +116,10 @@ export default function MainMapPage() {
                         <ResourcePoints />
                     </>
                 )}
+            {/* Menu for JTF-CC */}
+            {role === 'JTF-CC' && (
+                <JTFCCMenu />
+            )}
 
             </div>
         </div>
