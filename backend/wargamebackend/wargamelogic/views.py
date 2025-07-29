@@ -3,12 +3,12 @@ from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-from .models.Aircraft import F18
-from .models.LandVehicles import Bradley
-from .models.Warships import Destroyer
 
-from .serializers import F18Serializer, BradleySerializer, DestroyerSerializer
+from .models.Asset import Asset
+from .models.AssetType import AssetType
 
+from .serializers import AssetSerializer
+from .serializers import AssetTypeSerializer
 import json
 
 @csrf_exempt
@@ -30,18 +30,12 @@ def main_map(request):
 
 @api_view(['GET'])
 def get_all_assets(request):
-    f18s = F18Serializer(F18.objects.all(), many=True).data
-    for f in f18s:
-        f["type"] = "F18"
+    assets = Asset.objects.all()
+    return Response(AssetSerializer(assets, many=True).data)
 
-    bradleys = BradleySerializer(Bradley.objects.all(), many=True).data
-    for b in bradleys:
-        b["type"] = "Bradley"
+@api_view(['GET'])
+def get_asset_types(request):
+    assets_types = AssetType.objects.all()
+    return Response(AssetTypeSerializer(assets_types, many=True).data)
 
-    destroyers = DestroyerSerializer(Destroyer.objects.all(), many=True).data
-    for d in destroyers:
-        d["type"] = "Destroyer"
 
-    all_assets = f18s + bradleys + destroyers
-
-    return Response(all_assets)

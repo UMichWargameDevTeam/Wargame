@@ -1,19 +1,12 @@
 from rest_framework import serializers
-from .models.Aircraft import F18
-from .models.LandVehicles import Bradley
-from .models.Warships import Destroyer
-
-class F18Serializer(serializers.ModelSerializer):
+from .models.Asset import Asset
+from .models.AssetType import AssetType
+class AssetSerializer(serializers.ModelSerializer):
     class Meta:
-        model = F18
+        model = Asset
         fields = '__all__'
 
-class BradleySerializer(serializers.ModelSerializer):
+class AssetTypeSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Bradley
-        fields = '__all__'
-
-class DestroyerSerializer(serializers.ModelSerializer):
-    class Meta:
-        model = Destroyer
+        model = AssetType
         fields = '__all__'
