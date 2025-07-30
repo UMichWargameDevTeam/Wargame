@@ -1,4 +1,4 @@
-from wargamelogic.models.asset import Asset, AssetType
+from wargamelogic.models.Asset import Asset, AssetType
 
 class USSGeraldRFord(Asset):
     def save(self, *args, **kwargs):
