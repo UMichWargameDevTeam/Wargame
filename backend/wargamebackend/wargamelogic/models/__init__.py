@@ -1,3 +1,3 @@
-from .Aircraft import *
-from .LandVehicles import *
-from .Warships import *
+from .airforce import *
+from .ground import *
+from .navy import *

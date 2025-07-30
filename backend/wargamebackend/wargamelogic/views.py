@@ -3,12 +3,9 @@ from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
-from .models.Aircraft import F18
-from .models.LandVehicles import Bradley
-from .models.Warships import Destroyer
 
-from .serializers import F18Serializer, BradleySerializer, DestroyerSerializer
-
+from wargamelogic.models.Asset import Asset
+from wargamelogic.serializers import get_asset_serializer_map
 import json
 
 @csrf_exempt
@@ -30,18 +27,18 @@ def main_map(request):
 
 @api_view(['GET'])
 def get_all_assets(request):
-    f18s = F18Serializer(F18.objects.all(), many=True).data
-    for f in f18s:
-        f["type"] = "F18"
+    all_assets = []
 
-    bradleys = BradleySerializer(Bradley.objects.all(), many=True).data
-    for b in bradleys:
-        b["type"] = "Bradley"
-
-    destroyers = DestroyerSerializer(Destroyer.objects.all(), many=True).data
-    for d in destroyers:
-        d["type"] = "Destroyer"
-
-    all_assets = f18s + bradleys + destroyers
+    # Loop through all subclasses of Asset
+    for subclass in Asset.__subclasses__():
+        model_name = subclass.__name__
+        serializer_class = get_asset_serializer_map().get(model_name)
+        
+        if serializer_class:
+            instances = subclass.objects.all()
+            serialized = serializer_class(instances, many=True).data
+            for obj in serialized:
+                obj["type"] = model_name
+            all_assets.extend(serialized)
 
     return Response(all_assets)
