@@ -2,36 +2,15 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { Asset } from "@/lib/Types"
 
-interface Asset {
-    id: string;
-    name: string;
-    classification: string;
-    x_position: string;
-    y_position: string;
-    team: string;
-    asset_type: string;
-    hitpoints: string;
-    primary_ammo: string;
-    secondary_ammo: string;
-    terciary_ammo: string;
-    supplies_count: string;
-    created_at: string;
-    updated_at: string;
+interface AvailableAssetsProps {
+    assets: Asset[];
+  }
 
-}
-
-
-export default function AvailableAssets() {
+export default function AvailableAssets({ assets }: AvailableAssetsProps) {
     const [open, setOpen] = useState(true);
-    const [assets, setAssets] = useState<Asset[]>([]);
 
-    useEffect(() => {
-        fetch('http://localhost:8000/api/assets/')
-            .then(res => res.json())
-            .then(data => setAssets(data))
-            .catch(err => console.error('Failed to fetch assets:', err));
-    }, []);
 
     return (
         <div className="bg-neutral-700 rounded-lg mb-4 p-4 max-h-[300px] overflow-y-auto">
