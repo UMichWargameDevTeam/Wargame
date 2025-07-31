@@ -4,54 +4,83 @@ const requestedTroops = {
   USAF: 6,
   USN: 12,
   USA: 19,
-};
+} as const;
+
+type Branch = keyof typeof requestedTroops;
 
 const ResourcePointsPanel: React.FC = () => {
-  const [inputs, setInputs] = useState({ USAF: '', USN: '', USA: '' });
+  const [inputs, setInputs] = useState<Record<Branch, string>>({
+    USAF: '',
+    USN: '',
+    USA: '',
+  });
   const [showConfirm, setShowConfirm] = useState(false);
 
-  const handleChange = (branch: string, value: string) => {
-    setInputs((prev) => ({ ...prev, [branch]: value.replace(/[^0-9]/g, '') }));
-  };
-
-  const handleSend = () => {
-    setShowConfirm(true);
+  /* ---------- handlers ---------- */
+  const handleChange = (branch: Branch, value: string) => {
+    setInputs(prev => ({
+      ...prev,
+      [branch]: value.replace(/[^0-9]/g, ''),
+    }));
   };
 
   const handleConfirm = () => {
+    // send data if needed
     setShowConfirm(false);
     setInputs({ USAF: '', USN: '', USA: '' });
   };
 
+  /* ---------- view ---------- */
   return (
-    <div className="bg-neutral-900 border border-neutral-700 rounded-lg shadow-md p-4 w-full max-w-xs min-w-0 text-white overflow-visible break-words">
+    <div className="bg-neutral-900 border border-neutral-700 rounded-lg shadow-md
+                    p-4 w-full max-w-xs text-white break-words">
       <h4 className="text-blue-400 font-bold mb-2">Resource Points Panel</h4>
-      <div className="text-sm mb-4 flex flex-col gap-1">
-        <div><b>OPS:</b> 99 &nbsp; <b>LOG:</b> 99</div>
+
+      <div className="text-sm mb-4">
+        <b>OPS:</b> 99&nbsp;&nbsp;<b>LOG:</b> 99
       </div>
+
+      {/* branch rows */}
       {Object.entries(requestedTroops).map(([branch, req]) => (
-        <div key={branch} className="flex items-center mb-2 min-w-0">
-          <div className="flex-1 font-semibold min-w-0">{branch}</div>
-          <span className="text-xs text-gray-400 mr-2">Requested Troops:</span>
-          <span className="text-red-400 font-bold mr-2">{req}</span>
+        <div
+          key={branch}
+          className="flex items-center mb-2 gap-x-4"  /* <-- uniform spacing */
+        >
+          {/* branch name */}
+          <div className="w-14 font-semibold flex-shrink-0">{branch}</div>
+
+          {/* label */}
+          <span className="text-xs text-gray-400 flex-shrink-0">Requested:</span>
+
+          {/* requested number */}
+          <span className="text-red-400 font-bold flex-shrink-0">{req}</span>
+
+          {/* numeric input (keeps explicit width override) */}
           <input
             type="text"
-            value={inputs[branch as keyof typeof inputs]}
-            onChange={e => handleChange(branch, e.target.value)}
-            className="px-1 py-0.5 rounded bg-neutral-800 border border-neutral-600 text-white text-center focus:outline-none focus:ring-2 focus:ring-blue-400"
+            value={inputs[branch as Branch]}
+            onChange={e => handleChange(branch as Branch, e.target.value)}
+            style={{ width: '40px' }}      /* do NOT remove this override */
+            className="px-1 py-0.5 rounded bg-neutral-800 border
+                       border-neutral-600 text-white text-left
+                       focus:outline-none focus:ring-2 focus:ring-blue-400"
             placeholder="0"
             inputMode="numeric"
             pattern="[0-9]*"
           />
         </div>
       ))}
+
+      {/* send / confirm flow */}
       <button
-        className="mt-2 w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold py-1.5 rounded transition"
-        onClick={handleSend}
+        className="mt-2 w-full bg-blue-500 hover:bg-blue-600 text-white font-semibold
+                   py-1.5 rounded transition"
+        onClick={() => setShowConfirm(true)}
         disabled={showConfirm}
       >
         SEND
       </button>
+
       {showConfirm && (
         <div className="mt-3 p-2 bg-neutral-800 border border-blue-400 rounded text-center">
           <div className="mb-2">Confirm submission?</div>
@@ -73,4 +102,4 @@ const ResourcePointsPanel: React.FC = () => {
   );
 };
 
-export default ResourcePointsPanel; 
+export default ResourcePointsPanel;
