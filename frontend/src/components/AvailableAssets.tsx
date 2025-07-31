@@ -5,11 +5,22 @@ import { useEffect, useState } from 'react';
 
 interface Asset {
     id: string;
+    name: string;
     classification: string;
-    position: string;
+    x_position: string;
+    y_position: string;
     team: string;
     asset_type: string;
+    hitpoints: string;
+    primary_ammo: string;
+    secondary_ammo: string;
+    terciary_ammo: string;
+    supplies_count: string;
+    created_at: string;
+    updated_at: string;
+
 }
+
 
 export default function AvailableAssets() {
     const [open, setOpen] = useState(true);
@@ -40,9 +51,12 @@ export default function AvailableAssets() {
                             key={asset.id}
                             className="bg-neutral-800 text-white rounded p-2 hover:bg-neutral-600 cursor-pointer"
                         >
+                            <div><strong>Asset Name:</strong> {asset.name}</div>
                             <div><strong>Type:</strong> {asset.classification}</div>
                             <div><strong>Team:</strong> {asset.team}</div>
-                            <div><strong>Position:</strong> {asset.position}</div>
+                            <div><strong>X-Position:</strong> {asset.x_position}</div>
+                            <div><strong>Y-Position:</strong> {asset.y_position}</div>
+                            <div><strong>Hitpoints:</strong> {asset.hitpoints}</div>
                         </div>
                     ))}
                 </div>

@@ -25,3 +25,9 @@ class Asset(models.Model):
     terciary_ammo = models.IntegerField() # terciary ammo (if applicable)
     
     supplies_count = models.IntegerField() # total supplies in possession by this asset (helpful for logis)
+
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    def __str__(self):
+        return f"{self.name} ({self.id})"
