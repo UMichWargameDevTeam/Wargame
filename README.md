@@ -118,7 +118,7 @@ Use these from the root of the project:
 ```bash
 make backend     # Run Daphne ASGI backend
 make frontend    # Run Next.js frontend
-make dev         # Run both in parallel (UNIX/macOS only)
+make both         # Run both in parallel (UNIX/macOS only)
 ```
 
 ---
