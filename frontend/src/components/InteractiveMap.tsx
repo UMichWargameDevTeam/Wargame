@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Asset } from "@/lib/Types"
 
 const GRID_ROWS = 25;
 const GRID_COLS = 40;
@@ -14,9 +15,14 @@ interface MapElement {
 
 interface Props {
     mapSrc: string;
+    assets: Asset[]
+    setAssets: React.Dispatch<React.SetStateAction<Asset[]>>;
 }
 
-export default function InteractiveMap({ mapSrc }: Props) {
+
+
+export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
+
     const containerRef = useRef<HTMLDivElement>(null);
     const [zoom, setZoom] = useState(1);
     const [offset, setOffset] = useState({ x: 0, y: 0 });
@@ -25,32 +31,10 @@ export default function InteractiveMap({ mapSrc }: Props) {
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
     const [elementDragId, setElementDragId] = useState<string | null>(null);
     const [showGrid, setShowGrid] = useState(true);
-    // dummy elements
-    const [elements, setElements] = useState([
-        { id: 'unit1', x: 5, y: 10 },
-        { id: 'unit2', x: 15, y: 20 },
-        { id: 'unit3', x: 25, y: 5 },
-    ]);
 
 
     const gridWidth = GRID_COLS * CELL_SIZE;
     const gridHeight = GRID_ROWS * CELL_SIZE;
-
-    useEffect(() => {
-        const saved = sessionStorage.getItem('mapElements');
-        if (saved) {
-            setElements(JSON.parse(saved));
-        } else {
-            setElements([
-                { id: '1', x: 5, y: 5 },
-                { id: '2', x: 10, y: 8 },
-            ]);
-        }
-    }, []);
-
-    useEffect(() => {
-        sessionStorage.setItem('mapElements', JSON.stringify(elements));
-    }, [elements]);
 
     useEffect(() => {
         const container = containerRef.current;
@@ -94,7 +78,7 @@ export default function InteractiveMap({ mapSrc }: Props) {
         setZoom(newZoom);
     };
 
-    const handleMouseDown = (e: React.MouseEvent) => {
+    const handleMouseDown =  (e: React.MouseEvent) => {
         if (elementDragId) return;
         setDragging(true);
         setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y });
@@ -115,17 +99,37 @@ export default function InteractiveMap({ mapSrc }: Props) {
                 const newX = Math.floor(mouseX / CELL_SIZE);
                 const newY = Math.floor(mouseY / CELL_SIZE);
 
-                setElements(prev =>
-                    prev.map(el =>
-                        el.id === elementDragId ? { ...el, x: newX, y: newY } : el
+            
+                setAssets(prev =>
+                    prev.map(asset =>
+                        asset.id === elementDragId ? { ...asset, x_position: newX, y_position: newY } : asset
                     )
                 );
             }
         }
     };
 
-    const handleMouseUp = () => {
+    const handleMouseUp = async () => {
         setDragging(false);
+        if (elementDragId) {
+            const asset = assets.find(a => a.id === elementDragId);
+            if (asset) {
+                try {
+                    await fetch(`http://localhost:8000/api/assets/${elementDragId}/`, {
+                        method: 'PATCH',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({
+                            x_position: asset.x_position,
+                            y_position: asset.y_position,
+                        }),
+                    });
+                } catch (error) {
+                    console.error('Failed to update asset:', error);
+                }
+            }
+        }
         setElementDragId(null);
     };
 
@@ -188,23 +192,24 @@ export default function InteractiveMap({ mapSrc }: Props) {
                         )}
 
                     {/* Draggable Elements */}
-                    {elements.map(el => (
+                    {assets.map(asset => (
                         <div
-                            key={el.id}
+                            key={asset.id}
                             onMouseDown={(e) => {
                                 e.stopPropagation();
-                                setElementDragId(el.id);
+                                setElementDragId(asset.id);
                             }}
                             style={{
                                 position: 'absolute',
-                                left: el.x * CELL_SIZE,
-                                top: el.y * CELL_SIZE,
+                                left: asset.x_position * CELL_SIZE,
+                                top: asset.y_position * CELL_SIZE,
                                 width: CELL_SIZE,
                                 height: CELL_SIZE,
-                                backgroundColor: 'dodgerblue',
+                                backgroundColor: asset.team === "RED" ? 'red' : 'blue',
                                 borderRadius: '50%',
                                 cursor: 'grab',
                             }}
+                            title={asset.name} // optional
                         />
                     ))}
                 </div>

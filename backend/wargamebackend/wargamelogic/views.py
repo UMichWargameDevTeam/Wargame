@@ -3,9 +3,14 @@ from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.response import Response
 from rest_framework.decorators import api_view
+from rest_framework import status
+from rest_framework import viewsets
 
-from wargamelogic.models.Asset import Asset
-from wargamelogic.serializers import get_asset_serializer_map
+from .models.Asset import Asset
+from .models.AssetType import AssetType
+
+from .serializers import AssetSerializer
+from .serializers import AssetTypeSerializer
 import json
 
 @csrf_exempt
@@ -25,20 +30,12 @@ def register_role(request):
 def main_map(request):
     return JsonResponse({"message": "Hello from Django view!"})
 
-@api_view(['GET'])
-def get_all_assets(request):
-    all_assets = []
+class AssetViewSet(viewsets.ModelViewSet):
+    queryset = Asset.objects.all()
+    serializer_class = AssetSerializer
 
-    # Loop through all subclasses of Asset
-    for subclass in Asset.__subclasses__():
-        model_name = subclass.__name__
-        serializer_class = get_asset_serializer_map().get(model_name)
-        
-        if serializer_class:
-            instances = subclass.objects.all()
-            serialized = serializer_class(instances, many=True).data
-            for obj in serialized:
-                obj["type"] = model_name
-            all_assets.extend(serialized)
+class AssetTypeViewSet(viewsets.ModelViewSet):
+    queryset = AssetType.objects.all()
+    serializer_class = AssetTypeSerializer
 
-    return Response(all_assets)
+

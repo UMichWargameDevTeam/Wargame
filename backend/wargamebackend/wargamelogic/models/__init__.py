@@ -1,3 +1,2 @@
-from .airforce import *
-from .ground import *
-from .navy import *
+from .Asset import *
+from .AssetType import *

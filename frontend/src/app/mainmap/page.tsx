@@ -9,6 +9,7 @@ import ResourcePoints from '@/components/ResourcePoints';
 import CommandersIntent from '@/components/CommandersIntent';
 import BattlefieldGrid from '@/components/InteractiveMap';
 import InteractiveMap from '@/components/InteractiveMap';
+import {Asset} from '@/lib/Types'
 
 export default function MainMapPage() {
     const [socket, setSocket] = useState<WebSocket | null>(null);
@@ -16,7 +17,14 @@ export default function MainMapPage() {
     const [input, setInput] = useState('');
     const [role, setRole] = useState<string | null>(null);
     const [mapSrc, setMapSrc] = useState('/maps/taiwan_middle_hex.png');
-    
+    const [assets, setAssets] = useState<Asset[]>([]);
+
+    useEffect(() => {
+        fetch('http://localhost:8000/api/assets/')
+            .then(res => res.json())
+            .then(data => setAssets(data))
+            .catch(err => console.error('Failed to fetch assets:', err));
+    }, []);
 
     useEffect(() => {
         const storedRole = sessionStorage.getItem('role');
@@ -73,7 +81,7 @@ export default function MainMapPage() {
                 </>
             )}
             <div className="w-full h-full bg-neutral-800 rounded-lg overflow-hidden">
-                <InteractiveMap mapSrc={mapSrc}/>
+                <InteractiveMap mapSrc={mapSrc} assets={assets} setAssets={setAssets}/>
             </div>
 
             {/* Footer for Ops/Logs */}
@@ -103,7 +111,7 @@ export default function MainMapPage() {
             {/* Menu for USA/USAF/USN CC*/}
             {['USA-CC', 'USAF-CC', 'USN-CC'].includes(role || '') && (
                 <>
-                    <AvailableAssets />
+                    <AvailableAssets assets={assets}/>
                     <ResourcePoints />
                 </>
             )}
