@@ -67,9 +67,9 @@ export default function MainMapPage() {
         {/* Map + + Header + Footer */}
         <div className="flex flex-col w-[70%] h-full space-y-4">
             {/* Header for USA/USAF/USN CC*/}
-            {['USA-CC', 'USAF-CC', 'USN-CC'].includes(role || '') && (
+            {['Ops', 'Logistics', 'USA-CC', 'USAF-CC', 'USN-CC', 'JTF-CC'].includes(role || '') && (
                 <>
-                    <CommandersIntent />
+                    <CommandersIntent role={role} />
                 </>
             )}
             <div className="w-full h-full bg-neutral-800 rounded-lg overflow-hidden">
