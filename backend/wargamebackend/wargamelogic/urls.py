@@ -10,5 +10,6 @@ router.register(r'asset-types', AssetTypeViewSet)
 urlpatterns = [
     path('api/mainmap/', views.main_map, name='main_map'),
     path('api/register_role/', views.register_role, name='register_role'),
-    path('api/', include(router.urls))
+    path('api/', include(router.urls)),
+
 ] 

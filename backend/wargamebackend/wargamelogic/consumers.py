@@ -1,5 +1,7 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
+import asyncio
+import datetime
 
 class MainMapConsumer(AsyncWebsocketConsumer):
     async def connect(self):
@@ -47,3 +49,19 @@ class AssetConsumer(AsyncWebsocketConsumer):
 
     async def asset_update(self, event):
         await self.send(text_data=event["message"])
+
+class TimerConsumer(AsyncWebsocketConsumer):
+    timer_duration = 600  # 10 minutes in seconds
+    start_time = datetime.datetime.utcnow()
+
+    async def connect(self):
+        await self.channel_layer.group_add("global_timer", self.channel_name)
+        await self.accept()
+
+    async def disconnect(self, close_code):
+        await self.channel_layer.group_discard("global_timer", self.channel_name)
+
+    async def send_time_update(self, event):
+        await self.send(text_data=json.dumps({
+            "remaining_seconds": event["remaining_seconds"]
+        }))
