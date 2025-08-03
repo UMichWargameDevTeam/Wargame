@@ -16,7 +16,7 @@ export default function MainMapPage() {
     const [messages, setMessages] = useState<string[]>([]);
     const [input, setInput] = useState('');
     const [role, setRole] = useState<string | null>(null);
-    const [mapSrc, setMapSrc] = useState('/maps/taiwan_middle_hex.png');
+    const [mapSrc, setMapSrc] = useState('/maps/taiwan_middle_clean.png');
     const [assets, setAssets] = useState<Asset[]>([]);
 
     useEffect(() => {

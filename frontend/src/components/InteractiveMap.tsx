@@ -1,17 +1,12 @@
 'use client';
 
 import React, { useEffect, useRef, useState } from 'react';
+import DraggableAsset from './DraggableAsset';
 import { Asset } from "@/lib/Types"
 
 const GRID_ROWS = 25;
 const GRID_COLS = 40;
 const CELL_SIZE = 40;
-
-interface MapElement {
-    id: string;
-    x: number;
-    y: number;
-}
 
 interface Props {
     mapSrc: string;
@@ -31,6 +26,8 @@ export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
     const [elementDragId, setElementDragId] = useState<string | null>(null);
     const [showGrid, setShowGrid] = useState(true);
+    const socketRef = useRef<WebSocket | null>(null);
+
 
 
     const gridWidth = GRID_COLS * CELL_SIZE;
@@ -57,6 +54,33 @@ export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
         setInitialized(true);
     }, [initialized, gridWidth, gridHeight]);
 
+    // used to update element positions live
+
+    useEffect(() => {
+        const socket = new WebSocket('ws://localhost:8000/ws/assets/');
+        socketRef.current = socket;
+
+        socket.onmessage = (event) => {
+            const data = JSON.parse(event.data);
+
+            if (data.type === "asset_moved") {
+                const updated = data.payload;
+
+                setAssets(prev =>
+                    prev.map(asset =>
+                        asset.id === updated.id ? { ...asset, ...updated } : asset
+                    )
+                );
+            }
+        };
+
+        socket.onclose = () => {
+            console.log('WebSocket closed');
+        };
+
+        return () => socket.close();
+    }, []);
+
     const handleWheel = (e: React.WheelEvent) => {
         e.preventDefault();
         const delta = -e.deltaY * 0.001;
@@ -78,7 +102,7 @@ export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
         setZoom(newZoom);
     };
 
-    const handleMouseDown =  (e: React.MouseEvent) => {
+    const handleMouseDown = (e: React.MouseEvent) => {
         if (elementDragId) return;
         setDragging(true);
         setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y });
@@ -99,7 +123,7 @@ export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
                 const newX = Math.floor(mouseX / CELL_SIZE);
                 const newY = Math.floor(mouseY / CELL_SIZE);
 
-            
+
                 setAssets(prev =>
                     prev.map(asset =>
                         asset.id === elementDragId ? { ...asset, x_position: newX, y_position: newY } : asset
@@ -111,27 +135,53 @@ export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
 
     const handleMouseUp = async () => {
         setDragging(false);
-        if (elementDragId) {
-            const asset = assets.find(a => a.id === elementDragId);
-            if (asset) {
-                try {
-                    await fetch(`http://localhost:8000/api/assets/${elementDragId}/`, {
-                        method: 'PATCH',
-                        headers: {
-                            'Content-Type': 'application/json',
-                        },
-                        body: JSON.stringify({
-                            x_position: asset.x_position,
-                            y_position: asset.y_position,
-                        }),
-                    });
-                } catch (error) {
-                    console.error('Failed to update asset:', error);
-                }
+
+        if (!elementDragId) return;
+
+        const asset = assets.find(a => a.id === elementDragId);
+        if (!asset) return;
+
+        try {
+            // Update in backend (via REST API)
+            await fetch(`http://localhost:8000/api/assets/${asset.id}/`, {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    x_position: asset.x_position,
+                    y_position: asset.y_position,
+                }),
+            });
+
+            // Broadcast over WebSocket
+            if (socketRef.current?.readyState === WebSocket.OPEN) {
+                socketRef.current.send(JSON.stringify({
+                    type: "asset_moved", // so you can filter on server/client
+                    payload: {
+                        id: asset.id,
+                        x_position: asset.x_position,
+                        y_position: asset.y_position,
+                        name: asset.name,
+                        asset_type: asset.asset_type,
+                        team: asset.team,
+                        hitpoints: asset.hitpoints,
+                        primary_ammo: asset.primary_ammo,
+                        secondary_ammo: asset.secondary_ammo,
+                        terciary_ammo: asset.terciary_ammo,
+                        supplies_count: asset.supplies_count,
+                    }
+                }));
             }
+
+        } catch (error) {
+            console.error('Failed to update asset:', error);
         }
+
         setElementDragId(null);
     };
+
+
 
 
 
@@ -193,23 +243,11 @@ export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
 
                     {/* Draggable Elements */}
                     {assets.map(asset => (
-                        <div
+                        <DraggableAsset
                             key={asset.id}
-                            onMouseDown={(e) => {
-                                e.stopPropagation();
-                                setElementDragId(asset.id);
-                            }}
-                            style={{
-                                position: 'absolute',
-                                left: asset.x_position * CELL_SIZE,
-                                top: asset.y_position * CELL_SIZE,
-                                width: CELL_SIZE,
-                                height: CELL_SIZE,
-                                backgroundColor: asset.team === "RED" ? 'red' : 'blue',
-                                borderRadius: '50%',
-                                cursor: 'grab',
-                            }}
-                            title={asset.name} // optional
+                            asset={asset}
+                            cellSize={CELL_SIZE}
+                            onMouseDown={(id) => setElementDragId(id)}
                         />
                     ))}
                 </div>
