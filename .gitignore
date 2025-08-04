@@ -1,5 +1,7 @@
 # Ignore virtual environment
+env/
 backend/env/
+frontend/env/
 
 # Python cache and compiled files
 __pycache__/
