@@ -37,9 +37,9 @@ class Unit(models.Model):
     cost = models.FloatField()
     domain = models.CharField(max_length=20, choices=DOMAINS)
     type = models.CharField(max_length=20, choices=DEFENDER_TYPES)
-    max_health = models.FloatField()
     speed = models.FloatField()
-    supply_space = models.FloatField()
+    max_health = models.FloatField()
+    max_supply_space = models.FloatField()
     defense_modifier = models.FloatField()
     description = models.TextField()
 

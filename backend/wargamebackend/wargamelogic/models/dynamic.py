@@ -14,6 +14,7 @@ class UnitInstance(models.Model):
     team = models.ForeignKey(Team, on_delete=models.CASCADE)
     tile = models.ForeignKey(Tile, on_delete=models.CASCADE)
     health = models.FloatField()
+    supply_count = models.FloatField()
 
     def __str__(self):
         return f"{self.unit.name} | {self.team.name} | Tile: ({self.tile.row}, {self.tile.column}) | Health: {self.health}"
