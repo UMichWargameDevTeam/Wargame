@@ -1,12 +1,13 @@
 from rest_framework import serializers
-from .models.Asset import Asset
-from .models.AssetType import AssetType
-class AssetSerializer(serializers.ModelSerializer):
+from .models.static import Unit
+from .models.dynamic import UnitInstance
+
+class UnitSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Asset
+        model = Unit
         fields = '__all__'
 
-class AssetTypeSerializer(serializers.ModelSerializer):
+class UnitInstanceSerializer(serializers.ModelSerializer):
     class Meta:
-        model = AssetType
+        model = UnitInstance
         fields = '__all__'

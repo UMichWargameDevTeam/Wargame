@@ -37,6 +37,7 @@ ALLOWED_HOSTS = []
 # Application definition
 
 INSTALLED_APPS = [
+    'wargamelogic.apps.WargamelogicConfig',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -46,7 +47,6 @@ INSTALLED_APPS = [
     'corsheaders',
     'rest_framework',
     'channels',
-    'wargamelogic',
 ]
 
 MIDDLEWARE = [
