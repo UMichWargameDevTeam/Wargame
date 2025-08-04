@@ -1,6 +1,25 @@
 from rest_framework import serializers
-from .models.static import Unit
-from .models.dynamic import UnitInstance
+from .models.static import (
+  Team, Role, Unit, Attack, Ability, Landmark, Tile
+)
+from .models.dynamic import (
+    RoleInstance, UnitInstance, LandmarkInstance, TileInstance
+)
+
+class TeamSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Team
+        fields = '__all__'
+
+class RoleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Role
+        fields = '__all__'
+
+class RoleInstanceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = RoleInstance
+        fields = '__all__'
 
 class UnitSerializer(serializers.ModelSerializer):
     class Meta:
@@ -10,4 +29,34 @@ class UnitSerializer(serializers.ModelSerializer):
 class UnitInstanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = UnitInstance
+        fields = '__all__'
+
+class AttackSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Attack
+        fields = '__all__'
+
+class AbilitySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Ability
+        fields = '__all__'
+
+class LandmarkSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Landmark
+        fields = '__all__'
+
+class LandmarkInstanceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LandmarkInstance
+        fields = '__all__'
+
+class TileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tile
+        fields = '__all__'
+
+class TileInstanceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = TileInstance
         fields = '__all__'

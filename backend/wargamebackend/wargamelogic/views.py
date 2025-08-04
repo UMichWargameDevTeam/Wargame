@@ -5,9 +5,21 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view
 from rest_framework import status
 from rest_framework import viewsets
-from .models.static import Role, Team, Unit
-from .models.dynamic import RoleInstance, UnitInstance
-from .serializers import UnitSerializer, UnitInstanceSerializer
+from .models.static import Team, Role, Unit, Attack, Ability, Landmark, Tile
+from .models.dynamic import RoleInstance, UnitInstance, LandmarkInstance, TileInstance
+from .serializers import (
+    TeamSerializer,
+    RoleSerializer,
+    RoleInstanceSerializer,
+    UnitSerializer,
+    UnitInstanceSerializer,
+    AttackSerializer,
+    AbilitySerializer,
+    LandmarkSerializer,
+    LandmarkInstanceSerializer,
+    TileSerializer,
+    TileInstanceSerializer,
+)
 
 import json
 
@@ -53,6 +65,18 @@ def register_role(request):
 def main_map(request):
     return JsonResponse({"message": "Hello from Django view!"})
 
+class TeamViewSet(viewsets.ModelViewSet):
+    queryset = Team.objects.all()
+    serializer_class = TeamSerializer
+
+class RoleViewSet(viewsets.ModelViewSet):
+    queryset = Role.objects.all()
+    serializer_class = RoleSerializer
+
+class RoleInstanceViewSet(viewsets.ModelViewSet):
+    queryset = RoleInstance.objects.all()
+    serializer_class = RoleInstanceSerializer
+
 class UnitViewSet(viewsets.ModelViewSet):
     queryset = Unit.objects.all()
     serializer_class = UnitSerializer
@@ -60,3 +84,27 @@ class UnitViewSet(viewsets.ModelViewSet):
 class UnitInstanceViewSet(viewsets.ModelViewSet):
     queryset = UnitInstance.objects.all()
     serializer_class = UnitInstanceSerializer
+
+class AttackViewSet(viewsets.ModelViewSet):
+    queryset = Attack.objects.all()
+    serializer_class = AttackSerializer
+
+class AbilityViewSet(viewsets.ModelViewSet):
+    queryset = Ability.objects.all()
+    serializer_class = AbilitySerializer
+
+class LandmarkViewSet(viewsets.ModelViewSet):
+    queryset = Landmark.objects.all()
+    serializer_class = LandmarkSerializer
+
+class LandmarkInstanceViewSet(viewsets.ModelViewSet):
+    queryset = LandmarkInstance.objects.all()
+    serializer_class = LandmarkInstanceSerializer
+
+class TileViewSet(viewsets.ModelViewSet):
+    queryset = Tile.objects.all()
+    serializer_class = TileSerializer
+
+class TileInstanceViewSet(viewsets.ModelViewSet):
+    queryset = TileInstance.objects.all()
+    serializer_class = TileInstanceSerializer
