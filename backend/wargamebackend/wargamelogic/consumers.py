@@ -29,25 +29,25 @@ class MainMapConsumer(AsyncWebsocketConsumer):
         }))
 
 
-class UnitConsumer(AsyncWebsocketConsumer):
+class UnitInstanceConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        await self.channel_layer.group_add("units", self.channel_name)
+        await self.channel_layer.group_add("unit-instances", self.channel_name)
         await self.accept()
 
     async def disconnect(self, close_code):
-        await self.channel_layer.group_discard("units", self.channel_name)
+        await self.channel_layer.group_discard("unit-instances", self.channel_name)
 
     async def receive(self, text_data):
         # Broadcast to group
         await self.channel_layer.group_send(
-            "units",
+            "unit-instances",
             {
-                "type": "unit.update",
+                "type": "unit_instance.update",
                 "message": text_data,
             }
         )
 
-    async def unit_update(self, event):
+    async def unit_instance_update(self, event):
         await self.send(text_data=event["message"])
 
 class TimerConsumer(AsyncWebsocketConsumer):
