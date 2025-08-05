@@ -9,43 +9,43 @@ from .models.dynamic import (
 class TeamSerializer(serializers.ModelSerializer):
     class Meta:
         model = Team
-        fields = '__all__'
+        exclude = ['id']
 
 
 class RoleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Role
-        fields = '__all__'
+        exclude = ['id']
 
 
 class UnitSerializer(serializers.ModelSerializer):
     class Meta:
         model = Unit
-        fields = '__all__'
+        exclude = ['id']
 
 
 class AttackSerializer(serializers.ModelSerializer):
     class Meta:
         model = Attack
-        fields = '__all__'
+        exclude = ['id']
 
 
 class AbilitySerializer(serializers.ModelSerializer):
     class Meta:
         model = Ability
-        fields = '__all__'
+        exclude = ['id']
 
 
 class LandmarkSerializer(serializers.ModelSerializer):
     class Meta:
         model = Landmark
-        fields = '__all__'
+        exclude = ['id']
 
 
 class TileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tile
-        fields = ['id', 'row', 'column']
+        exclude = ['id']
 
 class RoleInstanceSerializer(serializers.ModelSerializer):
     role = RoleSerializer()
@@ -53,7 +53,7 @@ class RoleInstanceSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = RoleInstance
-        fields = '__all__'
+        exclude = ['id']
 
 
 class UnitInstanceSerializer(serializers.ModelSerializer):
@@ -86,4 +86,4 @@ class LandmarkInstanceTileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LandmarkInstanceTile
-        fields = '__all__'
+        exclude = ['id']
