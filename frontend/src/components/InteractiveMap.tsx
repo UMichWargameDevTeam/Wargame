@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef, useState } from 'react';
 import DraggableAsset from './DraggableAsset';
-import { Asset } from "@/lib/Types"
+import { Asset } from "@/lib/Types";
 
 const GRID_ROWS = 25;
 const GRID_COLS = 40;
@@ -10,76 +10,62 @@ const CELL_SIZE = 40;
 
 interface Props {
     mapSrc: string;
-    assets: Asset[]
+    assets: Asset[];
     setAssets: React.Dispatch<React.SetStateAction<Asset[]>>;
 }
 
-
-
 export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
-
     const containerRef = useRef<HTMLDivElement>(null);
+    const socketRef = useRef<WebSocket | null>(null);
+
     const [zoom, setZoom] = useState(1);
     const [offset, setOffset] = useState({ x: 0, y: 0 });
     const [initialized, setInitialized] = useState(false);
     const [dragging, setDragging] = useState(false);
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-    const [elementDragId, setElementDragId] = useState<string | null>(null);
+    const [elementDragId, setElementDragId] = useState<number>(0);
     const [showGrid, setShowGrid] = useState(true);
-    const socketRef = useRef<WebSocket | null>(null);
-
-
 
     const gridWidth = GRID_COLS * CELL_SIZE;
     const gridHeight = GRID_ROWS * CELL_SIZE;
 
+    // Fit map to screen initially
     useEffect(() => {
         const container = containerRef.current;
         if (!container || initialized) return;
 
-        const containerWidth = container.clientWidth;
-        const containerHeight = container.clientHeight;
-
-        // Calculate best zoom to fit the entire grid
-        const zoomX = containerWidth / gridWidth;
-        const zoomY = containerHeight / gridHeight;
+        const zoomX = container.clientWidth / gridWidth;
+        const zoomY = container.clientHeight / gridHeight;
         const initialZoom = Math.min(zoomX, zoomY);
 
-        // Center the map in the container
-        const initialOffsetX = (containerWidth - gridWidth * initialZoom) / 2;
-        const initialOffsetY = (containerHeight - gridHeight * initialZoom) / 2;
+        const initialOffsetX = (container.clientWidth - gridWidth * initialZoom) / 2;
+        const initialOffsetY = (container.clientHeight - gridHeight * initialZoom) / 2;
 
         setZoom(initialZoom);
         setOffset({ x: initialOffsetX, y: initialOffsetY });
         setInitialized(true);
     }, [initialized, gridWidth, gridHeight]);
 
-    // used to update element positions live
-
+    // WebSocket connection for live updates
     useEffect(() => {
-        const socket = new WebSocket('ws://localhost:8000/ws/assets/');
+        const socket = new WebSocket('ws://localhost:8000/ws/unit-instances/');
         socketRef.current = socket;
 
         socket.onmessage = (event) => {
             const data = JSON.parse(event.data);
-
-            if (data.type === "asset_moved") {
+            if (data.type === "unit_moved") {
                 const updated = data.payload;
-
                 setAssets(prev =>
                     prev.map(asset =>
-                        asset.id === updated.id ? { ...asset, ...updated } : asset
+                        asset.id === updated.id ? updated : asset
                     )
                 );
             }
         };
 
-        socket.onclose = () => {
-            console.log('WebSocket closed');
-        };
-
+        socket.onclose = () => console.log('WebSocket closed');
         return () => socket.close();
-    }, []);
+    }, [setAssets]);
 
     const handleWheel = (e: React.WheelEvent) => {
         e.preventDefault();
@@ -98,7 +84,6 @@ export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
                 y: offset.y - dy * (newZoom / zoom - 1),
             });
         }
-
         setZoom(newZoom);
     };
 
@@ -120,69 +105,52 @@ export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
                 const mouseX = (e.clientX - rect.left - offset.x) / zoom;
                 const mouseY = (e.clientY - rect.top - offset.y) / zoom;
 
-                const newX = Math.floor(mouseX / CELL_SIZE);
-                const newY = Math.floor(mouseY / CELL_SIZE);
-
+                const newCol = Math.floor(mouseX / CELL_SIZE);
+                const newRow = Math.floor(mouseY / CELL_SIZE);
 
                 setAssets(prev =>
                     prev.map(asset =>
-                        asset.id === elementDragId ? { ...asset, x_position: newX, y_position: newY } : asset
+                        asset.id === elementDragId
+                            ? { ...asset, tile: { ...asset.tile, column: newCol, row: newRow } }
+                            : asset
                     )
                 );
             }
         }
     };
 
+
+
     const handleMouseUp = async () => {
         setDragging(false);
-
         if (!elementDragId) return;
 
         const asset = assets.find(a => a.id === elementDragId);
         if (!asset) return;
 
         try {
-            // Update in backend (via REST API)
-            await fetch(`http://localhost:8000/api/assets/${asset.id}/`, {
+            // Update backend
+            await fetch(`http://localhost:8000/api/unit-instances/${asset.id}/`, {
                 method: 'PATCH',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    x_position: asset.x_position,
-                    y_position: asset.y_position,
+                    tile: asset.tile.id // Assuming serializer accepts tile ID
                 }),
             });
 
             // Broadcast over WebSocket
             if (socketRef.current?.readyState === WebSocket.OPEN) {
                 socketRef.current.send(JSON.stringify({
-                    type: "asset_moved", // so you can filter on server/client
-                    payload: {
-                        id: asset.id,
-                        x_position: asset.x_position,
-                        y_position: asset.y_position,
-                        name: asset.name,
-                        asset_type: asset.asset_type,
-                        team: asset.team,
-                        hitpoints: asset.hitpoints,
-                        primary_ammo: asset.primary_ammo,
-                        secondary_ammo: asset.secondary_ammo,
-                        terciary_ammo: asset.terciary_ammo,
-                        supplies_count: asset.supplies_count,
-                    }
+                    type: "unit_moved",
+                    payload: asset
                 }));
             }
-
         } catch (error) {
-            console.error('Failed to update asset:', error);
+            console.error('Failed to update unit:', error);
         }
 
-        setElementDragId(null);
+        setElementDragId(0);
     };
-
-
-
 
 
     return (
@@ -215,7 +183,7 @@ export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
                     }}
                     className='select-none'
                 >
-                    {/* Grid Cells */}
+                    {/* Grid */}
                     {showGrid &&
                         Array.from({ length: GRID_ROWS }).flatMap((_, row) =>
                             Array.from({ length: GRID_COLS }).map((_, col) => (
@@ -241,13 +209,13 @@ export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
                             ))
                         )}
 
-                    {/* Draggable Elements */}
+                    {/* Draggable Units */}
                     {assets.map(asset => (
                         <DraggableAsset
                             key={asset.id}
                             asset={asset}
                             cellSize={CELL_SIZE}
-                            onMouseDown={(id) => setElementDragId(id)}
+                            onMouseDown={(id) => setElementDragId(asset.id)}
                         />
                     ))}
                 </div>

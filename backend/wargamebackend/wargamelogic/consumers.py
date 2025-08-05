@@ -38,18 +38,19 @@ class UnitInstanceConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_discard("unit-instances", self.channel_name)
 
     async def receive(self, text_data):
-        # Broadcast to group
-        await self.channel_layer.group_send(
-            "unit-instances",
-            {
-                "type": "unit_instance.update",
-                "message": text_data,
-            }
-        )
+        data = json.loads(text_data)
+        if data["type"] == "unit_moved":
+            # Broadcast updated position to all
+            await self.channel_layer.group_send(
+                "unit-instances",
+                {
+                    "type": "unit_instance.update",
+                    "message": json.dumps(data),
+                }
+            )
 
     async def unit_instance_update(self, event):
         await self.send(text_data=event["message"])
-
 class TimerConsumer(AsyncWebsocketConsumer):
     timer_duration = 600  # 10 minutes in seconds
     start_time = datetime.datetime.utcnow()

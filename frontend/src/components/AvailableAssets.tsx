@@ -6,7 +6,7 @@ import { Asset } from "@/lib/Types"
 
 interface AvailableAssetsProps {
     assets: Asset[];
-  }
+}
 
 export default function AvailableAssets({ assets }: AvailableAssetsProps) {
     const [open, setOpen] = useState(true);
@@ -30,12 +30,12 @@ export default function AvailableAssets({ assets }: AvailableAssetsProps) {
                             key={asset.id}
                             className="bg-neutral-800 text-white rounded p-2 hover:bg-neutral-600 cursor-pointer"
                         >
-                            <div><strong>Asset Name:</strong> {asset.name}</div>
-                            <div><strong>Type:</strong> {asset.classification}</div>
-                            <div><strong>Team:</strong> {asset.team}</div>
-                            <div><strong>X-Position:</strong> {asset.x_position}</div>
-                            <div><strong>Y-Position:</strong> {asset.y_position}</div>
-                            <div><strong>Hitpoints:</strong> {asset.hitpoints}</div>
+                            <div><strong>Unit:</strong> {asset.unit.name}</div>
+                            <div><strong>Team:</strong> {asset.team.name}</div>
+                            <div><strong>Row:</strong> {asset.tile.row}</div>
+                            <div><strong>Column:</strong> {asset.tile.column}</div>
+                            <div><strong>Health:</strong> {asset.health}</div>
+                            <div><strong>Supply Count:</strong> {asset.supply_count}</div>
                         </div>
                     ))}
                 </div>

@@ -20,3 +20,6 @@ __pycache__/
 
 # Finder (Mac) Indexing files
 .DS_Store
+
+# static files
+backend/wargamebackend/staticfiles

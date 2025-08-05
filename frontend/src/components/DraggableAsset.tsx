@@ -6,7 +6,7 @@ import { Asset } from '@/lib/Types';
 interface Props {
     asset: Asset;
     cellSize: number;
-    onMouseDown: (id: string) => void;
+    onMouseDown: (id: string | number) => void;
 }
 
 export default function DraggableAsset({ asset, cellSize, onMouseDown }: Props) {
@@ -21,11 +21,11 @@ export default function DraggableAsset({ asset, cellSize, onMouseDown }: Props) 
         <div
             style={{
                 position: 'absolute',
-                left: asset.x_position * cellSize,
-                top: asset.y_position * cellSize,
+                left: asset.tile.column * cellSize,
+                top: asset.tile.row * cellSize,
                 width: cellSize,
                 height: cellSize,
-                backgroundColor: asset.team === "RED" ? 'red' : 'blue',
+                backgroundColor: asset.team.name === "RED" ? 'red' : 'blue',
                 borderRadius: '50%',
                 cursor: 'grab',
             }}
@@ -34,7 +34,7 @@ export default function DraggableAsset({ asset, cellSize, onMouseDown }: Props) 
                 onMouseDown(asset.id);
             }}
             onClick={toggleInfo}
-            title={asset.name}
+            title={asset.unit.name}
         >
             {showInfo && (
                 <div
@@ -53,14 +53,10 @@ export default function DraggableAsset({ asset, cellSize, onMouseDown }: Props) 
                     }}
                     onClick={e => e.stopPropagation()}
                 >
-                    <strong>{asset.name}</strong>
-                    <div><b>Team:</b> {asset.team}</div>
-                    <div><b>X:</b> {asset.x_position}, <b>Y:</b> {asset.y_position}</div>
-                    <div><b>HP:</b> {asset.hitpoints}</div>
-                    <div><b>Primary Ammo:</b> {asset.primary_ammo}</div>
-                    <div><b>Secondary Ammo:</b> {asset.secondary_ammo}</div>
-                    <div><b>Terciary Ammo:</b> {asset.terciary_ammo}</div>
-                    <div><b>Supplies:</b> {asset.supplies_count}</div>
+                    <div><b>Team:</b> {asset.team.name}</div>
+                    <div><b>Row:</b> {asset.tile.row}, <b>Col:</b> {asset.tile.column}</div>
+                    <div><b>HP:</b> {asset.health}</div>
+                    <div><b>Supplies:</b> {asset.supply_count}</div>
                 </div>
             )}
         </div>

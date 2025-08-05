@@ -38,6 +38,7 @@ ALLOWED_HOSTS = []
 
 INSTALLED_APPS = [
     'wargamelogic.apps.WargamelogicConfig',
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -150,7 +151,26 @@ CORS_ALLOW_ALL_ORIGINS = True
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
 
-STATIC_URL = 'static/'
+STATIC_URL = '/static/'
+STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+JAZZMIN_SETTINGS = {
+    "site_title": "Wargame Admin",
+    "site_header": "Wargame Control",
+    "site_brand": "Wargame Dashboard",
+    "welcome_sign": "Welcome to the Wargame Admin",
+    "copyright": "Wargame Project © 2025",
+    "search_model": ["auth.User", "wargamelogic.Team"],
+
+    # Theme customization
+    "theme": "darkly",  # Try: cosmo, cyborg, darkly, flatly, journal, litera, lumen, lux, materia, minty, pulse, sandstone, simplex, slate, solar, spacelab, superhero, united, yeti
+
+    # Icons for apps
+    "icons": {
+        "auth": "fas fa-users-cog",
+        "wargamelogic": "fas fa-chess",
+    },
+}
 
 # Default primary key field type
 # https://docs.djangoproject.com/en/5.1/ref/settings/#default-auto-field
