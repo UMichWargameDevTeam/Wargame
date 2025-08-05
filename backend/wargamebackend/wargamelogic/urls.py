@@ -26,7 +26,7 @@ router.register(r'abilities', AbilityViewSet)
 router.register(r'landmarks', LandmarkViewSet)
 router.register(r'landmark-instances', LandmarkInstanceViewSet)
 router.register(r'tiles', TileViewSet)
-router.register(r'tile-instances', LandmarkInstanceTileViewSet)
+router.register(r'landmark-instance-tiles', LandmarkInstanceTileViewSet)
 
 urlpatterns = [
     path('api/mainmap/', views.main_map, name='main_map'),
