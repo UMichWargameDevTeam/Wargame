@@ -6,10 +6,6 @@ from .models.dynamic import (
     RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile 
 )
 
-# --------------------------
-# Static model serializers
-# --------------------------
-
 class TeamSerializer(serializers.ModelSerializer):
     class Meta:
         model = Team
@@ -51,12 +47,10 @@ class TileSerializer(serializers.ModelSerializer):
         model = Tile
         fields = ['id', 'row', 'column']
 
-
-# --------------------------
-# Dynamic model serializers
-# --------------------------
-
 class RoleInstanceSerializer(serializers.ModelSerializer):
+    role = RoleSerializer()
+    team = TeamSerializer()
+    
     class Meta:
         model = RoleInstance
         fields = '__all__'
@@ -78,12 +72,18 @@ class UnitInstanceSerializer(serializers.ModelSerializer):
 
 
 class LandmarkInstanceSerializer(serializers.ModelSerializer):
+    landmark = LandmarkSerializer()
+    team = TeamSerializer()
+
     class Meta:
         model = LandmarkInstance
         fields = '__all__'
 
 
 class LandmarkInstanceTileSerializer(serializers.ModelSerializer):
+    landmark_instance = LandmarkInstanceSerializer()
+    tile = TileSerializer()
+
     class Meta:
         model = LandmarkInstanceTile
         fields = '__all__'

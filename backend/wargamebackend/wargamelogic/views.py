@@ -108,3 +108,109 @@ class TileViewSet(viewsets.ModelViewSet):
 class LandmarkInstanceTileViewSet(viewsets.ModelViewSet):
     queryset = LandmarkInstanceTile.objects.all()
     serializer_class = LandmarkInstanceTileSerializer
+
+@api_view(['GET'])
+def get_team_by_name(request, name):
+    try:
+        team = Team.objects.get(name=name)
+    except Team.DoesNotExist:
+        return Response({"error": "Team not found"}, status=status.HTTP_404_NOT_FOUND)
+    serializer = TeamSerializer(team)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def get_role_by_name(request, name):
+    try:
+        role = Role.objects.get(name=name)
+    except Role.DoesNotExist:
+        return Response({"error": "Role not found"}, status=status.HTTP_404_NOT_FOUND)
+    serializer = RoleSerializer(role)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def get_unit_by_name(request, unit_name):
+    try:
+        unit = Unit.objects.get(name=unit_name)
+    except Unit.DoesNotExist:
+        return Response({"error": "Unit not found"}, status=status.HTTP_404_NOT_FOUND)
+    serializer = UnitSerializer(unit)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def get_attack_by_unit_and_name(request, unit_name, attack_name):
+    try:
+        unit = Unit.objects.get(name=unit_name)
+        attack = unit.attacks.get(name=attack_name)
+    except (Unit.DoesNotExist, Attack.DoesNotExist):
+        return Response({"error": "Attack not found"}, status=status.HTTP_404_NOT_FOUND)
+    serializer = AttackSerializer(attack)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def get_ability_by_unit_and_name(request, unit_name, ability_name):
+    try:
+        unit = Unit.objects.get(name=unit_name)
+        ability = unit.abilities.get(name=ability_name)
+    except (Unit.DoesNotExist, Ability.DoesNotExist):
+        return Response({"error": "Ability not found"}, status=status.HTTP_404_NOT_FOUND)
+    serializer = AbilitySerializer(ability)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def get_landmark_by_name(request, name):
+    try:
+        landmark = Landmark.objects.get(name=name)
+    except Landmark.DoesNotExist:
+        return Response({"error": "Landmark not found"}, status=status.HTTP_404_NOT_FOUND)
+    serializer = LandmarkSerializer(landmark)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def get_tile_by_coords(request, row, column):
+    try:
+        tile = Tile.objects.get(row=row, column=column)
+    except Tile.DoesNotExist:
+        return Response({"error": "Tile not found"}, status=status.HTTP_404_NOT_FOUND)
+    serializer = TileSerializer(tile)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+def get_role_instance_by_team_and_role(request, team_name, role_name):
+    try:
+        team = Team.objects.get(name=team_name)
+        role = Role.objects.get(name=role_name)
+        role_instance = RoleInstance.objects.get(team=team, role=role)
+    except (Team.DoesNotExist, Role.DoesNotExist, RoleInstance.DoesNotExist):
+        return Response({"error": "RoleInstance not found"}, status=status.HTTP_404_NOT_FOUND)
+    return Response(RoleInstanceSerializer(role_instance).data)
+
+@api_view(['GET'])
+def get_unit_instance_by_id(request, pk):
+    try:
+        unit_instance = UnitInstance.objects.get(id=pk)
+    except UnitInstance.DoesNotExist:
+        return Response({"error": "UnitInstance not found"}, status=status.HTTP_404_NOT_FOUND)
+    return Response(UnitInstanceSerializer(unit_instance).data)
+
+@api_view(['GET'])
+def get_landmark_instance_by_id(request, pk):
+    try:
+        landmark_instance = LandmarkInstance.objects.get(id=pk)
+    except LandmarkInstance.DoesNotExist:
+        return Response({"error": "LandmarkInstance not found"}, status=status.HTTP_404_NOT_FOUND)
+    return Response(LandmarkInstanceSerializer(landmark_instance).data)
+
+@api_view(['GET'])
+def get_landmark_instance_tile_by_coords(request, row, column):
+    try:
+        tile = Tile.objects.get(row=row, column=column)
+        landmark_instance_tiles = LandmarkInstanceTile.objects.filter(tile=tile)
+    except Tile.DoesNotExist:
+        return Response({"error": "Tile not found"}, status=status.HTTP_404_NOT_FOUND)
+
+    if not landmark_instance_tiles.exists():
+        return Response({"error": "No LandmarkInstanceTiles found for this tile"}, status=status.HTTP_404_NOT_FOUND)
+
+    return Response(
+        LandmarkInstanceTileSerializer(landmark_instance_tiles, many=True).data
+    )

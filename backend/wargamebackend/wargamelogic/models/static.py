@@ -56,7 +56,7 @@ class Attack(models.Model):
 
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name='attacks')
     name = models.CharField(max_length=100)
-    cost = models.FloatField()
+    # cost = models.FloatField()
     to_hit = models.FloatField()
     shots = models.IntegerField()
     min_damage = models.FloatField()
