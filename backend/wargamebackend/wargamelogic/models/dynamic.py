@@ -6,11 +6,6 @@ class RoleInstance(models.Model):
     team = models.ForeignKey(Team, on_delete=models.CASCADE)
     user = models.CharField(max_length=255)  # e.g., browser ID or cookie
 
-    class Meta:
-        constraints = [
-            models.UniqueConstraint(fields=['role', 'team'], name='unique_role_per_team')
-        ]
-
     def __str__(self):
         return f"{self.role.name} | {self.team.name} | User: {self.user}"
 
