@@ -6,7 +6,7 @@ from rest_framework.decorators import api_view
 from rest_framework import status
 from rest_framework import viewsets
 from .models.static import Team, Role, Unit, Attack, Ability, Landmark, Tile
-from .models.dynamic import RoleInstance, UnitInstance, LandmarkInstance, TileInstance
+from .models.dynamic import RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile
 from .serializers import (
     TeamSerializer,
     RoleSerializer,
@@ -18,7 +18,7 @@ from .serializers import (
     LandmarkSerializer,
     LandmarkInstanceSerializer,
     TileSerializer,
-    TileInstanceSerializer,
+    LandmarkInstanceTileSerializer
 )
 
 import json
@@ -105,6 +105,6 @@ class TileViewSet(viewsets.ModelViewSet):
     queryset = Tile.objects.all()
     serializer_class = TileSerializer
 
-class TileInstanceViewSet(viewsets.ModelViewSet):
-    queryset = TileInstance.objects.all()
-    serializer_class = TileInstanceSerializer
+class LandmarkInstanceTileViewSet(viewsets.ModelViewSet):
+    queryset = LandmarkInstanceTile.objects.all()
+    serializer_class = LandmarkInstanceTileSerializer

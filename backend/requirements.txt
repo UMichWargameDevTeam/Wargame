@@ -6,3 +6,4 @@ asgiref
 daphne
 dotenv
 psycopg
+django-jazzmin

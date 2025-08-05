@@ -67,6 +67,9 @@ class Attack(models.Model):
     attack_modifier_applies_to = models.CharField(max_length=100)
     description = models.TextField()
 
+    class Meta:
+        unique_together = ("unit", "name")
+
     def __str__(self):
         return f"{self.unit.name} - {self.name}"
 
@@ -74,6 +77,9 @@ class Ability(models.Model):
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name='abilities')
     name = models.CharField(max_length=100)
     description = models.TextField()
+
+    class Meta:
+        unique_together = ("unit", "name")
 
     def __str__(self):
         return f"{self.unit.name} - {self.name}"

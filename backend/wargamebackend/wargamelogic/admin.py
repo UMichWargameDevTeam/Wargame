@@ -12,7 +12,7 @@ from .models.dynamic import (
     RoleInstance,
     UnitInstance,
     LandmarkInstance,
-    TileInstance,
+    LandmarkInstanceTile,
 )
 # Register your models here.
 admin.site.register(Team)
@@ -26,4 +26,4 @@ admin.site.register(Landmark)
 admin.site.register(RoleInstance)
 admin.site.register(UnitInstance)
 admin.site.register(LandmarkInstance)
-admin.site.register(TileInstance)
+admin.site.register(LandmarkInstanceTile)

@@ -12,7 +12,7 @@ from .views import (
     LandmarkViewSet,
     LandmarkInstanceViewSet,
     TileViewSet,
-    TileInstanceViewSet,
+    LandmarkInstanceTileViewSet
 )
 
 router = DefaultRouter()
@@ -26,7 +26,7 @@ router.register(r'abilities', AbilityViewSet)
 router.register(r'landmarks', LandmarkViewSet)
 router.register(r'landmark-instances', LandmarkInstanceViewSet)
 router.register(r'tiles', TileViewSet)
-router.register(r'tile-instances', TileInstanceViewSet)
+router.register(r'tile-instances', LandmarkInstanceTileViewSet)
 
 urlpatterns = [
     path('api/mainmap/', views.main_map, name='main_map'),

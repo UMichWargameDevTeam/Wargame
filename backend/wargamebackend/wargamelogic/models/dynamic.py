@@ -27,9 +27,9 @@ class LandmarkInstance(models.Model):
     def __str__(self):
         return f"{self.landmark.name} | {self.team.name} | Victory Points: {self.victory_points}"
 
-class TileInstance(models.Model):
-    tile = models.ForeignKey(Tile, on_delete=models.CASCADE)
+class LandmarkInstanceTile(models.Model):
     landmark_instance = models.ForeignKey(LandmarkInstance, on_delete=models.CASCADE)
+    tile = models.ForeignKey(Tile, on_delete=models.CASCADE)
 
     def __str__(self):
-        return f"Tile ({self.tile.row}, {self.tile.column}) | {self.landmark_instance.landmark.name}"
+        return f"{self.landmark_instance.landmark.name} | Tile ({self.tile.row}, {self.tile.column})"
