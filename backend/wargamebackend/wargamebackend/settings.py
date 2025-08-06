@@ -29,16 +29,21 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SECRET_KEY = urlparse(os.getenv("SECRET_KEY"))
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = False
 
 ALLOWED_HOSTS = [
-    "longtermwargame.onrender.com"
+    "longtermwargame.onrender.com", "localhost"
 ]
 
 CSRF_TRUSTED_ORIGINS = [
     "https://longtermwargame.onrender.com"
 ]
 
+CSRF_COOKIE_SECURE = True
+
+SESSION_COOKIE_SECURE = True
+
+CONN_MAX_AGE = None
 
 # Application definition
 
