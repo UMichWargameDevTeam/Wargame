@@ -35,6 +35,10 @@ ALLOWED_HOSTS = [
     "longtermwargame.onrender.com"
 ]
 
+CSRF_TRUSTED_ORIGINS = [
+    "https://longtermwargame.onrender.com"
+]
+
 
 # Application definition
 
