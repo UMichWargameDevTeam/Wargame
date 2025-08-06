@@ -1,7 +1,7 @@
 // components/AvailableAssets.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import {useState } from 'react';
 import { Asset } from "@/lib/Types"
 
 interface AvailableAssetsProps {

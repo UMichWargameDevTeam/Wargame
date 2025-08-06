@@ -21,7 +21,7 @@ export default function AssetDisplay() {
                 const parsed = JSON.parse(stored);
                 setSelectedAssets((prev) => ({ ...prev, ...parsed }));
             } catch (e) {
-                console.error('Invalid session data for assetDisplay');
+                console.error('Invalid session data for assetDisplay', e);
             }
         }
     }, []);

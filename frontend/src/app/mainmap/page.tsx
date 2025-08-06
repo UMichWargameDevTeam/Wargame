@@ -12,9 +12,9 @@ import { Asset } from '@/lib/Types'
 import { BACKEND_URL, WS_URL } from '@/lib/utils';
 
 export default function MainMapPage() {
-    const [socket, setSocket] = useState<WebSocket | null>(null);
-    const [messages, setMessages] = useState<string[]>([]);
-    const [input, setInput] = useState('');
+    // const [socket, setSocket] = useState<WebSocket | null>(null);
+    //const [messages, setMessages] = useState<string[]>([]);
+    // const [input, setInput] = useState('');
     const [role, setRole] = useState<string | null>(null);
     const [mapSrc, setMapSrc] = useState('/maps/taiwan_middle_clean.png');
     const [assets, setAssets] = useState<Asset[]>([]);
@@ -48,13 +48,13 @@ export default function MainMapPage() {
     }, []);
 
     // used for sending messages over websockets - currently not in use
-    const sendMessage = () => {
-        if (socket && socket.readyState === WebSocket.OPEN) {
-            const payload = JSON.stringify({ message: input });
-            socket.send(payload);
-            setInput('');
-        }
-    };
+    // const sendMessage = () => {
+    //     if (socket && socket.readyState === WebSocket.OPEN) {
+    //         const payload = JSON.stringify({ message: input });
+    //         socket.send(payload);
+    //         setInput('');
+    //     }
+    // };
 
     const canViewRestrictedComponents = (role: string | null) => {
         return role === 'Ops' || role === 'Logistics';

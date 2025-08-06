@@ -214,7 +214,7 @@ export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
                             key={asset.id}
                             asset={asset}
                             cellSize={CELL_SIZE}
-                            onMouseDown={(id) => setElementDragId(asset.id)}
+                            onMouseDown={() => setElementDragId(asset.id)}
                         />
                     ))}
                 </div>
