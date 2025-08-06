@@ -136,11 +136,13 @@ USE_I18N = True
 
 USE_TZ = True
 
+REDIS_URL = os.getenv("REDIS_URL", "redis://127.0.0.1:6379")
+
 CHANNEL_LAYERS = {
     "default": {
         "BACKEND": "channels_redis.core.RedisChannelLayer",
         "CONFIG": {
-            "hosts": [("localhost", 6379)],
+            "hosts": [REDIS_URL],
         },
     },
 }

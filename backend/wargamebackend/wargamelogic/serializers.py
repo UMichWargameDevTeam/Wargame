@@ -9,38 +9,32 @@ from .models.dynamic import (
 class TeamSerializer(serializers.ModelSerializer):
     class Meta:
         model = Team
-        exclude = ['id']
-
+        fields = '__all__'
 
 class RoleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Role
-        exclude = ['id']
-
+        fields = '__all__'
 
 class UnitSerializer(serializers.ModelSerializer):
     class Meta:
         model = Unit
-        exclude = ['id']
-
+        fields = '__all__'
 
 class AttackSerializer(serializers.ModelSerializer):
     class Meta:
         model = Attack
-        exclude = ['id']
-
+        fields = '__all__'
 
 class AbilitySerializer(serializers.ModelSerializer):
     class Meta:
         model = Ability
-        exclude = ['id']
-
+        fields = '__all__'
 
 class LandmarkSerializer(serializers.ModelSerializer):
     class Meta:
         model = Landmark
-        exclude = ['id']
-
+        fields = '__all__'
 
 class TileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -54,8 +48,7 @@ class RoleInstanceSerializer(serializers.ModelSerializer):
     
     class Meta:
         model = RoleInstance
-        exclude = ['id']
-
+        fields = '__all__'
 
 class UnitInstanceSerializer(serializers.ModelSerializer):
     tile = TileSerializer(read_only=True)  # Show tile details in GET
@@ -87,4 +80,4 @@ class LandmarkInstanceTileSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = LandmarkInstanceTile
-        exclude = ['id']
+        fields = '__all__'
