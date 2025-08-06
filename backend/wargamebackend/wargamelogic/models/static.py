@@ -34,7 +34,7 @@ class Unit(models.Model):
     ]
 
     name = models.CharField(max_length=100, unique=True)
-    cost = models.FloatField()
+    # cost = models.FloatField()
     domain = models.CharField(max_length=20, choices=DOMAINS)
     type = models.CharField(max_length=20, choices=DEFENDER_TYPES)
     speed = models.FloatField()
@@ -56,7 +56,7 @@ class Attack(models.Model):
 
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name='attacks')
     name = models.CharField(max_length=100)
-    # cost = models.FloatField()
+    cost = models.FloatField()
     to_hit = models.FloatField()
     shots = models.IntegerField()
     min_damage = models.FloatField()
