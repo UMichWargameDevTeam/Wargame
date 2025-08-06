@@ -34,7 +34,6 @@ class Unit(models.Model):
     ]
 
     name = models.CharField(max_length=100, unique=True)
-    cost = models.FloatField()
     domain = models.CharField(max_length=20, choices=DOMAINS)
     type = models.CharField(max_length=20, choices=DEFENDER_TYPES)
     speed = models.FloatField()

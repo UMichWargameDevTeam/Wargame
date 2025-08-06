@@ -45,5 +45,7 @@ urlpatterns = [
     path('api/landmark-instances/<int:pk>/', views.get_landmark_instance_by_id, name='get_landmark_instance_by_id'),
     path('api/landmark-instance-tiles/<int:row>/<int:column>/', views.get_landmark_instance_tile_by_coords, name='get_landmark_instance_tile_by_coords'),
 
+    path('api/game/move-unit', views.move_unit, name='move_unit'),
+
     path('api/', include(router.urls)),
 ]
