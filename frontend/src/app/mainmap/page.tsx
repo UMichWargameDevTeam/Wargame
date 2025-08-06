@@ -9,6 +9,7 @@ import ResourcePoints from '@/components/ResourcePoints';
 import CommandersIntent from '@/components/CommandersIntent';
 import InteractiveMap from '@/components/InteractiveMap';
 import { Asset } from '@/lib/Types'
+import { BACKEND_URL, WS_URL } from '@/lib/utils';
 
 export default function MainMapPage() {
     const [socket, setSocket] = useState<WebSocket | null>(null);
@@ -21,7 +22,7 @@ export default function MainMapPage() {
 
 
     useEffect(() => {
-        fetch('http://localhost:8000/api/unit-instances/')
+        fetch(`${BACKEND_URL}/api/unit-instances/`)
             .then(res => res.json())
             .then(data => setAssets(data))
             .catch(err => console.error('Failed to fetch unit instances:', err));
@@ -38,7 +39,7 @@ export default function MainMapPage() {
 
     // effect for timer
     useEffect(() => {
-        const ws = new WebSocket('ws://localhost:8000/ws/timer/');
+        const ws = new WebSocket(`${WS_URL}/timer/`);
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
             setTimer(data.remaining_seconds);

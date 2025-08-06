@@ -3,6 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import DraggableAsset from './DraggableAsset';
 import { Asset } from "@/lib/Types";
+import {BACKEND_URL, WS_URL} from '@/lib/utils'
 
 const GRID_ROWS = 25;
 const GRID_COLS = 40;
@@ -48,7 +49,7 @@ export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
 
     // WebSocket connection for live updates
     useEffect(() => {
-        const socket = new WebSocket('ws://localhost:8000/ws/unit-instances/');
+        const socket = new WebSocket(`${WS_URL}/unit-instances/`);
         socketRef.current = socket;
 
         socket.onmessage = (event) => {
@@ -128,7 +129,7 @@ export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
         if (!asset) return;
 
         try {
-            await fetch(`http://localhost:8000/api/unit-instances/${asset.id}/`, {
+            await fetch(`${BACKEND_URL}/api/unit-instances/${asset.id}/`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
