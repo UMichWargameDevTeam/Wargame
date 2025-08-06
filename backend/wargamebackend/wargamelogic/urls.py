@@ -41,8 +41,6 @@ urlpatterns = [
     path('api/tiles/<int:row>/<int:column>/', views.get_tile_by_coords, name='get_tile_by_coords'),
 
     path('api/role-instances/<str:team_name>/<str:role_name>/', views.get_role_instances_by_team_and_role, name='get_role_instance_by_team_and_role'),
-    path('api/unit-instances-by-id/<int:pk>/', views.get_unit_instance_by_id, name='get_unit_instance_by_id'),
-    path('api/landmark-instances/<int:pk>/', views.get_landmark_instance_by_id, name='get_landmark_instance_by_id'),
     path('api/landmark-instance-tiles/<int:row>/<int:column>/', views.get_landmark_instance_tile_by_coords, name='get_landmark_instance_tile_by_coords'),
 
     path('api/', include(router.urls)),
