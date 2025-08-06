@@ -45,7 +45,8 @@ class LandmarkSerializer(serializers.ModelSerializer):
 class TileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tile
-        exclude = ['id']
+        fields = ['id', 'row', 'column', 'terrain']
+
 
 class RoleInstanceSerializer(serializers.ModelSerializer):
     role = RoleSerializer()
@@ -57,18 +58,18 @@ class RoleInstanceSerializer(serializers.ModelSerializer):
 
 
 class UnitInstanceSerializer(serializers.ModelSerializer):
-    unit = UnitSerializer(read_only=True)
-    team = TeamSerializer(read_only=True)
-    tile = TileSerializer(read_only=True)
-    tile_id = serializers.PrimaryKeyRelatedField(
-        queryset=Tile.objects.all(),
-        source="tile",
-        write_only=True
-    )
+    tile = TileSerializer(read_only=True)  # Show tile details in GET
+    row = serializers.IntegerField(write_only=True, required=False)
+    column = serializers.IntegerField(write_only=True, required=False)
+    team = TeamSerializer()
+    unit = UnitSerializer()
 
     class Meta:
         model = UnitInstance
-        fields = '__all__'
+        fields = [
+            'id', 'unit', 'team', 'tile', 'health', 'supply_count',
+            'row', 'column'  # writable for PATCH
+        ]
 
 
 class LandmarkInstanceSerializer(serializers.ModelSerializer):

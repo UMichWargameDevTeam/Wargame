@@ -84,6 +84,32 @@ class UnitViewSet(viewsets.ModelViewSet):
 class UnitInstanceViewSet(viewsets.ModelViewSet):
     queryset = UnitInstance.objects.all()
     serializer_class = UnitInstanceSerializer
+    http_method_names = ['get', 'post', 'patch', 'put', 'delete']
+
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        row = request.data.get("row")
+        column = request.data.get("column")
+
+        if row is not None and column is not None:
+            tile, created = Tile.objects.get_or_create(
+                row=row,
+                column=column,
+                defaults={"terrain": "Plains/Grasslands"}  # default
+            )
+            instance.tile = tile
+            instance.save()
+
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        return Response(serializer.data)
+
+    def update(self, request, *args, **kwargs):
+        # Make PUT behave the same way
+        return self.partial_update(request, *args, **kwargs)
 
 class AttackViewSet(viewsets.ModelViewSet):
     queryset = Attack.objects.all()

@@ -68,7 +68,7 @@ export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
     }, [setAssets]);
 
     const handleWheel = (e: React.WheelEvent) => {
-        e.preventDefault();
+        //e.preventDefault();
         const delta = -e.deltaY * 0.001;
         const newZoom = Math.min(Math.max(zoom + delta, 0.5), 3);
 
@@ -120,7 +120,6 @@ export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
     };
 
 
-
     const handleMouseUp = async () => {
         setDragging(false);
         if (!elementDragId) return;
@@ -129,12 +128,12 @@ export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
         if (!asset) return;
 
         try {
-            // Update backend
             await fetch(`http://localhost:8000/api/unit-instances/${asset.id}/`, {
-                method: 'PATCH',
-                headers: { 'Content-Type': 'application/json' },
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    tile: asset.tile.id // Assuming serializer accepts tile ID
+                    row: asset.tile.row,
+                    column: asset.tile.column
                 }),
             });
 
@@ -146,12 +145,11 @@ export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
                 }));
             }
         } catch (error) {
-            console.error('Failed to update unit:', error);
+            console.error("Failed to update unit:", error);
         }
 
         setElementDragId(0);
     };
-
 
     return (
         <div className="relative w-full h-full overflow-hidden">
