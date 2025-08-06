@@ -1,2 +1,2 @@
-from .Asset import *
-from .AssetType import *
+from .static import *
+from .dynamic import *

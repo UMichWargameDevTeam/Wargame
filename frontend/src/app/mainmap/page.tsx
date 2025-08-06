@@ -21,10 +21,10 @@ export default function MainMapPage() {
 
 
     useEffect(() => {
-        fetch('http://localhost:8000/api/assets/')
+        fetch('http://localhost:8000/api/unit-instances/')
             .then(res => res.json())
             .then(data => setAssets(data))
-            .catch(err => console.error('Failed to fetch assets:', err));
+            .catch(err => console.error('Failed to fetch unit instances:', err));
     }, []);
 
     useEffect(() => {

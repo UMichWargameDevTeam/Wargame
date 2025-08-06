@@ -1,15 +1,29 @@
 from django.contrib import admin
-
+from .models.static import (
+    Team,
+    Role,
+    Unit,
+    Attack,
+    Ability,
+    Tile,
+    Landmark,
+)
+from .models.dynamic import (
+    RoleInstance,
+    UnitInstance,
+    LandmarkInstance,
+    LandmarkInstanceTile,
+)
 # Register your models here.
-from django.contrib import admin
-from .models import *
+admin.site.register(Team)
+admin.site.register(Role)
+admin.site.register(Unit)
+admin.site.register(Attack)
+admin.site.register(Ability)
+admin.site.register(Tile)
+admin.site.register(Landmark)
 
-@admin.register(Asset)
-class AssetAdmin(admin.ModelAdmin):
-    list_display = ("name", "created_at")
-    search_fields = ("name",)
-
-@admin.register(AssetType)
-class AssetTypeAdmin(admin.ModelAdmin):
-    list_display = ("name", "created_at")
-    search_fields = ("name",)
+admin.site.register(RoleInstance)
+admin.site.register(UnitInstance)
+admin.site.register(LandmarkInstance)
+admin.site.register(LandmarkInstanceTile)

@@ -1,17 +1,8 @@
 export interface Asset {
-    id: string;
-    name: string;
-    classification: string;
-    x_position: number;
-    y_position: number;
-    team: string;
-    asset_type: string;
-    hitpoints: string;
-    primary_ammo: string;
-    secondary_ammo: string;
-    terciary_ammo: string;
-    supplies_count: string;
-    created_at: string;
-    updated_at: string;
-
+    id: number;  // unit instance id
+    unit: { name: string };
+    team: { name: string };
+    tile: { id: number; row: number; column: number }; // includes tile.id
+    health: number;
+    supply_count: number;
 }

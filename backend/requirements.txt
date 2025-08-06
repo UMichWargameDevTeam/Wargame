@@ -4,3 +4,7 @@ channels
 django-cors-headers
 asgiref
 daphne
+channels-redis
+dotenv
+psycopg
+django-jazzmin

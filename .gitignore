@@ -1,5 +1,7 @@
 # Ignore virtual environment
+env/
 backend/env/
+frontend/env/
 
 # Python cache and compiled files
 __pycache__/
@@ -18,3 +20,6 @@ __pycache__/
 
 # Finder (Mac) Indexing files
 .DS_Store
+
+# static files
+backend/wargamebackend/staticfiles

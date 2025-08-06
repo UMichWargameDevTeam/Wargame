@@ -29,27 +29,28 @@ class MainMapConsumer(AsyncWebsocketConsumer):
         }))
 
 
-class AssetConsumer(AsyncWebsocketConsumer):
+class UnitInstanceConsumer(AsyncWebsocketConsumer):
     async def connect(self):
-        await self.channel_layer.group_add("assets", self.channel_name)
+        await self.channel_layer.group_add("unit-instances", self.channel_name)
         await self.accept()
 
     async def disconnect(self, close_code):
-        await self.channel_layer.group_discard("assets", self.channel_name)
+        await self.channel_layer.group_discard("unit-instances", self.channel_name)
 
     async def receive(self, text_data):
-        # Broadcast to group
-        await self.channel_layer.group_send(
-            "assets",
-            {
-                "type": "asset.update",
-                "message": text_data,
-            }
-        )
+        data = json.loads(text_data)
+        if data["type"] == "unit_moved":
+            # Broadcast updated position to all
+            await self.channel_layer.group_send(
+                "unit-instances",
+                {
+                    "type": "unit_instance.update",
+                    "message": json.dumps(data),
+                }
+            )
 
-    async def asset_update(self, event):
+    async def unit_instance_update(self, event):
         await self.send(text_data=event["message"])
-
 class TimerConsumer(AsyncWebsocketConsumer):
     timer_duration = 600  # 10 minutes in seconds
     start_time = datetime.datetime.utcnow()
