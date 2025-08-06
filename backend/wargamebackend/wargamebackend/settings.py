@@ -32,7 +32,7 @@ SECRET_KEY = urlparse(os.getenv("SECRET_KEY"))
 DEBUG = False
 
 ALLOWED_HOSTS = [
-    "longtermwargame.onrender.com"
+    "longtermwargame.onrender.com", "localhost"
 ]
 
 CSRF_TRUSTED_ORIGINS = [
