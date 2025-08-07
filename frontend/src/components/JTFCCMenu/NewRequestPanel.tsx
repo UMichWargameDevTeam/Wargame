@@ -2,9 +2,9 @@ import React from 'react';
 
 const NewRequestPanel: React.FC = () => {
   return (
-    <div className="bg-neutral-900 border border-blue-400 rounded-lg shadow-md
-                    p-4 w-64 max-w-full text-white">
-      <h4 className="text-blue-400 font-bold mb-2">NEW REQUEST</h4>
+    <div className="bg-neutral-700 border border-blue-400 rounded-lg shadow-md
+                    p-2 w-64 max-w-full text-white">
+      <h4 className="text-md font-semibold mb-2">NEW REQUEST</h4>
 
       <div className="mb-4">
         <div className="text-sm"><b>FROM:</b> USA/CC</div>

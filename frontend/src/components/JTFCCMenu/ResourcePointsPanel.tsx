@@ -32,9 +32,9 @@ const ResourcePointsPanel: React.FC = () => {
 
   /* ---------- view ---------- */
   return (
-    <div className="bg-neutral-900 border border-neutral-700 rounded-lg shadow-md
-                    p-4 w-full max-w-xs text-white break-words">
-      <h4 className="text-blue-400 font-bold mb-2">Resource Points Panel</h4>
+    <div className="bg-neutral-700 border border-neutral-700 rounded-lg shadow-md 
+                    p-4 w-full text-white break-words">
+      <h3 className="text-lg font-semibold mb-2">Resource Points</h3>
 
       <div className="text-sm mb-4">
         <b>OPS:</b> 99&nbsp;&nbsp;<b>LOG:</b> 99
@@ -50,10 +50,10 @@ const ResourcePointsPanel: React.FC = () => {
           <div className="w-14 font-semibold flex-shrink-0">{branch}</div>
 
           {/* label */}
-          <span className="text-xs text-gray-400 flex-shrink-0">Requested:</span>
+          <span className="text-xs flex-shrink-0">&nbsp; Requested:&nbsp;</span>
 
           {/* requested number */}
-          <span className="text-red-400 font-bold flex-shrink-0">{req}</span>
+          <span className="text-red-400 font-bold flex-shrink-0">{req}&nbsp;</span>
 
           {/* numeric input (keeps explicit width override) */}
           <input

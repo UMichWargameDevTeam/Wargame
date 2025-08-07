@@ -1,6 +1,7 @@
 import React from 'react';
 import NewRequestPanel from './NewRequestPanel';
 import ResourcePointsPanel from './ResourcePointsPanel';
+import FileOrganizer from './FileOrganizer';
 
 /**
  * Right-hand menu column.
@@ -8,9 +9,20 @@ import ResourcePointsPanel from './ResourcePointsPanel';
  */
 const JTFCCMenu: React.FC = () => {
   return (
-    <div className="flex flex-col justify-between h-full w-full p-2 gap-4">
-      <NewRequestPanel />
-      <ResourcePointsPanel />
+    // We remove the 'gap' utility from this parent div.
+    <div className="flex flex-col items-center w-full p-2">
+
+      <div style={{ marginTop: '20px' }} className="w-full">
+        <FileOrganizer />
+      </div>
+      
+      <div style={{ marginTop: '120px' }} className="w-full">
+        <ResourcePointsPanel />
+      </div>
+
+      <div style={{ marginTop: '200px' }}>
+        <NewRequestPanel />
+      </div>
     </div>
   );
 };
