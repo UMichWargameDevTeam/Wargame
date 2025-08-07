@@ -5,6 +5,7 @@ export const authed_fetch = async (
     input: string | URL | globalThis.Request,
     init?: RequestInit
 ) => {
+    const BASE_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
     const accessToken = localStorage.getItem("accessToken");
     const headers = new Headers(init?.headers);
 
@@ -12,7 +13,7 @@ export const authed_fetch = async (
         headers.set("Authorization", `Bearer ${accessToken}`);
     }
 
-    const res = await fetch(process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000" + input, {
+    let res = await fetch(`${BASE_URL}${input}`, {
         ...init,
         headers,
     });
@@ -20,7 +21,7 @@ export const authed_fetch = async (
     if (res.status === 401 && accessToken) {
         const refreshToken = localStorage.getItem("refreshToken");
 
-        const refreshRes = await fetch(`${BACKEND_URL}/api/auth/token/refresh/`, {
+        const refreshRes = await fetch(`${BASE_URL}/api/auth/token/refresh/`, {
             method: "POST",
             headers: {
                 "Content-Type": "application/json",
@@ -32,15 +33,14 @@ export const authed_fetch = async (
             const data = await refreshRes.json();
             localStorage.setItem("accessToken", data.access);
 
-
             headers.set("Authorization", `Bearer ${data.access}`);
-            const res2 = await fetch(BACKEND_URL + input, {
+            res = await fetch(`${BASE_URL}${input}`, {
                 ...init,
                 headers,
             });
-            return res2
         }
     }
+
     return res;
-}
+};
 
