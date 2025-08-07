@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 
@@ -92,6 +93,11 @@ export default function LoginForm() {
                     >
                         {loading ? "Logging in..." : "Log In"}
                     </button>
+                    <Link href="/register" className="w-full">
+                        <div className="w-full bg-gray-600 text-white py-2 rounded-lg hover:bg-gray-700 transition duration-200 flex justify-center">
+                            Register
+                        </div>
+                    </Link>
                 </form>
             </div>
         </div>
