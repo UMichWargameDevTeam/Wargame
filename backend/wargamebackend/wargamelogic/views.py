@@ -211,47 +211,20 @@ def get_role_instances_by_team_and_role(request, team_name, role_name):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def get_unit_instance_by_id(request, pk):
-    try:
-        unit_instance = UnitInstance.objects.get(id=pk)
-    except UnitInstance.DoesNotExist:
-        return Response({"error": "UnitInstance not found"}, status=status.HTTP_404_NOT_FOUND)
-    
-    serializer = UnitInstanceSerializer(unit_instance)
-    return Response(serializer.data)
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_landmark_instance_by_id(request, pk):
-    try:
-        landmark_instance = LandmarkInstance.objects.get(id=pk)
-    except LandmarkInstance.DoesNotExist:
-        return Response({"error": "LandmarkInstance not found"}, status=status.HTTP_404_NOT_FOUND)
-    
-    serializer = LandmarkInstanceSerializer(landmark_instance)
-    return Response(serializer.data)
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_landmark_instance_tile_by_coords(request, row, column):
-    try:
-        tile = Tile.objects.get(row=row, column=column)
-        landmark_instance_tiles = LandmarkInstanceTile.objects.filter(tile=tile)
-    except Tile.DoesNotExist:
-        return Response({"error": "Tile not found"}, status=status.HTTP_404_NOT_FOUND)
-
-    if not landmark_instance_tiles.exists():
-        return Response({"error": "No LandmarkInstanceTiles found for this tile"}, status=status.HTTP_404_NOT_FOUND)
-
-    serializer = LandmarkInstanceTileSerializer(landmark_instance_tiles, many=True)
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
 def get_tiles_for_landmark_instance_by_id(request, pk):
     landmark_instance = get_object_or_404(LandmarkInstance, pk=pk)
     landmark_instance_tiles = get_list_or_404(LandmarkInstanceTile, landmark_instance=landmark_instance)
     tiles = [lit.tile for lit in landmark_instance_tiles]
     serializer = TileSerializer(tiles, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_landmark_instances_for_tile_by_coords(request, row, column):
+    tile = get_object_or_404(Tile, row=row, column=column)
+    landmark_instance_tiles = get_list_or_404(LandmarkInstanceTile, tile=tile)
+    landmark_instances = [lit.landmark_instance for lit in landmark_instance_tiles]
+    serializer = LandmarkInstanceSerializer(landmark_instances, many=True)
     return Response(serializer.data)
 
 
