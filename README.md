@@ -2,9 +2,10 @@
 
 A real-time web-based wargame map viewer and command tool. Built with:
 
-- **Next.js** frontend
-- **Django + Channels (Daphne)** backend
-- WebSocket support for live communication between roles/devices
+- **Next.js** frontend, hosted on Vercel at https://long-term-wargame.vercel.app
+- **Django + Channels (Daphne)** backend, hosted on Render
+- **PostgreSQL** database, hosted on Neon
+- WebSocket support for live communication between roles/devices, hosted on redis cloud
 
 ---
 
