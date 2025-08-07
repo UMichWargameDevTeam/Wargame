@@ -41,6 +41,11 @@ CSRF_TRUSTED_ORIGINS = [
     "https://longtermwargame.onrender.com"
 ]
 
+CSRF_COOKIE_SECURE = True
+
+SESSION_COOKIE_SECURE = True
+
+CONN_MAX_AGE = None
 
 # Application definition
 

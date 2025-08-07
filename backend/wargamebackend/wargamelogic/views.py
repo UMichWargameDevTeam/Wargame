@@ -1,6 +1,7 @@
 
 from django.http import HttpResponse, JsonResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.shortcuts import get_object_or_404, get_list_or_404
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -151,91 +152,62 @@ class LandmarkInstanceTileViewSet(viewsets.ModelViewSet):
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_team_by_name(request, name):
-    try:
-        team = Team.objects.get(name=name)
-    except Team.DoesNotExist:
-        return Response({"error": "Team not found"}, status=status.HTTP_404_NOT_FOUND)
+    team = get_object_or_404(Team, name=name)
     serializer = TeamSerializer(team)
     return Response(serializer.data)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_role_by_name(request, name):
-    try:
-        role = Role.objects.get(name=name)
-    except Role.DoesNotExist:
-        return Response({"error": "Role not found"}, status=status.HTTP_404_NOT_FOUND)
+    role = get_object_or_404(Role, name=name)
     serializer = RoleSerializer(role)
     return Response(serializer.data)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_unit_by_name(request, unit_name):
-    try:
-        unit = Unit.objects.get(name=unit_name)
-    except Unit.DoesNotExist:
-        return Response({"error": "Unit not found"}, status=status.HTTP_404_NOT_FOUND)
+    unit = get_object_or_404(Unit, name=unit_name)
     serializer = UnitSerializer(unit)
     return Response(serializer.data)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_attack_by_unit_and_name(request, unit_name, attack_name):
-    try:
-        unit = Unit.objects.get(name=unit_name)
-        attack = unit.attacks.get(name=attack_name)
-    except (Unit.DoesNotExist, Attack.DoesNotExist):
-        return Response({"error": "Attack not found"}, status=status.HTTP_404_NOT_FOUND)
+    unit = get_object_or_404(Unit, name=unit_name)
+    attack = get_object_or_404(Attack, unit=unit, name=attack_name)
     serializer = AttackSerializer(attack)
     return Response(serializer.data)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_ability_by_unit_and_name(request, unit_name, ability_name):
-    try:
-        unit = Unit.objects.get(name=unit_name)
-        ability = unit.abilities.get(name=ability_name)
-    except (Unit.DoesNotExist, Ability.DoesNotExist):
-        return Response({"error": "Ability not found"}, status=status.HTTP_404_NOT_FOUND)
+    unit = get_object_or_404(Unit, name=unit_name)
+    ability = get_object_or_404(Ability, unit=unit, name=ability_name)
     serializer = AbilitySerializer(ability)
     return Response(serializer.data)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_landmark_by_name(request, name):
-    try:
-        landmark = Landmark.objects.get(name=name)
-    except Landmark.DoesNotExist:
-        return Response({"error": "Landmark not found"}, status=status.HTTP_404_NOT_FOUND)
+    landmark = get_object_or_404(Landmark, name=name)
     serializer = LandmarkSerializer(landmark)
     return Response(serializer.data)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_tile_by_coords(request, row, column):
-    try:
-        tile = Tile.objects.get(row=row, column=column)
-    except Tile.DoesNotExist:
-        return Response({"error": "Tile not found"}, status=status.HTTP_404_NOT_FOUND)
+    tile = get_object_or_404(Tile, row=row, column=column)
     serializer = TileSerializer(tile)
     return Response(serializer.data)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def get_role_instances_by_team_and_role(request, team_name, role_name):
-    try:
-        team = Team.objects.get(name=team_name)
-        role = Role.objects.get(name=role_name)
-        role_instances = RoleInstance.objects.filter(team=team, role=role)
-    except (Team.DoesNotExist, Role.DoesNotExist):
-        return Response({"error": "Team or Role not found"}, status=status.HTTP_404_NOT_FOUND)
-    
-    if not role_instances.exists():
-        return Response({"error": "No RoleInstances found"}, status=status.HTTP_404_NOT_FOUND)
-    
+    team = get_object_or_404(Team, name=team_name)
+    role = get_object_or_404(Role, name=role_name)
+    role_instances = get_list_or_404(RoleInstance, team=team, role=role)
     serializer = RoleInstanceSerializer(role_instances, many=True)
     return Response(serializer.data)
-
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -272,8 +244,15 @@ def get_landmark_instance_tile_by_coords(request, row, column):
         return Response({"error": "No LandmarkInstanceTiles found for this tile"}, status=status.HTTP_404_NOT_FOUND)
 
     serializer = LandmarkInstanceTileSerializer(landmark_instance_tiles, many=True)
-    return Response(serializer.data)
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_tiles_for_landmark_instance_by_id(request, pk):
+    landmark_instance = get_object_or_404(LandmarkInstance, pk=pk)
+    landmark_instance_tiles = get_list_or_404(LandmarkInstanceTile, landmark_instance=landmark_instance)
+    tiles = [lit.tile for lit in landmark_instance_tiles]
+    serializer = TileSerializer(tiles, many=True)
+    return Response(serializer.data)
 
 
 # --------------------------- GAME LOGIC --------------------------- #

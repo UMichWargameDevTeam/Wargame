@@ -41,7 +41,10 @@ urlpatterns = [
     path('api/tiles/<int:row>/<int:column>/', views.get_tile_by_coords, name='get_tile_by_coords'),
 
     path('api/role-instances/<str:team_name>/<str:role_name>/', views.get_role_instances_by_team_and_role, name='get_role_instance_by_team_and_role'),
-    path('api/landmark-instance-tiles/<int:row>/<int:column>/', views.get_landmark_instance_tile_by_coords, name='get_landmark_instance_tile_by_coords'),
+    path('api/units/<str:unit_name>/attacks/', views.get_attacks_for_unit_by_name, name='get_attacks_for_unit_by_name'),
+    path('api/units/<str:unit_name>/abilities/', views.get_abilities_for_unit_by_name, name='get_abilities_for_unit_by_name'),
+    path('api/landmark-instances/<int:pk>/tiles/', views.get_tiles_for_landmark_instance_by_id, name='get_tiles_for_landmark_instance_by_id'),
+    path('api/tiles/<int:row>/<int:column>/landmark-instances/', views.get_landmark_instances_for_tile_by_coords, name='get_landmark_instances_for_tile_by_coords'),
 
     path('api/game/move-unit', views.move_unit, name='move_unit'),
 
