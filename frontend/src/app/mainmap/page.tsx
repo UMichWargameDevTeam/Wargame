@@ -9,7 +9,7 @@ import ResourcePoints from '@/components/ResourcePoints';
 import CommandersIntent from '@/components/CommandersIntent';
 import InteractiveMap from '@/components/InteractiveMap';
 import { Asset } from '@/lib/Types'
-import { authed_fetch, BACKEND_URL, WS_URL } from '@/lib/utils';
+import { authed_fetch, WS_URL } from '@/lib/utils';
 
 export default function MainMapPage() {
     // const [socket, setSocket] = useState<WebSocket | null>(null);

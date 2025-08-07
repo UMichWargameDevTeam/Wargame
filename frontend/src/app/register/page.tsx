@@ -39,6 +39,7 @@ export default function RegisterForm() {
             router.push('/')
         } catch (err) {
             setError("Invalid username or password.");
+            console.error(err)
         } finally {
             setLoading(false);
         }

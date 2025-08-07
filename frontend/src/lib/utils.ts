@@ -4,7 +4,7 @@ export const WS_URL = process.env.NEXT_PUBLIC_WS_URL || 'ws://localhost:8000';
 export const authed_fetch = async (
     input: string | URL | globalThis.Request,
     init?: RequestInit
-): Promise<any> => {
+) => {
     const accessToken = localStorage.getItem("accessToken");
     const headers = new Headers(init?.headers);
 
