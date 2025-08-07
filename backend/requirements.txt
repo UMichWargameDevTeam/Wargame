@@ -8,3 +8,4 @@ channels-redis
 dotenv
 psycopg
 django-jazzmin
+djangorestframework-simplejwt

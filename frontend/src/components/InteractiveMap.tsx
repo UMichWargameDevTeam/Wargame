@@ -3,7 +3,7 @@
 import React, { useEffect, useRef, useState } from 'react';
 import DraggableAsset from './DraggableAsset';
 import { Asset } from "@/lib/Types";
-import {BACKEND_URL, WS_URL} from '@/lib/utils'
+import {authed_fetch, WS_URL} from '@/lib/utils'
 
 const GRID_ROWS = 25;
 const GRID_COLS = 40;
@@ -129,7 +129,7 @@ export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
         if (!asset) return;
 
         try {
-            await fetch(`${BACKEND_URL}/api/unit-instances/${asset.id}/`, {
+            await authed_fetch(`/api/unit-instances/${asset.id}/`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
