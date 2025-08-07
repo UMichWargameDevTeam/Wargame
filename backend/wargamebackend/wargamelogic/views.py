@@ -25,6 +25,7 @@ from .game_logic import *
 import json
 
 @csrf_exempt
+@permission_classes([IsAuthenticated])
 def register_role(request):
     """
     body: {
@@ -67,22 +68,27 @@ def main_map(request):
     return JsonResponse({"message": "Hello from Django view!"})
 
 class TeamViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
     queryset = Team.objects.all()
     serializer_class = TeamSerializer
 
 class RoleViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
     queryset = Role.objects.all()
     serializer_class = RoleSerializer
 
 class RoleInstanceViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
     queryset = RoleInstance.objects.all()
     serializer_class = RoleInstanceSerializer
 
 class UnitViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
     queryset = Unit.objects.all()
     serializer_class = UnitSerializer
 
 class UnitInstanceViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
     queryset = UnitInstance.objects.all()
     serializer_class = UnitInstanceSerializer
     http_method_names = ['get', 'post', 'patch', 'put', 'delete']
@@ -113,30 +119,37 @@ class UnitInstanceViewSet(viewsets.ModelViewSet):
         return self.partial_update(request, *args, **kwargs)
 
 class AttackViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
     queryset = Attack.objects.all()
     serializer_class = AttackSerializer
 
 class AbilityViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
     queryset = Ability.objects.all()
     serializer_class = AbilitySerializer
 
 class LandmarkViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
     queryset = Landmark.objects.all()
     serializer_class = LandmarkSerializer
 
 class LandmarkInstanceViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
     queryset = LandmarkInstance.objects.all()
     serializer_class = LandmarkInstanceSerializer
 
 class TileViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
     queryset = Tile.objects.all()
     serializer_class = TileSerializer
 
 class LandmarkInstanceTileViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
     queryset = LandmarkInstanceTile.objects.all()
     serializer_class = LandmarkInstanceTileSerializer
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_team_by_name(request, name):
     try:
         team = Team.objects.get(name=name)
@@ -146,6 +159,7 @@ def get_team_by_name(request, name):
     return Response(serializer.data)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_role_by_name(request, name):
     try:
         role = Role.objects.get(name=name)
@@ -155,6 +169,7 @@ def get_role_by_name(request, name):
     return Response(serializer.data)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_unit_by_name(request, unit_name):
     try:
         unit = Unit.objects.get(name=unit_name)
@@ -164,6 +179,7 @@ def get_unit_by_name(request, unit_name):
     return Response(serializer.data)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_attack_by_unit_and_name(request, unit_name, attack_name):
     try:
         unit = Unit.objects.get(name=unit_name)
@@ -174,6 +190,7 @@ def get_attack_by_unit_and_name(request, unit_name, attack_name):
     return Response(serializer.data)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_ability_by_unit_and_name(request, unit_name, ability_name):
     try:
         unit = Unit.objects.get(name=unit_name)
@@ -184,6 +201,7 @@ def get_ability_by_unit_and_name(request, unit_name, ability_name):
     return Response(serializer.data)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_landmark_by_name(request, name):
     try:
         landmark = Landmark.objects.get(name=name)
@@ -193,6 +211,7 @@ def get_landmark_by_name(request, name):
     return Response(serializer.data)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_tile_by_coords(request, row, column):
     try:
         tile = Tile.objects.get(row=row, column=column)
@@ -202,6 +221,7 @@ def get_tile_by_coords(request, row, column):
     return Response(serializer.data)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_role_instances_by_team_and_role(request, team_name, role_name):
     try:
         team = Team.objects.get(name=team_name)
@@ -218,6 +238,7 @@ def get_role_instances_by_team_and_role(request, team_name, role_name):
 
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_unit_instance_by_id(request, pk):
     try:
         unit_instance = UnitInstance.objects.get(id=pk)
@@ -228,6 +249,7 @@ def get_unit_instance_by_id(request, pk):
     return Response(serializer.data)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_landmark_instance_by_id(request, pk):
     try:
         landmark_instance = LandmarkInstance.objects.get(id=pk)
@@ -238,6 +260,7 @@ def get_landmark_instance_by_id(request, pk):
     return Response(serializer.data)
 
 @api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_landmark_instance_tile_by_coords(request, row, column):
     try:
         tile = Tile.objects.get(row=row, column=column)
@@ -255,6 +278,7 @@ def get_landmark_instance_tile_by_coords(request, row, column):
 
 # --------------------------- GAME LOGIC --------------------------- #
 @api_view(['POST'])
+@permission_classes([IsAuthenticated])
 def move_unit(request):
     unit_instance_id = request.data.get('unitId')
     target_row = request.data.get('targetRow')

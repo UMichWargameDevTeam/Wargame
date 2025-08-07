@@ -22,6 +22,7 @@ from django.conf.urls.static import static
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('', include('wargamelogic.urls')), 
+    path('api/auth/',include('auth.urls') )
 ]
 
 if settings.DEBUG:

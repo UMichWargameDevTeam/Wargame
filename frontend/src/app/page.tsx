@@ -1,6 +1,6 @@
 'use client';
 
-import { BACKEND_URL } from '@/lib/utils';
+import { authed_fetch, BACKEND_URL } from '@/lib/utils';
 import { useRouter } from 'next/navigation';
 
 export default function RoleSelectPage() {
@@ -8,7 +8,7 @@ export default function RoleSelectPage() {
 
   // Saves the role selected in the session (tab/device)
   const handleRoleSelect = (role: string) => {
-    fetch(`${BACKEND_URL}/api/register_role/`, {
+    authed_fetch(`/api/register_role/`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

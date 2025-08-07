@@ -9,7 +9,7 @@ import ResourcePoints from '@/components/ResourcePoints';
 import CommandersIntent from '@/components/CommandersIntent';
 import InteractiveMap from '@/components/InteractiveMap';
 import { Asset } from '@/lib/Types'
-import { BACKEND_URL, WS_URL } from '@/lib/utils';
+import { authed_fetch, BACKEND_URL, WS_URL } from '@/lib/utils';
 
 export default function MainMapPage() {
     // const [socket, setSocket] = useState<WebSocket | null>(null);
@@ -22,7 +22,7 @@ export default function MainMapPage() {
 
 
     useEffect(() => {
-        fetch(`${BACKEND_URL}/api/unit-instances/`)
+        authed_fetch(`/api/unit-instances/`)
             .then(res => res.json())
             .then(data => setAssets(data))
             .catch(err => console.error('Failed to fetch unit instances:', err));
