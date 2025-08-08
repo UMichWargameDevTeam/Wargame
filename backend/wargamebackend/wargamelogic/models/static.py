@@ -67,7 +67,9 @@ class Attack(models.Model):
     description = models.TextField()
 
     class Meta:
-        unique_together = ("unit", "name")
+        constraints = [
+            models.UniqueConstraint(fields=["unit", "name"], name="unique_unit_attack_pair")
+        ]
 
     def __str__(self):
         return f"{self.unit.name} - {self.name}"
@@ -78,7 +80,9 @@ class Ability(models.Model):
     description = models.TextField()
 
     class Meta:
-        unique_together = ("unit", "name")
+        constraints = [
+            models.UniqueConstraint(fields=["unit", "name"], name="unique_unit_ability_pair")
+        ]
 
     def __str__(self):
         return f"{self.unit.name} - {self.name}"
@@ -100,7 +104,9 @@ class Tile(models.Model):
     terrain = models.CharField(max_length=30, choices=TERRAIN_TYPES)
 
     class Meta:
-        unique_together = ("row", "column")
+        constraints = [
+            models.UniqueConstraint(fields=["row", "column"], name="unique_row_column_pair")
+        ]
 
     def __str__(self):
         return f"Tile ({self.row}, {self.column})"

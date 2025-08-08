@@ -3,8 +3,10 @@ from .models.static import (
     Team, Role, Unit, Attack, Ability, Landmark, Tile
 )
 from .models.dynamic import (
-    RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile 
+    GameInstance, TeamInstance, RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile
 )
+
+# static model serializers
 
 class TeamSerializer(serializers.ModelSerializer):
     class Meta:
@@ -41,21 +43,35 @@ class TileSerializer(serializers.ModelSerializer):
         model = Tile
         fields = ['id', 'row', 'column', 'terrain']
 
+# dynamic model serializers
+
+class GameInstanceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GameInstance
+        fields = ['id', 'join_code', 'created_at']
+
+class TeamInstanceSerializer(serializers.ModelSerializer):
+    game_instance = GameInstanceSerializer()
+    team = TeamSerializer()
+
+    class Meta:
+        model = TeamInstance
+        fields = '__all__'
 
 class RoleInstanceSerializer(serializers.ModelSerializer):
+    team_instance = TeamInstanceSerializer()
     role = RoleSerializer()
-    team = TeamSerializer()
     
     class Meta:
         model = RoleInstance
         fields = '__all__'
 
 class UnitInstanceSerializer(serializers.ModelSerializer):
+    team_instance = TeamInstanceSerializer()
+    unit = UnitSerializer()
     tile = TileSerializer(read_only=True)  # Show tile details in GET
     row = serializers.IntegerField(write_only=True, required=False)
     column = serializers.IntegerField(write_only=True, required=False)
-    team = TeamSerializer()
-    unit = UnitSerializer()
 
     class Meta:
         model = UnitInstance
@@ -66,8 +82,9 @@ class UnitInstanceSerializer(serializers.ModelSerializer):
 
 
 class LandmarkInstanceSerializer(serializers.ModelSerializer):
+    game_instance = GameInstanceSerializer()
+    team_instance = TeamInstanceSerializer(allow_null=True, required=False)
     landmark = LandmarkSerializer()
-    team = TeamSerializer()
 
     class Meta:
         model = LandmarkInstance

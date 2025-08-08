@@ -8,6 +8,8 @@ import AvailableAssets from '@/components/AvailableAssets';
 import ResourcePoints from '@/components/ResourcePoints';
 import CommandersIntent from '@/components/CommandersIntent';
 import InteractiveMap from '@/components/InteractiveMap';
+import JTFMenu from '@/components/JTFMenu';
+import SendResourcePoints from '@/components/SendResourcePoints';
 import { Asset } from '@/lib/Types'
 import { authed_fetch, WS_URL } from '@/lib/utils';
 
@@ -24,9 +26,20 @@ export default function MainMapPage() {
     useEffect(() => {
         authed_fetch(`/api/unit-instances/`)
             .then(res => res.json())
-            .then(data => setAssets(data))
-            .catch(err => console.error('Failed to fetch unit instances:', err));
+            .then(data => {
+                if (Array.isArray(data)) {
+                    setAssets(data);
+                } else {
+                    console.error('Expected array but got:', data);
+                    setAssets([]); // fallback to empty array
+                }
+            })
+            .catch(err => {
+                console.error('Failed to fetch unit instances:', err);
+                setAssets([]); // fallback to empty array on error
+            });
     }, []);
+
 
     useEffect(() => {
         const storedRole = sessionStorage.getItem('role');
@@ -113,6 +126,13 @@ export default function MainMapPage() {
                     <>
                         <AvailableAssets assets={assets} />
                         <ResourcePoints />
+                    </>
+                )}
+                {/* Menu for USA/USAF/USN CC*/}
+                {['JTF-CC'].includes(role || '') && (
+                    <>
+                        <JTFMenu />
+                        <SendResourcePoints />
                     </>
                 )}
 
