@@ -15,6 +15,11 @@ class TeamInstance(models.Model):
     # Whose team_instance matches this teamInstance, then summing their victory_points
     victory_points = models.FloatField()
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["game_instance", "team"], name="unique_game_team_pair")
+        ]
+
     def __str__(self):
         return f"GameInstance: {self.game_instance.join_code} | {self.team.name} | Victory Points: {self.victory_points}"
 

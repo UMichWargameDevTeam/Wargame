@@ -7,8 +7,12 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
 from rest_framework import viewsets, filters
-from .models.static import Team, Role, Unit, Attack, Ability, Landmark, Tile
-from .models.dynamic import RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile, GameInstance
+from .models.static import (
+  Team, Role, Unit, Attack, Ability, Landmark, Tile
+)
+from .models.dynamic import (
+  GameInstance, TeamInstance, RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile
+)
 from .serializers import (
     TeamSerializer,
     RoleSerializer,
@@ -18,10 +22,11 @@ from .serializers import (
     AttackSerializer,
     AbilitySerializer,
     LandmarkSerializer,
+    GameInstanceSerializer,
+    TeamInstanceSerializer,
     LandmarkInstanceSerializer,
     TileSerializer,
     LandmarkInstanceTileSerializer,
-    GameInstanceSerializer
 )
 from .game_logic import *
 import json
@@ -135,6 +140,22 @@ class LandmarkViewSet(viewsets.ModelViewSet):
     queryset = Landmark.objects.all()
     serializer_class = LandmarkSerializer
 
+class GameInstanceViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    queryset = GameInstance.objects.all()
+    serializer_class = GameInstanceSerializer
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        join_code = self.request.query_params.get('join_code')
+        if join_code:
+            queryset = queryset.filter(join_code=join_code)
+        return queryset
+
+class TeamInstanceViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    queryset = TeamInstance.objects.all()
+    serializer_class = TeamInstanceSerializer
+
 class LandmarkInstanceViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = LandmarkInstance.objects.all()
@@ -149,17 +170,6 @@ class LandmarkInstanceTileViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = LandmarkInstanceTile.objects.all()
     serializer_class = LandmarkInstanceTileSerializer
-
-class GameInstanceViewSet(viewsets.ModelViewSet):
-    queryset = GameInstance.objects.all()
-    serializer_class = GameInstanceSerializer
-    permission_classes = [IsAuthenticated]
-    def get_queryset(self):
-        queryset = super().get_queryset()
-        join_code = self.request.query_params.get('join_code')
-        if join_code:
-            queryset = queryset.filter(join_code=join_code)
-        return queryset
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -214,17 +224,29 @@ def get_tile_by_coords(request, row, column):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def get_role_instances_by_team_and_role(request, team_name, role_name):
+def get_game_team_instances_by_name(request, join_code, team_name):
+    game_instance = get_object_or_404(GameInstance, join_code=join_code)
     team = get_object_or_404(Team, name=team_name)
+    team_instance = get_object_or_404(TeamInstance, game_instance=game_instance, team=team)
+    serializer = TeamInstanceSerializer(team_instance)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_game_role_instances_by_team_and_role(request, join_code, team_name, role_name):
+    game_instance = get_object_or_404(GameInstance, join_code=join_code)
+    team = get_object_or_404(Team, name=team_name)
+    team_instance = get_object_or_404(TeamInstance, game_instance=game_instance, team=team)
     role = get_object_or_404(Role, name=role_name)
-    role_instances = get_list_or_404(RoleInstance, team=team, role=role)
+    role_instances = get_list_or_404(RoleInstance, team_instance=team_instance, role=role)
     serializer = RoleInstanceSerializer(role_instances, many=True)
     return Response(serializer.data)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def get_tiles_for_landmark_instance_by_id(request, pk):
-    landmark_instance = get_object_or_404(LandmarkInstance, pk=pk)
+def get_game_tiles_for_landmark_instance_by_id(request, join_code, pk):
+    game_instance = get_object_or_404(GameInstance, join_code=join_code)
+    landmark_instance = get_object_or_404(LandmarkInstance, pk=pk, game_instance=game_instance)
     landmark_instance_tiles = get_list_or_404(LandmarkInstanceTile, landmark_instance=landmark_instance)
     tiles = [lit.tile for lit in landmark_instance_tiles]
     serializer = TileSerializer(tiles, many=True)
@@ -232,9 +254,14 @@ def get_tiles_for_landmark_instance_by_id(request, pk):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def get_landmark_instances_for_tile_by_coords(request, row, column):
+def get_game_landmark_instances_for_tile_by_coords(request, join_code, row, column):
+    game_instance = get_object_or_404(GameInstance, join_code=join_code)
     tile = get_object_or_404(Tile, row=row, column=column)
-    landmark_instance_tiles = get_list_or_404(LandmarkInstanceTile, tile=tile)
+    landmark_instance_tiles = get_list_or_404(
+        LandmarkInstanceTile,
+        tile=tile,
+        landmark_instance__game_instance=game_instance
+    )
     landmark_instances = [lit.landmark_instance for lit in landmark_instance_tiles]
     serializer = LandmarkInstanceSerializer(landmark_instances, many=True)
     return Response(serializer.data)
