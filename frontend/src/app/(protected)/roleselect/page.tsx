@@ -18,11 +18,14 @@ export default function RoleSelectPage() {
     const [selectedBranch, setSelectedBranch] = useState<string>('USA');
     const [selectedRole, setSelectedRole] = useState<string | null>(null);
     const [showDialog, setShowDialog] = useState(false);
+    const [joinCode, setJoinCode] = useState<string | null>(null);
     const [gameInstance, setGameInstance] = useState<string | null>(null);
 
     useEffect(() => {
         setSelectedRole(sessionStorage.getItem('role'));
         setGameInstance(sessionStorage.getItem('gameInstanceId'));
+        const storedCode = sessionStorage.getItem('gameJoinCode');
+        setJoinCode(storedCode);
     }, []);
 
     const handleRoleSelect = (role: string) => {
@@ -39,12 +42,21 @@ export default function RoleSelectPage() {
         }
     };
 
+    const handleJoinSuccess = (id: string, code: string) => {
+        setGameInstance(id);
+        setJoinCode(code);
+    };
+
     const handleLogout = () => {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         sessionStorage.removeItem('role');
         sessionStorage.removeItem('team');
         router.push('/login');
+    };
+
+    const handleLeave = () => {
+        setJoinCode(null);
     };
 
     return (
@@ -82,19 +94,17 @@ export default function RoleSelectPage() {
                             Create New Game as Gamemaster
                         </button>
                         <button
-                            onClick={() => setShowDialog(true)}
                             className="px-4 py-2 bg-orange-700 rounded hover:bg-orange-600 transition"
+                            onClick={() => setShowDialog(true)}
                         >
-                            Join Game
+                            {joinCode ? `Leave (${joinCode})` : 'Join Game'}
                         </button>
 
                         {showDialog && (
                             <JoinGameDialog
                                 onClose={() => setShowDialog(false)}
-                                onSuccess={(gameInstanceId) => {
-                                    console.log('Joined game with ID:', gameInstanceId);
-                                    setGameInstance(gameInstanceId.toString());
-                                }}
+                                onSuccess={handleJoinSuccess}
+                                onLeave={handleLeave}
                             />
                         )}
                         {/* Continue Button */}
