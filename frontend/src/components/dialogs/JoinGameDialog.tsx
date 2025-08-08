@@ -1,6 +1,6 @@
 'use client';
 
-import { authed_fetch, BACKEND_URL } from '@/lib/utils';
+import { authed_fetch } from '@/lib/utils';
 import { useState } from 'react';
 
 interface JoinGameDialogProps {
