@@ -43,3 +43,10 @@ class LandmarkInstanceTile(models.Model):
 
     def __str__(self):
         return f"{self.landmark_instance.landmark.name} | Tile ({self.tile.row}, {self.tile.column})"
+class GameInstance(models.Model):
+    join_code = models.CharField(max_length=20, unique=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"GameInstance ({self.join_code})"
+

@@ -6,9 +6,9 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework import status
-from rest_framework import viewsets
+from rest_framework import viewsets, filters
 from .models.static import Team, Role, Unit, Attack, Ability, Landmark, Tile
-from .models.dynamic import RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile
+from .models.dynamic import RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile, GameInstance
 from .serializers import (
     TeamSerializer,
     RoleSerializer,
@@ -20,7 +20,8 @@ from .serializers import (
     LandmarkSerializer,
     LandmarkInstanceSerializer,
     TileSerializer,
-    LandmarkInstanceTileSerializer
+    LandmarkInstanceTileSerializer,
+    GameInstanceSerializer
 )
 from .game_logic import *
 import json
@@ -148,6 +149,17 @@ class LandmarkInstanceTileViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = LandmarkInstanceTile.objects.all()
     serializer_class = LandmarkInstanceTileSerializer
+
+class GameInstanceViewSet(viewsets.ModelViewSet):
+    queryset = GameInstance.objects.all()
+    serializer_class = GameInstanceSerializer
+    permission_classes = [IsAuthenticated]
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        join_code = self.request.query_params.get('join_code')
+        if join_code:
+            queryset = queryset.filter(join_code=join_code)
+        return queryset
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
