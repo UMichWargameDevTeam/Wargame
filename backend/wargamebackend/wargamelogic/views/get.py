@@ -1,6 +1,7 @@
 
 from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, get_list_or_404
+from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -15,7 +16,7 @@ from ..serializers import (
     RoleSerializer,
     RoleInstanceSerializer,
     UnitSerializer,
-    UnitInstanceSerializer, # TODO: make views for this
+    UnitInstanceSerializer,
     AttackSerializer,
     AbilitySerializer,
     LandmarkSerializer,
@@ -101,6 +102,37 @@ def get_game_role_instances_by_team_and_role(request, join_code, team_name, role
     role = get_object_or_404(Role, name=role_name)
     role_instances = get_list_or_404(RoleInstance, team_instance=team_instance, role=role)
     serializer = RoleInstanceSerializer(role_instances, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_game_unit_instances_by_team_name(request, join_code, team_name):
+    game_instance = get_object_or_404(GameInstance, join_code=join_code)
+    team = get_object_or_404(Team, name=team_name)
+    team_instance = get_object_or_404(TeamInstance, game_instance=game_instance, team=team)
+    unit_instances = UnitInstance.objects.filter(team_instance=team_instance)
+    serializer = UnitInstanceSerializer(unit_instances, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_game_unit_instances_by_team_name_and_domain(request, join_code, team_name, domain):
+    valid_domains = [d[0] for d in Unit.DOMAINS]
+    if domain not in valid_domains:
+        return Response({'error': f'Invalid domain: {domain}. Must be one of {valid_domains}'}, status=status.HTTP_400_BAD_REQUEST)
+    game_instance = get_object_or_404(GameInstance, join_code=join_code)
+    team = get_object_or_404(Team, name=team_name)
+    team_instance = get_object_or_404(TeamInstance, game_instance=game_instance, team=team)
+    unit_instances = UnitInstance.objects.filter(team_instance=team_instance, unit__domain=domain)
+    serializer = UnitInstanceSerializer(unit_instances, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_game_unit_instances(request, join_code):
+    game_instance = get_object_or_404(GameInstance, join_code=join_code)
+    unit_instances = UnitInstance.objects.filter(team_instance__game_instance=game_instance)
+    serializer = UnitInstanceSerializer(unit_instances, many=True)
     return Response(serializer.data)
 
 @api_view(['GET'])

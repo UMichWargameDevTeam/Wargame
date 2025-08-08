@@ -5,16 +5,15 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 import json
 from ..models.static import (
-  Team, Role, Tile
+    Team, Role, Tile
 )
 from ..models.dynamic import (
-  RoleInstance, UnitInstance
+    GameInstance, TeamInstance, RoleInstance, UnitInstance
 )
 from ..game_logic import (
     move_unit_instance
 )
 
-# TODO: update this with game instance
 @csrf_exempt
 @permission_classes([IsAuthenticated])
 def register_role(request):
@@ -27,11 +26,12 @@ def register_role(request):
     if request.method == 'POST':
         try:
             data = json.loads(request.body)
-            role_name = data.get('role')
+            game_join_code = data.get('join-code')
             team_name = data.get('team')
+            role_name = data.get('role')
 
-            if not role_name or not team_name:
-                return JsonResponse({'error': 'Missing role or team name'}, status=400)
+            if not game_join_code or not team_name or not role_name:
+                return JsonResponse({'error': 'Missing join-code or team or role name'}, status=400)
 
             try:
                 role = Role.objects.get(name=role_name)
@@ -42,10 +42,20 @@ def register_role(request):
                 team = Team.objects.get(name=team_name)
             except Team.DoesNotExist:
                 return JsonResponse({'error': f'Team not found: {team_name}'}, status=404)
+            
+            try:
+                game_instance = GameInstance.objects.get(join_code=game_join_code)
+            except GameInstance.DoesNotExist:
+                return JsonResponse({'error': f'GameInstance not found with join code: {game_join_code}'}, status=404)
+            
+            try:
+                team_instance = TeamInstance.objects.get(game_instance=game_instance, team=team)
+            except TeamInstance.DoesNotExist:
+                return JsonResponse({'error': f'TeamInstance not found for team "{team_name}" in game "{game_join_code}"'}, status=404)
 
             # TODO: keep track of the user who registered for this role, 
             # and prevent multiple users from registering for the same role
-            role_instance = RoleInstance.objects.create(role=role, team=team)
+            role_instance = RoleInstance.objects.create(team_instance=team_instance, role=role, supply_points=0)
 
             print(f"[Backend] Role registered: {role_name} for team: {team_name}")
             return JsonResponse({'status': 'ok', 'role': role_name, 'team': team_name})
