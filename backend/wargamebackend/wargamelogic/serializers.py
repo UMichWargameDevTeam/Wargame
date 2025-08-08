@@ -3,7 +3,7 @@ from .models.static import (
     Team, Role, Unit, Attack, Ability, Landmark, Tile
 )
 from .models.dynamic import (
-    RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile 
+    RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile, GameInstance
 )
 
 class TeamSerializer(serializers.ModelSerializer):
@@ -81,3 +81,8 @@ class LandmarkInstanceTileSerializer(serializers.ModelSerializer):
     class Meta:
         model = LandmarkInstanceTile
         fields = '__all__'
+
+class GameInstanceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = GameInstance
+        fields = ['id', 'join_code', 'created_at']
