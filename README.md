@@ -44,9 +44,9 @@ LongTermWargame/
 ## 🐍 Backend Setup
 
 ```bash
-cd backend/wargamebackend
 python -m venv env
 source env/bin/activate  # or env\Scripts\activate on Windows
+cd backend/wargamebackend
 pip install -r requirements.txt
 ```
 
@@ -76,13 +76,20 @@ make front
 
 ---
 
-## ▶️ Run Both at Once (macOS/Linux only)
+## .env file Setup
 
-```bash
-make both
+In the top-level directory, create a file named .env with the following structure:
+
 ```
-
-> This runs both the backend (Daphne) and frontend (Next.js) in parallel in one terminal.
+# Initially obtained from backend/wargamebackend/wargamebackend/settings.py
+SECRET_KEY='your django secret key here'
+# Obtained by going to the Neon project's dashboard, clicking Connect, selecting Django, enable Connection Pooling, and looking at the .env tab
+DATABASE_URL='your neon database connection url, with connection pooling enabled, here'
+# Same as DATABASE_URL, except Connection Pooling is disabled.
+TEST_DATABASE_URL='your neon database connection url, with connection pooling disabled, here'
+# Should be True in development, False in production
+DEBUG=True
+```
 
 ---
 
