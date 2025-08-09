@@ -157,8 +157,6 @@ export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
                     }
                     else if (level === 1) {
                         // Parent tile coordinates at level 0
-                        const parentRows = Math.ceil(imgH / (cellSize * 2));
-                        const parentCols = Math.ceil(imgW / (cellSize * 2));
                         const parentRow = Math.floor(row / 2);
                         const parentCol = Math.floor(col / 2);
 
