@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 from .static import Role, Team, Unit, Tile, Landmark
 
 class GameInstance(models.Model):
@@ -71,3 +72,13 @@ class LandmarkInstanceTile(models.Model):
         team_name = self.landmark_instance.team_instance.team.name if self.landmark_instance.team_instance else "No Team"
         return f"GameInstance: {self.landmark_instance.game_instance.join_code} | {team_name} | {self.landmark_instance.landmark.name} | Tile ({self.tile.row}, {self.tile.column})"
 
+
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    game_instance = models.ForeignKey(
+        GameInstance,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="profiles"
+    )

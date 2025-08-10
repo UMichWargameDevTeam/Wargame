@@ -36,6 +36,8 @@ router.register(r'game-instances', GameInstanceViewSet, basename='game-instance'
 urlpatterns = [
     path('api/mainmap/', get.main_map, name='main_map'),
     path('api/register_role/', post.register_role, name='register_role'),
+    path("api/join-game-instance/", post.join_game_instance, name="join_game_instance"),
+
 
     path('api/teams/<str:name>/', get.get_team_by_name, name='get_team_by_name'),
     path('api/roles/<str:name>/', get.get_role_by_name, name='get_role_by_name'),

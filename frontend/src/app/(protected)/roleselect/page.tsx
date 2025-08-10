@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import JoinGameDialog from '@/components/dialogs/JoinGameDialog';
-
+import { useUsers } from '@/context/UsersContext';
 
 const branchCommandRoles: Record<string, string> = {
     USA: 'USA-CC',
@@ -14,32 +14,54 @@ const branchCommandRoles: Record<string, string> = {
 
 export default function RoleSelectPage() {
     const router = useRouter();
+    const { updateUser } = useUsers();
+
     const [team, setTeam] = useState<string>('Red');
     const [selectedBranch, setSelectedBranch] = useState<string>('USA');
     const [selectedRole, setSelectedRole] = useState<string | null>(null);
     const [showDialog, setShowDialog] = useState(false);
     const [joinCode, setJoinCode] = useState<string | null>(null);
     const [gameInstance, setGameInstance] = useState<string | null>(null);
+    const [username, setUsername] = useState<string>('');
 
     useEffect(() => {
-        setSelectedRole(sessionStorage.getItem('role'));
-        setGameInstance(sessionStorage.getItem('gameInstanceId'));
+        const storedRole = sessionStorage.getItem('role');
+        const storedBranch = sessionStorage.getItem('branch');
+        const storedTeam = sessionStorage.getItem('team');
+        const storedGameId = sessionStorage.getItem('gameInstanceId');
         const storedCode = sessionStorage.getItem('gameJoinCode');
-        setJoinCode(storedCode);
+        const storedUsername = sessionStorage.getItem('username') || 'Unknown';
+
+        if (storedRole) setSelectedRole(storedRole);
+        if (storedBranch) setSelectedBranch(storedBranch);
+        if (storedTeam) setTeam(storedTeam);
+        if (storedGameId) setGameInstance(storedGameId);
+        if (storedCode) setJoinCode(storedCode);
+        setUsername(storedUsername);
     }, []);
 
     const handleRoleSelect = (role: string) => {
         setSelectedRole(role);
         sessionStorage.setItem('role', role);
         sessionStorage.setItem('team', team);
+        sessionStorage.setItem('branch', selectedBranch);
     };
 
     const handleContinue = () => {
-        if (selectedRole) {
-            router.push('/mainmap');
-        } else {
+        if (!selectedRole) {
             alert("Please select a role before continuing.");
+            return;
         }
+
+        updateUser({
+            username,
+            branch: selectedBranch,
+            team,
+            role: selectedRole,
+            status: 'notready',
+        });
+
+        router.push('/mainmap');
     };
 
     const handleJoinSuccess = (id: string, code: string) => {
@@ -50,13 +72,15 @@ export default function RoleSelectPage() {
     const handleLogout = () => {
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
-        sessionStorage.removeItem('role');
-        sessionStorage.removeItem('team');
+        sessionStorage.clear();
         router.push('/login');
     };
 
     const handleLeave = () => {
         setJoinCode(null);
+        setGameInstance(null);
+        sessionStorage.removeItem('gameJoinCode');
+        sessionStorage.removeItem('gameInstanceId');
     };
 
     return (

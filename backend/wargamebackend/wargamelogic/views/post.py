@@ -65,6 +65,18 @@ def register_role(request):
 
     return JsonResponse({'error': 'Invalid method'}, status=405)
 
+def join_game_instance(request):
+    if request.method == "POST":
+        join_code = request.POST.get("join_code")
+        try:
+            game_instance = GameInstance.objects.get(join_code=join_code)
+        except GameInstance.DoesNotExist:
+            return JsonResponse({"error": "Invalid join code"}, status=400)
+
+        request.user.game_instance = game_instance
+        request.user.save()
+
+        return JsonResponse({"status": "success"})
 
 # --------------------------- GAME LOGIC --------------------------- #
 @api_view(['POST'])

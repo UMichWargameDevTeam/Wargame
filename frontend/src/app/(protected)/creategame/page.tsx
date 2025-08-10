@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { authed_fetch } from '@/lib/utils';
+import Users from '@/components/Users';
 
 export default function CreateGamePage() {
     const [joinCode, setJoinCode] = useState('');
@@ -161,9 +162,8 @@ export default function CreateGamePage() {
                     </div>
                 </div>
 
-                {/* Right side: Placeholder for future controls */}
-                <div className=" flex-1 bg-neutral-800 rounded-lg shadow-lg flex items-center justify-center text-xl text-gray-400">
-                    More controls coming soon...
+                <div className="flex-1 bg-neutral-800 rounded-lg shadow-lg p-4 overflow-y-auto">
+                    <Users />
                 </div>
             </div>
         </div>
