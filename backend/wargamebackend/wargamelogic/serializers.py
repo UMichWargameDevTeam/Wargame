@@ -76,7 +76,7 @@ class UnitInstanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = UnitInstance
         fields = [
-            'id', 'unit', 'team', 'tile', 'health', 'supply_count',
+            'id', 'unit', 'team_instance', 'tile', 'health', 'supply_count',
             'row', 'column'  # writable for PATCH
         ]
 
