@@ -17,12 +17,8 @@ class GetEndpointTests(TestCase):
         self.user = User.objects.create_user(username='testuser', password='testpass')
         self.client.force_authenticate(user=self.user)
 
-        self.game_instance = GameInstance.objects.create(
-            join_code="ABC123"
-        )
-        self.team = Team.objects.create(
-            name="RED"
-        )
+        self.game_instance = GameInstance.objects.create(join_code="ABC123")
+        self.team = Team.objects.create(name="RED")
         self.team_instance = TeamInstance.objects.create(
             game_instance=self.game_instance,
             team=self.team,
@@ -52,6 +48,15 @@ class GetEndpointTests(TestCase):
             health=1000.0,
             supply_count=100.0
         )
+
+        role = Role.objects.create(name="Gamemaster")
+        RoleInstance.objects.create(
+            user=self.user,
+            role=role,
+            team_instance=self.team_instance,
+            supply_points=0
+        )
+
 
     def test_get_units(self):
         self.client.force_authenticate(user=self.user)
@@ -187,18 +192,18 @@ class RoleRequiredTests(TestCase):
         self.url = f"/api/game-instances/{self.game_instance.join_code}/team-instances/{self.team.name}/unit-instances/"
         self.register_role_url = "/api/register_role/"
 
-    def test_invalid_join_code_returns_404(self):
+    def test_invalid_join_code(self):
         self.client.force_authenticate(user=self.overall_commander_user)
         bad_url = f"/api/game-instances/INVALIDCODE/team-instances/{self.team.name}/unit-instances/"
         response = self.client.get(bad_url)
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
-    def test_valid_join_code_but_no_role_instance_returns_403(self):
+    def test_valid_join_code_but_no_role_instance3(self):
         self.client.force_authenticate(user=self.random_user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
-    def test_wrong_team_returns_403(self):
+    def test_wrong_team(self):
         other_team = Team.objects.create(name="Russia")
         TeamInstance.objects.create(
             game_instance=self.game_instance,

@@ -1,4 +1,5 @@
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, get_list_or_404
 from django.db import IntegrityError
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view, permission_classes
@@ -14,7 +15,7 @@ from ..game_logic import (
     move_unit_instance
 )
 from ..check_roles import (
-    require_role, require_any_role
+    require_role_instance, require_any_role_instance
 )
 
 @api_view(['POST'])
@@ -80,6 +81,10 @@ def register_role(request):
 # --------------------------- GAME LOGIC --------------------------- #
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@require_role_instance({
+    'team_instance': lambda request, kwargs: get_object_or_404(UnitInstance, pk=request.data.get('unitId')).team_instance
+    # TODO: add more criteria here once we get more info from the mechanics team
+})
 def move_unit(request):
     unit_instance_id = request.data.get('unitId')
     target_row = request.data.get('targetRow')
