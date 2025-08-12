@@ -25,6 +25,7 @@ from ..serializers import (
     TileSerializer,
 )
 from ..game_logic import *
+from ..check_roles import role_required, any_role_required
 
 def main_map(request):
     return JsonResponse({"message": "Hello from Django view!"})
@@ -116,6 +117,7 @@ def get_game_unit_instances(request, join_code):
 # To be used by team overall commanders.
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+@role_required(name='Overall Commander')
 def get_game_unit_instances_by_team_name(request, join_code, team_name):
     game_instance = get_object_or_404(GameInstance, join_code=join_code)
     team = get_object_or_404(Team, name=team_name)

@@ -1,5 +1,5 @@
-
 from django.http import JsonResponse
+from django.db import IntegrityError
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
@@ -13,12 +13,17 @@ from ..models.dynamic import (
 from ..game_logic import (
     move_unit_instance
 )
+from ..check_roles import (
+    role_required, any_role_required
+)
 
-@csrf_exempt
+@api_view(['POST'])
 @permission_classes([IsAuthenticated])
+@csrf_exempt
 def register_role(request):
     """
     body: {
+        join-code: String,
         role: String,
         team: String
     }
@@ -31,7 +36,7 @@ def register_role(request):
             role_name = data.get('role')
 
             if not game_join_code or not team_name or not role_name:
-                return JsonResponse({'error': 'Missing join-code or team or role name'}, status=400)
+                return JsonResponse({'error': 'Missing join-code or team or role'}, status=400)
 
             try:
                 role = Role.objects.get(name=role_name)
@@ -42,22 +47,28 @@ def register_role(request):
                 team = Team.objects.get(name=team_name)
             except Team.DoesNotExist:
                 return JsonResponse({'error': f'Team not found: {team_name}'}, status=404)
-            
+
             try:
                 game_instance = GameInstance.objects.get(join_code=game_join_code)
             except GameInstance.DoesNotExist:
                 return JsonResponse({'error': f'GameInstance not found with join code: {game_join_code}'}, status=404)
-            
+
             try:
                 team_instance = TeamInstance.objects.get(game_instance=game_instance, team=team)
             except TeamInstance.DoesNotExist:
                 return JsonResponse({'error': f'TeamInstance not found for team "{team_name}" in game "{game_join_code}"'}, status=404)
 
-            # TODO: keep track of the user who registered for this role, 
-            # and prevent multiple users from registering for the same role
-            role_instance = RoleInstance.objects.create(team_instance=team_instance, role=role, supply_points=0)
+            try:
+                RoleInstance.objects.create(
+                    team_instance=team_instance,
+                    role=role,
+                    user=request.user,
+                    supply_points=0
+                )
+            except IntegrityError:
+                return JsonResponse({'error': f'Role already assigned for user {request.user.username}'}, status=400)
 
-            print(f"[Backend] Role registered: {role_name} for team: {team_name}")
+            print(f"[Backend] Role registered: {role_name} for team: {team_name} by user: {request.user.username}")
             return JsonResponse({'status': 'ok', 'role': role_name, 'team': team_name})
 
         except Exception as e:

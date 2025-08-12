@@ -92,6 +92,7 @@ class GameInstanceViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = GameInstance.objects.all()
     serializer_class = GameInstanceSerializer
+    
     def get_queryset(self):
         queryset = super().get_queryset()
         join_code = self.request.query_params.get('join_code')
