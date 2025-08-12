@@ -1,99 +1,133 @@
+from django.http import JsonResponse
 from functools import wraps
-from rest_framework.response import Response
-from rest_framework import status
+from .models.static import Team
+from .models.dynamic import RoleInstance, GameInstance
 
-# helper function for @role_required and @any_role_required
+
+class RoleDenied(Exception):
+    def __init__(self, message):
+        super().__init__(message)
+        self.message = message
+
+
+class GlobalRoleDenied(RoleDenied):
+    pass
+
+
+def resolve_arg(arg, request, kwargs, model_class=None, model_lookup=None, global_error_msg=None):
+    """
+    Resolves an argument into its actual object:
+    - Callable(request, kwargs)
+    - Model instance
+    - String (looked up in model_class if provided)
+    """
+    if callable(arg):
+        return arg(request, kwargs)
+    elif model_class and isinstance(arg, str):
+        try:
+            return model_class.objects.get(**{model_lookup: arg})
+        except model_class.DoesNotExist:
+            raise GlobalRoleDenied(global_error_msg or f"{model_class.__name__} not found")
+    elif model_class and isinstance(arg, model_class):
+        return arg
+    elif model_class is None:
+        return arg
+    else:
+        raise RoleDenied(f"Invalid type for {model_class.__name__ if model_class else 'argument'}")
+
+
 def role_matches(request, kwargs, **criteria):
     """
-    Returns True if the current user's RoleInstance matches the given criteria.
-    Automatically uses join_code and team_name from kwargs if present.
-    Admin users always pass.
+    Flexible role matching:
+    - 'game_instance' is REQUIRED (callable, object, or join_code string)
+    - 'team' is OPTIONAL (callable, object, or name string)
+    - Remaining keys match against role fields.
     """
-    from .models.dynamic import RoleInstance, GameInstance
-
-    # Admins bypass all checks
     if request.user.is_staff or request.user.is_superuser:
         return True
 
-    # --- Game lookup ---
-    join_code = kwargs.get('join_code')
-    if join_code:
-        try:
-            game_instance = GameInstance.objects.get(join_code=join_code)
-        except GameInstance.DoesNotExist:
-            return False
-    else:
-        game_instance = None
+    # --- GameInstance resolution ---
+    game_instance_arg = criteria.pop('game_instance', None)
+    if game_instance_arg is None:
+        raise GlobalRoleDenied("No game_instance provided in require_role")
+
+    game_instance = resolve_arg(
+        game_instance_arg,
+        request,
+        kwargs,
+        model_class=GameInstance,
+        model_lookup="join_code",
+        global_error_msg="GameInstance not found"
+    )
 
     # --- RoleInstance lookup ---
-    query = RoleInstance.objects.filter(user=request.user)
-    if game_instance:
-        query = query.filter(team_instance__game_instance=game_instance)
+    query = RoleInstance.objects.filter(
+        user=request.user,
+        team_instance__game_instance=game_instance
+    )
     role_instance = query.select_related('role', 'team_instance__team').first()
-
     if not role_instance:
-        return False
+        raise GlobalRoleDenied("You do not have a role in this game")
 
-    # --- Team check (only if provided in URL) ---
-    team_name = kwargs.get('team_name')
-    if team_name and role_instance.team_instance.team.name != team_name:
-        return False
+    # --- Team resolution ---
+    team_arg = criteria.pop('team', None)
+    if team_arg is not None:
+        expected_team = resolve_arg(
+            team_arg,
+            request,
+            kwargs,
+            model_class=Team,
+            model_lookup="name",
+            global_error_msg="Team not found"
+        )
+        if role_instance.team_instance.team != expected_team:
+            raise GlobalRoleDenied(f"You are not part of the required team: {expected_team}")
 
     # --- Role field checks ---
     for field, expected in criteria.items():
         if getattr(role_instance.role, field, None) != expected:
-            return False
+            raise RoleDenied(f"Your role does not meet the required {field}={expected}")
 
     return True
 
-# example usage:
-# @role_required(name='Combatant Commander')
-def role_required(**criteria):
+
+def require_role(**criteria):
     def decorator(view_func):
         @wraps(view_func)
         def _wrapped_view(request, *args, **kwargs):
-            if not role_matches(request, kwargs, **criteria):
-                # Admins bypass check already in role_matches
-                return Response(
-                    {
-                        'error': f'Access denied: requires {criteria}'
-                    },
-                    status=status.HTTP_403_FORBIDDEN
-                )
-            return view_func(request, *args, **kwargs)
+            try:
+                if role_matches(request, kwargs, **criteria):
+                    return view_func(request, *args, **kwargs)
+            except RoleDenied as e:
+                return JsonResponse({'error': e.message}, status=403)
+            return JsonResponse({'error': 'Permission denied'}, status=403)
         return _wrapped_view
     return decorator
 
 
-# example usage:
-# @any_role_required([
-#     {'branch': 'Army', 'is_commander': True},
-#     {'branch': 'Navy', 'is_commander': True}
-# ])
-def any_role_required(criteria_list):
+def require_any_role(criteria_list):
     """
     Allows access if ANY criteria in the list passes.
-    Automatically uses join_code and team_name from kwargs if present.
-    Admins always pass.
+    Uses the same dynamic resolution as require_role.
     """
     def decorator(view_func):
         @wraps(view_func)
         def _wrapped_view(request, *args, **kwargs):
-            # Admin bypass
-            if request.user.is_staff or request.user.is_superuser:
-                return view_func(request, *args, **kwargs)
-
             for criteria in criteria_list:
-                if role_matches(request, kwargs, **criteria):
-                    return view_func(request, *args, **kwargs)
+                try:
+                    if role_matches(request, kwargs, **criteria):
+                        return view_func(request, *args, **kwargs)
+                except GlobalRoleDenied as e:
+                    return JsonResponse({'error': e.message}, status=403)
+                except RoleDenied:
+                    pass
 
-            # If none matched, return all allowed combinations in the error
-            return Response(
+            return JsonResponse(
                 {
                     'error': 'Access denied: no role criteria matched',
                     'allowed_roles': criteria_list
                 },
-                status=status.HTTP_403_FORBIDDEN
+                status=403
             )
         return _wrapped_view
     return decorator

@@ -14,7 +14,7 @@ from ..game_logic import (
     move_unit_instance
 )
 from ..check_roles import (
-    role_required, any_role_required
+    require_role, require_any_role
 )
 
 @api_view(['POST'])

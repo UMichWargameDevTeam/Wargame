@@ -24,11 +24,15 @@ class UnitSerializer(serializers.ModelSerializer):
         fields = '__all__'
 
 class AttackSerializer(serializers.ModelSerializer):
+    unit = UnitSerializer(read_only=True)
+
     class Meta:
         model = Attack
         fields = '__all__'
 
 class AbilitySerializer(serializers.ModelSerializer):
+    unit = UnitSerializer(read_only=True)
+
     class Meta:
         model = Ability
         fields = '__all__'
@@ -41,35 +45,35 @@ class LandmarkSerializer(serializers.ModelSerializer):
 class TileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tile
-        fields = ['id', 'row', 'column', 'terrain']
+        fields = '__all__'
 
 # dynamic model serializers
 
 class GameInstanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = GameInstance
-        fields = ['id', 'join_code', 'created_at']
+        fields = '__all__'
 
 class TeamInstanceSerializer(serializers.ModelSerializer):
     game_instance = GameInstanceSerializer()
-    team = TeamSerializer()
+    team = TeamSerializer(read_only=True)
 
     class Meta:
         model = TeamInstance
         fields = '__all__'
 
 class RoleInstanceSerializer(serializers.ModelSerializer):
-    team_instance = TeamInstanceSerializer()
-    role = RoleSerializer()
-    user = serializers.StringRelatedField()
+    team_instance = TeamInstanceSerializer(read_only=True)
+    role = RoleSerializer(read_only=True)
+    user = serializers.StringRelatedField(read_only=True)
     
     class Meta:
         model = RoleInstance
         fields = '__all__'
 
 class UnitInstanceSerializer(serializers.ModelSerializer):
-    team_instance = TeamInstanceSerializer()
-    unit = UnitSerializer()
+    team_instance = TeamInstanceSerializer(read_only=True)
+    unit = UnitSerializer(read_only=True)
     tile = TileSerializer(read_only=True)  # Show tile details in GET
     row = serializers.IntegerField(write_only=True, required=False)
     column = serializers.IntegerField(write_only=True, required=False)
@@ -81,20 +85,18 @@ class UnitInstanceSerializer(serializers.ModelSerializer):
             'row', 'column'  # writable for PATCH
         ]
 
-
 class LandmarkInstanceSerializer(serializers.ModelSerializer):
-    game_instance = GameInstanceSerializer()
-    team_instance = TeamInstanceSerializer(allow_null=True, required=False)
-    landmark = LandmarkSerializer()
+    game_instance = GameInstanceSerializer(read_only=True)
+    team_instance = TeamInstanceSerializer(read_only=True, allow_null=True)
+    landmark = LandmarkSerializer(read_only=True)
 
     class Meta:
         model = LandmarkInstance
         fields = '__all__'
 
-
 class LandmarkInstanceTileSerializer(serializers.ModelSerializer):
-    landmark_instance = LandmarkInstanceSerializer()
-    tile = TileSerializer()
+    landmark_instance = LandmarkInstanceSerializer(read_only=True)
+    tile = TileSerializer(read_only=True)
 
     class Meta:
         model = LandmarkInstanceTile

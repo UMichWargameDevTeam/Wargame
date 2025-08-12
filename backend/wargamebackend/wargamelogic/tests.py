@@ -138,6 +138,9 @@ class RoleRequiredTests(TestCase):
         self.navy_commander_user = User.objects.create_user(
             username="navy_user", password="testpass"
         )
+        self.random_user = User.objects.create_user(
+            username="random_user", password="testpass"
+        )
 
         self.game_instance = GameInstance.objects.create(join_code="GAME123")
         self.team = Team.objects.create(name="USA")
@@ -184,17 +187,33 @@ class RoleRequiredTests(TestCase):
         self.url = f"/api/game-instances/{self.game_instance.join_code}/team-instances/{self.team.name}/unit-instances/"
         self.register_role_url = "/api/register_role/"
 
-    def test_overall_commander_can_access(self):
+    def test_invalid_join_code_returns_404(self):
         self.client.force_authenticate(user=self.overall_commander_user)
+        bad_url = f"/api/game-instances/INVALIDCODE/team-instances/{self.team.name}/unit-instances/"
+        response = self.client.get(bad_url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_valid_join_code_but_no_role_instance_returns_403(self):
+        self.client.force_authenticate(user=self.random_user)
         response = self.client.get(self.url)
-        # print(response.json())
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertTrue(len(response.data) > 0)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_wrong_team_returns_403(self):
+        other_team = Team.objects.create(name="Russia")
+        TeamInstance.objects.create(
+            game_instance=self.game_instance,
+            team=other_team,
+            victory_points=0
+        )
+        self.client.force_authenticate(user=self.overall_commander_user)
+        wrong_team_url = f"/api/game-instances/{self.game_instance.join_code}/team-instances/{other_team.name}/unit-instances/"
+        response = self.client.get(wrong_team_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+    
 
     def test_navy_commander_cannot_access(self):
         self.client.force_authenticate(user=self.navy_commander_user)
         response = self.client.get(self.url)
-        # print(response.json())
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_user_cannot_impersonate_when_registering_role(self):
@@ -213,7 +232,12 @@ class RoleRequiredTests(TestCase):
             data=json.dumps(payload),
             content_type="application/json"
         )
-        # print(response.json())
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         ri = RoleInstance.objects.latest("id")
         self.assertEqual(ri.user, self.navy_commander_user)
+
+    def test_overall_commander_can_access(self):
+        self.client.force_authenticate(user=self.overall_commander_user)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(len(response.data) > 0)

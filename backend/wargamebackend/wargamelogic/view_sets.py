@@ -21,6 +21,10 @@ from .serializers import (
     TileSerializer,
     LandmarkInstanceTileSerializer,
 )
+from django.shortcuts import get_object_or_404
+from .check_roles import (
+    require_role, require_any_role
+)
 
 class TeamViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
@@ -48,6 +52,10 @@ class UnitInstanceViewSet(viewsets.ModelViewSet):
     serializer_class = UnitInstanceSerializer
     http_method_names = ['get', 'post', 'patch', 'put', 'delete']
 
+    @require_role(
+        game_instance=lambda request, kwargs: get_object_or_404(UnitInstance, pk=kwargs['pk']).team_instance.game_instance,
+        team=lambda request, kwargs: get_object_or_404(UnitInstance, pk=kwargs['pk']).team_instance.team,
+    )
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
 
@@ -69,6 +77,10 @@ class UnitInstanceViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.data)
 
+    @require_role(
+        game_instance=lambda request, kwargs: get_object_or_404(UnitInstance, pk=kwargs['pk']).team_instance.game_instance,
+        team=lambda request, kwargs: get_object_or_404(UnitInstance, pk=kwargs['pk']).team_instance.team,
+    )
     def update(self, request, *args, **kwargs):
         # Make PUT behave the same way
         return self.partial_update(request, *args, **kwargs)
