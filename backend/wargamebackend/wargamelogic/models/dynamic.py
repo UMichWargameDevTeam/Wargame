@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 from .static import Role, Team, Unit, Tile, Landmark
 
 class GameInstance(models.Model):
@@ -26,11 +27,16 @@ class TeamInstance(models.Model):
 class RoleInstance(models.Model):
     team_instance = models.ForeignKey(TeamInstance, on_delete=models.CASCADE)
     role = models.ForeignKey(Role, on_delete=models.CASCADE)
-    user = models.CharField(max_length=255)  # e.g., browser ID or cookie
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     supply_points = models.FloatField()
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["team_instance", "user"], name="unique_team_user_pair")
+        ]
+    
     def __str__(self):
-        return f"GameInstance: {self.team_instance.game_instance.join_code} | {self.team_instance.team.name} | {self.role.name} | User: {self.user} | Supply Points: {self.supply_points}"
+        return f"GameInstance: {self.team_instance.game_instance.join_code} | {self.team_instance.team.name} | {self.role.name} | User: {self.user.username} | Supply Points: {self.supply_points}"
 
 class UnitInstance(models.Model):
     team_instance = models.ForeignKey(TeamInstance, on_delete=models.CASCADE)

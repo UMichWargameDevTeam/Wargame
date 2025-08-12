@@ -61,6 +61,7 @@ class TeamInstanceSerializer(serializers.ModelSerializer):
 class RoleInstanceSerializer(serializers.ModelSerializer):
     team_instance = TeamInstanceSerializer()
     role = RoleSerializer()
+    user = serializers.StringRelatedField()
     
     class Meta:
         model = RoleInstance
