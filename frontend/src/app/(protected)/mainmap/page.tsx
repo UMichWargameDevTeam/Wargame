@@ -11,7 +11,8 @@ import InteractiveMap from '@/components/InteractiveMap';
 import JTFMenu from '@/components/JTFMenu';
 import SendResourcePoints from '@/components/SendResourcePoints';
 import { Asset } from '@/lib/Types'
-import { authed_fetch, WS_URL } from '@/lib/utils';
+import { useAuthedFetch } from '@/hooks/useAuthedFetch';
+import { WS_URL } from '@/lib/utils';
 
 export default function MainMapPage() {
     // const [socket, setSocket] = useState<WebSocket | null>(null);
@@ -21,7 +22,7 @@ export default function MainMapPage() {
     const [mapSrc, setMapSrc] = useState('/maps/taiwan_middle_clean.png');
     const [assets, setAssets] = useState<Asset[]>([]);
     const [timer, setTimer] = useState<number>(600); // 10 minutes in seconds
-
+    const authed_fetch = useAuthedFetch()
 
     useEffect(() => {
         authed_fetch(`/api/unit-instances/`)

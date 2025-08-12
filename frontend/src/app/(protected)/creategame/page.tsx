@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { authed_fetch } from '@/lib/utils';
+import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 
 export default function CreateGamePage() {
     const [joinCode, setJoinCode] = useState('');
@@ -12,6 +12,7 @@ export default function CreateGamePage() {
     const [joinedGameCode, setJoinedGameCode] = useState<string | null>(null);
     const [joinError, setJoinError] = useState<string | null>(null);
 
+    const authed_fetch = useAuthedFetch();
     const router = useRouter();
 
     useEffect(() => {
