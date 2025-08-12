@@ -9,3 +9,4 @@ dotenv
 psycopg
 django-jazzmin
 djangorestframework-simplejwt
+whitenoise
