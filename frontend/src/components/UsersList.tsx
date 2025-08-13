@@ -13,7 +13,6 @@ interface User {
 export default function UsersList() {
     const [users, setUsers] = useState<User[]>([]);
     const gameInstanceId = typeof window !== 'undefined' ? sessionStorage.getItem('gameInstanceId') : null;
-    const username = typeof window !== 'undefined' ? sessionStorage.getItem('username') : null;
 
     useEffect(() => {
         if (!gameInstanceId) return;

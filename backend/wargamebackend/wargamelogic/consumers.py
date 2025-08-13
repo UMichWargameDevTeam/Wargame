@@ -8,11 +8,11 @@ connected_users = {}  # {game_id: [{username, team, branch, role, ready}]}
 class GameUsersConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.game_id = self.scope['url_route']['kwargs']['game_id']
-        self.username = self.scope['user'].username if self.scope['user'].is_authenticated else 'Guest'
+        self.username = self.scope['session'].get('username', 'Guest')
         
         # Add to connected users
         connected_users.setdefault(self.game_id, []).append({
-            "username": self.username,
+            "username": self.scope['session'].get('username', 'Guest'),
             "team": self.scope['session'].get('team', 'Unknown'),
             "branch": self.scope['session'].get('branch', 'Unknown'),
             "role": self.scope['session'].get('role', 'Unknown'),
@@ -33,11 +33,24 @@ class GameUsersConsumer(AsyncWebsocketConsumer):
 
     async def receive(self, text_data):
         data = json.loads(text_data)
-        if data.get("type") == "ready_status":
+
+        if data.get("type") == "join":
+            self.username = data["username"]
+            connected_users.setdefault(self.game_id, []).append({
+                "username": self.username,
+                "team": data.get("team", "Unknown"),
+                "branch": data.get("branch", "Unknown"),
+                "role": data.get("role", "Unknown"),
+                "ready": data.get("ready", False)
+            })
+            await self.send_user_list()
+
+        elif data.get("type") == "ready_status":
             for u in connected_users.get(self.game_id, []):
                 if u["username"] == self.username:
                     u["ready"] = data.get("ready", False)
-        await self.send_user_list()
+            await self.send_user_list()
+
 
     async def send_user_list(self):
         # Sort team → branch → role

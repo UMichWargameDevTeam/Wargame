@@ -60,9 +60,14 @@ export default function RoleSelectPage() {
 
         // Optionally send "joined" event before redirect
         const socket = new WebSocket(`ws://localhost:8000/ws/game/${gameInstance}/`);
+
         socket.onopen = () => {
             socket.send(JSON.stringify({
-                type: 'ready_status',
+                type: 'join',
+                username: sessionStorage.getItem('username'),
+                team,
+                branch: selectedBranch,
+                role: selectedRole,
                 ready: false,
             }));
             router.push('/mainmap');

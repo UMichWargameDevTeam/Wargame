@@ -55,9 +55,10 @@ export default function CreateGamePage() {
 
             sessionStorage.setItem('gameInstanceId', data[0].id);
             sessionStorage.setItem('gameJoinCode', data[0].join_code);
-            sessionStorage.setItem('role', 'Gamemaster'); // ✅ Save role
+            sessionStorage.setItem('role', 'Gamemaster'); 
             setJoinedGameCode(data[0].join_code);
             setJoinGameCode('');
+            
         } catch (err) {
             setJoinError((err as Error).message);
         }
