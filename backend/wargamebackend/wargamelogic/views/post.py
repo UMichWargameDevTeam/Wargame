@@ -18,6 +18,10 @@ from ..check_roles import (
     require_role_instance, require_any_role_instance
 )
 
+# any user can create a role for themselves for any game,
+# but they cannot create a gamemaster role for a game that already has a gamemaster,
+# and they cannot create multiple roles for themselves in the same game.
+# if they want to change their role, a gamemaster or admin must do it.
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @csrf_exempt
@@ -59,62 +63,30 @@ def register_role(request):
             except TeamInstance.DoesNotExist:
                 return JsonResponse({'error': f'TeamInstance not found for team "{team_name}" in game "{game_join_code}"'}, status=404)
 
-            try:
-                RoleInstance.objects.create(
-                    team_instance=team_instance,
-                    role=role,
-                    user=request.user,
-                    supply_points=0
-                )
-            except IntegrityError:
-                return JsonResponse({'error': f'Role already assigned for user {request.user.username}'}, status=400)
+            if role.name == "Gamemaster":
+                if RoleInstance.objects.filter(
+                    team_instance__game_instance=game_instance,
+                    role__name="Gamemaster"
+                ).exists():
+                    return JsonResponse({'error': 'This game already has a Gamemaster'}, status=400)
+
+            # Check if the user already has a role in this game
+            if RoleInstance.objects.filter(
+                team_instance__game_instance=game_instance,
+                user=request.user
+            ).exists():
+                return JsonResponse({'error': f'User {request.user.username} already has a role in this game'}, status=400)
+
+            RoleInstance.objects.create(
+                team_instance=team_instance,
+                role=role,
+                user=request.user,
+            )
 
             print(f"[Backend] Role registered: {role_name} for team: {team_name} by user: {request.user.username}")
-            return JsonResponse({'status': 'ok', 'role': role_name, 'team': team_name})
+            return JsonResponse({'status': 'ok', 'role': role_name, 'team': team_name}, status=201)
 
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
 
     return JsonResponse({'error': 'Invalid method'}, status=405)
-
-
-# --------------------------- GAME LOGIC --------------------------- #
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-@require_role_instance({
-    'team_instance': lambda request, kwargs: get_object_or_404(UnitInstance, pk=request.data.get('unitId')).team_instance
-    # TODO: add more criteria here once we get more info from the mechanics team
-})
-def move_unit(request):
-    unit_instance_id = request.data.get('unitId')
-    target_row = request.data.get('targetRow')
-    target_col = request.data.get('targetCol')
-
-    if unit_instance_id is None or target_row is None or target_col is None:
-        return JsonResponse({'error': 'Missing parameters'}, status=400)
-
-    try:
-        unit_instance = UnitInstance.objects.select_related('unit', 'tile', 'team').get(id=unit_instance_id)
-    except UnitInstance.DoesNotExist:
-        return JsonResponse({'error': 'UnitInstance not found'}, status=404)
-
-    # TODO: Add team ownership validation if you want to ensure user controls this unit
-    # e.g., if unit_instance.team.user != user: return JsonResponse(...)
-
-    try:
-        target_tile = Tile.objects.get(row=target_row, column=target_col)
-    except Tile.DoesNotExist:
-        return JsonResponse({'error': 'Target tile does not exist'}, status=404)
-
-    success, message = move_unit_instance(unit_instance, target_tile)
-
-    if not success:
-        return JsonResponse({'error': message}, status=400)
-
-    return JsonResponse({
-        'status': 'moved',
-        'new_position': {
-            'row': target_tile.row,
-            'column': target_tile.column,
-        }
-    })
