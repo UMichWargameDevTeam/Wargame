@@ -25,6 +25,7 @@ from ..serializers import (
     TileSerializer,
 )
 from ..game_logic import *
+from ..check_roles import role_required, any_role_required
 
 def main_map(request):
     return JsonResponse({"message": "Hello from Django view!"})
@@ -86,7 +87,7 @@ def get_tile_by_coords(request, row, column):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def get_game_team_instances_by_name(request, join_code, team_name):
+def get_game_team_instance_by_name(request, join_code, team_name):
     game_instance = get_object_or_404(GameInstance, join_code=join_code)
     team = get_object_or_404(Team, name=team_name)
     team_instance = get_object_or_404(TeamInstance, game_instance=game_instance, team=team)
@@ -104,8 +105,19 @@ def get_game_role_instances_by_team_and_role(request, join_code, team_name, role
     serializer = RoleInstanceSerializer(role_instances, many=True)
     return Response(serializer.data)
 
+# To be used by the gamemaster.
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+def get_game_unit_instances(request, join_code):
+    game_instance = get_object_or_404(GameInstance, join_code=join_code)
+    unit_instances = UnitInstance.objects.filter(team_instance__game_instance=game_instance)
+    serializer = UnitInstanceSerializer(unit_instances, many=True)
+    return Response(serializer.data)
+
+# To be used by team overall commanders.
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+@role_required(name='Overall Commander')
 def get_game_unit_instances_by_team_name(request, join_code, team_name):
     game_instance = get_object_or_404(GameInstance, join_code=join_code)
     team = get_object_or_404(Team, name=team_name)
@@ -114,24 +126,20 @@ def get_game_unit_instances_by_team_name(request, join_code, team_name):
     serializer = UnitInstanceSerializer(unit_instances, many=True)
     return Response(serializer.data)
 
+# To be used by team branch commanders.
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def get_game_unit_instances_by_team_name_and_domain(request, join_code, team_name, domain):
-    valid_domains = [d[0] for d in Unit.DOMAINS]
-    if domain not in valid_domains:
-        return Response({'error': f'Invalid domain: {domain}. Must be one of {valid_domains}'}, status=status.HTTP_400_BAD_REQUEST)
+def get_game_unit_instances_by_team_name_and_branch(request, join_code, team_name, branch):
+    valid_branches = [b[0] for b in Unit.BRANCHES]
+    if branch not in valid_branches:
+        return Response(
+            {'error': f'Invalid branch: {branch}. Must be one of {valid_branches}'},
+            status=status.HTTP_400_BAD_REQUEST
+        )
     game_instance = get_object_or_404(GameInstance, join_code=join_code)
     team = get_object_or_404(Team, name=team_name)
     team_instance = get_object_or_404(TeamInstance, game_instance=game_instance, team=team)
-    unit_instances = UnitInstance.objects.filter(team_instance=team_instance, unit__domain=domain)
-    serializer = UnitInstanceSerializer(unit_instances, many=True)
-    return Response(serializer.data)
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_game_unit_instances(request, join_code):
-    game_instance = get_object_or_404(GameInstance, join_code=join_code)
-    unit_instances = UnitInstance.objects.filter(team_instance__game_instance=game_instance)
+    unit_instances = UnitInstance.objects.filter(team_instance=team_instance, unit__branch=branch)
     serializer = UnitInstanceSerializer(unit_instances, many=True)
     return Response(serializer.data)
 

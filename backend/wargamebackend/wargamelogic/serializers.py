@@ -61,6 +61,7 @@ class TeamInstanceSerializer(serializers.ModelSerializer):
 class RoleInstanceSerializer(serializers.ModelSerializer):
     team_instance = TeamInstanceSerializer()
     role = RoleSerializer()
+    user = serializers.StringRelatedField()
     
     class Meta:
         model = RoleInstance
@@ -76,7 +77,7 @@ class UnitInstanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = UnitInstance
         fields = [
-            'id', 'unit', 'team', 'tile', 'health', 'supply_count',
+            'id', 'unit', 'team_instance', 'tile', 'health', 'supply_count',
             'row', 'column'  # writable for PATCH
         ]
 

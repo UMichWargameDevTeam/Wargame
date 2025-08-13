@@ -3,7 +3,8 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import DraggableAsset from './DraggableAsset';
 import { Asset } from "@/lib/Types";
-import { authed_fetch, WS_URL } from '@/lib/utils';
+import { WS_URL } from '@/lib/utils';
+import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 
 
 interface Props {
@@ -29,7 +30,7 @@ export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
     const [elementDragId, setElementDragId] = useState<number>(0);
     const [showGrid, setShowGrid] = useState(true);
-
+    const authed_fetch = useAuthedFetch()
 
     useEffect(() => {
         const savedZoom = sessionStorage.getItem('map_zoom');
