@@ -5,6 +5,7 @@ from .views import (
 from rest_framework.routers import DefaultRouter
 from .view_sets import (
     TeamViewSet,
+    TeamInstanceViewSet,
     RoleViewSet,
     RoleInstanceViewSet,
     UnitViewSet,
@@ -20,6 +21,7 @@ from .view_sets import (
 
 router = DefaultRouter()
 router.register(r'teams', TeamViewSet)
+router.register(r'team-instances', TeamInstanceViewSet)
 router.register(r'roles', RoleViewSet)
 router.register(r'role-instances', RoleInstanceViewSet)
 router.register(r'units', UnitViewSet)

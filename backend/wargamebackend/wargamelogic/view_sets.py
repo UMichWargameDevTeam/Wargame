@@ -100,7 +100,7 @@ class RoleInstanceViewSet(viewsets.ModelViewSet):
             'role.name':'Gamemaster'
         },
         {
-            'id': lambda request, kwargs: kwargs['pk'],
+            'id': lambda request, kwargs: int(kwargs['pk']),
         },
     ])
     def destroy(self, request, *args, **kwargs):
@@ -124,10 +124,16 @@ class UnitInstanceViewSet(viewsets.ModelViewSet):
 
     # TODO: restrict the get method of this endpoint
 
-    @require_role_instance({
-        'team_instance': lambda request, kwargs: get_object_or_404(UnitInstance, pk=kwargs['pk']).team_instance
-        # TODO: add more criteria here once we get more info from the mechanics team
-    })
+    @require_any_role_instance([
+        {
+            'team_instance.game_instance': lambda request, kwargs: get_object_or_404(UnitInstance, pk=kwargs['pk']).team_instance.game_instance,
+            'role.name':'Gamemaster'
+        },
+        {
+            'team_instance': lambda request, kwargs: get_object_or_404(UnitInstance, pk=kwargs['pk']).team_instance
+            # TODO: add more criteria here once we get more info from the mechanics team
+        }
+    ])
     def partial_update(self, request, *args, **kwargs):
         instance = self.get_object()
 
@@ -149,10 +155,16 @@ class UnitInstanceViewSet(viewsets.ModelViewSet):
 
         return Response(serializer.data)
 
-    @require_role_instance({
-        'team_instance': lambda request, kwargs: get_object_or_404(UnitInstance, pk=kwargs['pk']).team_instance
-        # TODO: add more criteria here once we get more info from the mechanics team
-    })
+    @require_any_role_instance([
+        {
+            'team_instance.game_instance': lambda request, kwargs: get_object_or_404(UnitInstance, pk=kwargs['pk']).team_instance.game_instance,
+            'role.name':'Gamemaster'
+        },
+        {
+            'team_instance': lambda request, kwargs: get_object_or_404(UnitInstance, pk=kwargs['pk']).team_instance
+            # TODO: add more criteria here once we get more info from the mechanics team
+        }
+    ])
     def update(self, request, *args, **kwargs):
         # Make PUT behave the same way
         return self.partial_update(request, *args, **kwargs)
