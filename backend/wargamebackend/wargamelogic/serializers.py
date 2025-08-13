@@ -1,4 +1,5 @@
 from rest_framework import serializers
+from django.contrib.auth.models import User
 from .models.static import (
     Team, Role, Unit, Attack, Ability, Landmark, Tile
 )
@@ -12,40 +13,65 @@ class TeamSerializer(serializers.ModelSerializer):
     class Meta:
         model = Team
         fields = '__all__'
+        read_only_fields = ['id']
 
 class RoleSerializer(serializers.ModelSerializer):
     class Meta:
         model = Role
         fields = '__all__'
+        read_only_fields = ['id']
 
 class UnitSerializer(serializers.ModelSerializer):
     class Meta:
         model = Unit
         fields = '__all__'
+        read_only_fields = ['id']
 
 class AttackSerializer(serializers.ModelSerializer):
     unit = UnitSerializer(read_only=True)
 
+    unit_id = serializers.PrimaryKeyRelatedField(
+        source='unit',
+        queryset=Unit.objects.all(),
+        write_only=True
+    )
+
     class Meta:
         model = Attack
-        fields = '__all__'
+        fields = [
+            'id', 'unit', 'name', 'cost', 'to_hit', 'shots', 'min_damage', 'max_damage', 'range', 'type', 'attack_modifier', 'attack_modifier_applies_to', 'description'
+            'unit_id'
+        ]
+        read_only_fields = ['id']
 
 class AbilitySerializer(serializers.ModelSerializer):
     unit = UnitSerializer(read_only=True)
 
+    unit_id = serializers.PrimaryKeyRelatedField(
+        source='unit',
+        queryset=Unit.objects.all(),
+        write_only=True
+    )
+
     class Meta:
         model = Ability
-        fields = '__all__'
+        fields = [
+            'id', 'unit', 'name', 'description',
+            'unit_id'
+        ]
+        read_only_fields = ['id']
 
 class LandmarkSerializer(serializers.ModelSerializer):
     class Meta:
         model = Landmark
         fields = '__all__'
+        read_only_fields = ['id']
 
 class TileSerializer(serializers.ModelSerializer):
     class Meta:
         model = Tile
         fields = '__all__'
+        read_only_fields = ['id']
 
 # dynamic model serializers
 
@@ -53,51 +79,124 @@ class GameInstanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = GameInstance
         fields = '__all__'
+        read_only_fields = ['id']
 
 class TeamInstanceSerializer(serializers.ModelSerializer):
-    game_instance = GameInstanceSerializer()
+    game_instance = GameInstanceSerializer(read_only=True)
     team = TeamSerializer(read_only=True)
+
+    game_instance_id = serializers.PrimaryKeyRelatedField(
+        source='game_instance',
+        queryset=GameInstance.objects.all(),
+        write_only=True
+    )
+    team_id = serializers.PrimaryKeyRelatedField(
+        source='team',
+        queryset=Team.objects.all(),
+        write_only=True
+    )
 
     class Meta:
         model = TeamInstance
-        fields = '__all__'
+        fields = [
+            'id', 'game_instance', 'team', 'victory_points',
+            'game_instance_id', 'team_id'
+        ]
+        read_only_fields = ['id']
 
 class RoleInstanceSerializer(serializers.ModelSerializer):
     team_instance = TeamInstanceSerializer(read_only=True)
     role = RoleSerializer(read_only=True)
     user = serializers.StringRelatedField(read_only=True)
+
+    team_instance_id = serializers.PrimaryKeyRelatedField(
+        source='team_instance',
+        queryset=TeamInstance.objects.all(),
+        write_only=True
+    )
+    role_id = serializers.PrimaryKeyRelatedField(
+        source='role',
+        queryset=Role.objects.all(),
+        write_only=True
+    )
+    user_id = serializers.PrimaryKeyRelatedField(
+        source='user',
+        queryset=User.objects.all(),
+        write_only=True
+    )
     
     class Meta:
         model = RoleInstance
-        fields = '__all__'
+        fields = [
+            'id', 'team_instance', 'role', 'user',
+            'team_instance_id', 'role_id', 'user_id'
+        ]
+        read_only_fields = ['id']
 
 class UnitInstanceSerializer(serializers.ModelSerializer):
     team_instance = TeamInstanceSerializer(read_only=True)
     unit = UnitSerializer(read_only=True)
-    tile = TileSerializer(read_only=True)  # Show tile details in GET
+    tile = TileSerializer(read_only=True)
+
     row = serializers.IntegerField(write_only=True, required=False)
     column = serializers.IntegerField(write_only=True, required=False)
 
     class Meta:
         model = UnitInstance
         fields = [
-            'id', 'unit', 'team_instance', 'tile', 'health', 'supply_count',
+            'id', 'team_instance', 'unit', 'tile', 'health', 'supply_count',
             'row', 'column'  # writable for PATCH
         ]
+        read_only_fields = ['id']
 
 class LandmarkInstanceSerializer(serializers.ModelSerializer):
     game_instance = GameInstanceSerializer(read_only=True)
     team_instance = TeamInstanceSerializer(read_only=True, allow_null=True)
     landmark = LandmarkSerializer(read_only=True)
 
+    game_instance_id = serializers.PrimaryKeyRelatedField(
+        source='game_instance',
+        queryset=GameInstance.objects.all(),
+        write_only=True
+    )
+    team_instance_id = serializers.PrimaryKeyRelatedField(
+        source='team_instance',
+        queryset=TeamInstance.objects.all(),
+        write_only=True
+    )
+    landmark_id = serializers.PrimaryKeyRelatedField(
+        source='landmark',
+        queryset=Landmark.objects.all(),
+        write_only=True
+    )
+
     class Meta:
         model = LandmarkInstance
-        fields = '__all__'
+        fields = [
+            'id', 'game_instance', 'team_instance', 'landmark', 'victory_points',
+            'game_instance_id', 'team_instance_id', 'landmark_id'
+        ]
+        read_only_fields = ['id']
 
 class LandmarkInstanceTileSerializer(serializers.ModelSerializer):
     landmark_instance = LandmarkInstanceSerializer(read_only=True)
     tile = TileSerializer(read_only=True)
 
+    landmark_instance_id = serializers.PrimaryKeyRelatedField(
+        source='landmark_instance',
+        queryset=Landmark.objects.all(),
+        write_only=True
+    )
+    tile_id = serializers.PrimaryKeyRelatedField(
+        source='tile',
+        queryset=Tile.objects.all(),
+        write_only=True
+    )
+
     class Meta:
         model = LandmarkInstanceTile
-        fields = '__all__'
+        fields = [
+            'id', 'landmark_instance', 'tile',
+            'landmark_instance_id', 'tile_id'
+        ]
+        read_only_fields = ['id']

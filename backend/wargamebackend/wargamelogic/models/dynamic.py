@@ -14,7 +14,7 @@ class TeamInstance(models.Model):
     team = models.ForeignKey(Team, on_delete=models.CASCADE)
     # Victory points could also be calculated by querying all LandmarkInstances
     # Whose team_instance matches this teamInstance, then summing their victory_points
-    victory_points = models.FloatField()
+    victory_points = models.FloatField(default=0)
 
     class Meta:
         constraints = [
@@ -28,7 +28,7 @@ class RoleInstance(models.Model):
     team_instance = models.ForeignKey(TeamInstance, on_delete=models.CASCADE)
     role = models.ForeignKey(Role, on_delete=models.CASCADE)
     user = models.ForeignKey(User, on_delete=models.CASCADE)
-    supply_points = models.FloatField()
+    supply_points = models.FloatField(default=0)
 
     class Meta:
         constraints = [
