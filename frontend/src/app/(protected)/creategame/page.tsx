@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
+import UsersList from '@/components/UsersList';
 
 export default function CreateGamePage() {
     const [joinCode, setJoinCode] = useState('');
@@ -161,10 +162,7 @@ export default function CreateGamePage() {
                         )}
                     </div>
                 </div>
-
-                <div className="flex-1 bg-neutral-800 rounded-lg shadow-lg p-4 overflow-y-auto">
-                    <Users />
-                </div>
+                    <UsersList />
             </div>
         </div>
     );

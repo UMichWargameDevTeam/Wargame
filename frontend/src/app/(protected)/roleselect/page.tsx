@@ -3,7 +3,6 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import JoinGameDialog from '@/components/dialogs/JoinGameDialog';
-import { useUsers } from '@/context/UsersContext';
 
 const branchCommandRoles: Record<string, string> = {
     USA: 'USA-CC',
@@ -14,7 +13,6 @@ const branchCommandRoles: Record<string, string> = {
 
 export default function RoleSelectPage() {
     const router = useRouter();
-    const { updateUser } = useUsers();
 
     const [team, setTeam] = useState<string>('Red');
     const [selectedBranch, setSelectedBranch] = useState<string>('USA');
@@ -48,20 +46,27 @@ export default function RoleSelectPage() {
     };
 
     const handleContinue = () => {
-        if (!selectedRole) {
-            alert("Please select a role before continuing.");
+        if (!selectedRole || !gameInstance) {
+            alert("Please select a role and join a game before continuing.");
             return;
         }
 
-        updateUser({
-            username,
-            branch: selectedBranch,
-            team,
-            role: selectedRole,
-            status: 'notready',
-        });
+        // Save all details to sessionStorage
+        sessionStorage.setItem('team', team);
+        sessionStorage.setItem('branch', selectedBranch);
+        sessionStorage.setItem('role', selectedRole);
+        sessionStorage.setItem('gameInstanceId', gameInstance);
+        sessionStorage.setItem('username', username);
 
-        router.push('/mainmap');
+        // Optionally send "joined" event before redirect
+        const socket = new WebSocket(`ws://localhost:8000/ws/game/${gameInstance}/`);
+        socket.onopen = () => {
+            socket.send(JSON.stringify({
+                type: 'ready_status',
+                ready: false,
+            }));
+            router.push('/mainmap');
+        };
     };
 
     const handleJoinSuccess = (id: string, code: string) => {

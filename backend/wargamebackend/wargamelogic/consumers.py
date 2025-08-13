@@ -3,67 +3,58 @@ from channels.generic.websocket import AsyncWebsocketConsumer
 import datetime
 from django.contrib.auth import get_user_model
 
-class UsersConsumer(AsyncWebsocketConsumer):
-    async def connect(self):
-        self.group_name = "active_users"
-        await self.channel_layer.group_add(self.group_name, self.channel_name)
-        await self.accept()
+connected_users = {}  # {game_id: [{username, team, branch, role, ready}]}
 
-        await self.broadcast_users()
+class GameUsersConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        self.game_id = self.scope['url_route']['kwargs']['game_id']
+        self.username = self.scope['user'].username if self.scope['user'].is_authenticated else 'Guest'
+        
+        # Add to connected users
+        connected_users.setdefault(self.game_id, []).append({
+            "username": self.username,
+            "team": self.scope['session'].get('team', 'Unknown'),
+            "branch": self.scope['session'].get('branch', 'Unknown'),
+            "role": self.scope['session'].get('role', 'Unknown'),
+            "ready": False
+        })
+
+        await self.channel_layer.group_add(self.game_id, self.channel_name)
+        await self.accept()
+        await self.send_user_list()
 
     async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(self.group_name, self.channel_name)
-        await self.broadcast_users()
+        if self.game_id in connected_users:
+            connected_users[self.game_id] = [
+                u for u in connected_users[self.game_id] if u["username"] != self.username
+            ]
+        await self.channel_layer.group_discard(self.game_id, self.channel_name)
+        await self.send_user_list()
 
     async def receive(self, text_data):
-        """
-        Expect incoming JSON like:
-        {
-          "type": "update_user",
-          "username": "Jake",
-          "branch": "Navy",
-          "team": "Blue",
-          "role": "Commander",
-          "status": "notready"
-        }
-        """
         data = json.loads(text_data)
+        if data.get("type") == "ready_status":
+            for u in connected_users.get(self.game_id, []):
+                if u["username"] == self.username:
+                    u["ready"] = data.get("ready", False)
+        await self.send_user_list()
 
-        if data.get("type") == "update_user":
-            # store in memory or DB — here, we'll just broadcast
-            await self.channel_layer.group_send(
-                self.group_name,
-                {
-                    "type": "users.update",
-                    "user": data
-                }
-            )
-
-    async def broadcast_users(self):
-        # If storing in DB, fetch here
-        User = get_user_model()
-        users = User.objects.all().values(
-            "username", "branch", "team", "role", "status"
+    async def send_user_list(self):
+        # Sort team → branch → role
+        sorted_users = sorted(
+            connected_users.get(self.game_id, []),
+            key=lambda x: (x["team"], x["branch"], x["role"])
         )
         await self.channel_layer.group_send(
-            self.group_name,
+            self.game_id,
             {
-                "type": "users.list",
-                "users": list(users)
+                "type": "user_list",
+                "users": sorted_users
             }
         )
 
-    async def users_list(self, event):
-        await self.send(text_data=json.dumps({
-            "type": "users_list",
-            "users": event["users"]
-        }))
-
-    async def users_update(self, event):
-        await self.send(text_data=json.dumps({
-            "type": "user_update",
-            "user": event["user"]
-        }))
+    async def user_list(self, event):
+        await self.send(text_data=json.dumps({"type": "user_list", "users": event["users"]}))
 
 class MainMapConsumer(AsyncWebsocketConsumer):
     async def connect(self):
