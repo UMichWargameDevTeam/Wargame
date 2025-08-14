@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 import UsersList from '@/components/UsersList';
+import { WS_URL } from '@/lib/utils';
 
 export default function CreateGamePage() {
     const [joinCode, setJoinCode] = useState('');
@@ -53,14 +54,30 @@ export default function CreateGamePage() {
             const data = await res.json();
             if (data.length === 0) throw new Error('No matching join code');
 
-            sessionStorage.setItem('gameInstanceId', data[0].id);
+            const gameId = data[0].id;
+            sessionStorage.setItem('gameInstanceId', gameId);
             sessionStorage.setItem('gameJoinCode', data[0].join_code);
-            sessionStorage.setItem('role', 'Gamemaster'); 
+            sessionStorage.setItem('role', 'Gamemaster');
+            sessionStorage.setItem('username', sessionStorage.getItem('username') || 'Gamemaster');
+
+            // Open WS and send join event
+            const socket = new WebSocket(`${WS_URL}/game/${gameId}/`);
+            socket.onopen = () => {
+                socket.send(JSON.stringify({
+                    type: 'join',
+                    username: sessionStorage.getItem('username'),
+                    team: 'Gamemaster', // or whatever team logic you want
+                    branch: 'None',
+                    role: 'Gamemaster',
+                    ready: false,
+                }));
+            };
+
             setJoinedGameCode(data[0].join_code);
             setJoinGameCode('');
-            
+
         } catch (err) {
-            setJoinError((err as Error).message);
+
         }
     };
 
@@ -68,6 +85,7 @@ export default function CreateGamePage() {
         sessionStorage.removeItem('gameInstanceId');
         sessionStorage.removeItem('gameJoinCode');
         setJoinedGameCode(null);
+        window.location.reload();
     };
 
     return (
@@ -163,7 +181,9 @@ export default function CreateGamePage() {
                         )}
                     </div>
                 </div>
-                    <UsersList />
+                <div className="bg-neutral-800 rounded-lg max-w-md max-h-[475px] overflow-y-auto">
+                    <UsersList/>
+                </div>
             </div>
         </div>
     );
