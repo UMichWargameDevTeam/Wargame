@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import JoinGameDialog from '@/components/dialogs/JoinGameDialog';
+import { WS_URL } from '@/lib/utils';
 
 const branchCommandRoles: Record<string, string> = {
     USA: 'USA-CC',
@@ -59,7 +60,7 @@ export default function RoleSelectPage() {
         sessionStorage.setItem('username', username);
 
         // Optionally send "joined" event before redirect
-        const socket = new WebSocket(`ws://localhost:8000/ws/game/${gameInstance}/`);
+        const socket = new WebSocket(`${WS_URL}/game/${gameInstance}/`);
 
         socket.onopen = () => {
             socket.send(JSON.stringify({
