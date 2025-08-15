@@ -76,8 +76,11 @@ export default function CreateGamePage() {
             setJoinedGameCode(data[0].join_code);
             setJoinGameCode('');
 
-        } catch (err) {
-
+        } catch (err: unknown) {
+            if (err instanceof Error)
+                console.error(err.message);
+            else 
+                console.error("An unkown error has occured.")
         }
     };
 
