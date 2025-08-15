@@ -90,3 +90,53 @@ def register_role(request):
             return JsonResponse({'error': str(e)}, status=400)
 
     return JsonResponse({'error': 'Invalid method'}, status=405)
+
+def join_game_instance(request):
+    if request.method == "POST":
+        join_code = request.POST.get("join_code")
+        try:
+            game_instance = GameInstance.objects.get(join_code=join_code)
+        except GameInstance.DoesNotExist:
+            return JsonResponse({"error": "Invalid join code"}, status=400)
+
+        request.user.game_instance = game_instance
+        request.user.save()
+
+        return JsonResponse({"status": "success"})
+
+# --------------------------- GAME LOGIC --------------------------- #
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def move_unit(request):
+    unit_instance_id = request.data.get('unitId')
+    target_row = request.data.get('targetRow')
+    target_col = request.data.get('targetCol')
+
+    if unit_instance_id is None or target_row is None or target_col is None:
+        return JsonResponse({'error': 'Missing parameters'}, status=400)
+
+    try:
+        unit_instance = UnitInstance.objects.select_related('unit', 'tile', 'team').get(id=unit_instance_id)
+    except UnitInstance.DoesNotExist:
+        return JsonResponse({'error': 'UnitInstance not found'}, status=404)
+
+    # TODO: Add team ownership validation if you want to ensure user controls this unit
+    # e.g., if unit_instance.team.user != user: return JsonResponse(...)
+
+    try:
+        target_tile = Tile.objects.get(row=target_row, column=target_col)
+    except Tile.DoesNotExist:
+        return JsonResponse({'error': 'Target tile does not exist'}, status=404)
+
+    success, message = move_unit_instance(unit_instance, target_tile)
+
+    if not success:
+        return JsonResponse({'error': message}, status=400)
+
+    return JsonResponse({
+        'status': 'moved',
+        'new_position': {
+            'row': target_tile.row,
+            'column': target_tile.column,
+        }
+    })

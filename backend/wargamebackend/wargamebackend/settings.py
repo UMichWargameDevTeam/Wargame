@@ -33,6 +33,7 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1", "t", "yes")
 # print(DEBUG)
 
+
 ALLOWED_HOSTS = [
     "longtermwargame.onrender.com",
     "localhost",

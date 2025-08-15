@@ -45,6 +45,7 @@ export default function LoginForm() {
             const data = await res.json();
             localStorage.setItem("accessToken", data.access);
             localStorage.setItem("refreshToken", data.refresh);
+            sessionStorage.setItem("username", username);
 
             router.push('/roleselect') // after login
         } catch (err) {
