@@ -1,13 +1,11 @@
 'use client';
 
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useCallback } from 'react';
 import DraggableAsset from './DraggableAsset';
 import { Asset } from "@/lib/Types";
-import {authed_fetch, WS_URL} from '@/lib/utils'
+import { WS_URL } from '@/lib/utils';
+import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 
-const GRID_ROWS = 25;
-const GRID_COLS = 40;
-const CELL_SIZE = 40;
 
 interface Props {
     mapSrc: string;
@@ -15,39 +13,54 @@ interface Props {
     setAssets: React.Dispatch<React.SetStateAction<Asset[]>>;
 }
 
+const BASE_CELL_SIZE = 80;
+const MIN_ZOOM = 0.5;
+const MAX_ZOOM = 5;
+
+
 export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
     const containerRef = useRef<HTMLDivElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
     const socketRef = useRef<WebSocket | null>(null);
+    const imageRef = useRef<HTMLImageElement | null>(null);
 
     const [zoom, setZoom] = useState(1);
-    const [offset, setOffset] = useState({ x: 0, y: 0 });
-    const [initialized, setInitialized] = useState(false);
+    const [offset, setOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
     const [dragging, setDragging] = useState(false);
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
     const [elementDragId, setElementDragId] = useState<number>(0);
     const [showGrid, setShowGrid] = useState(true);
+    const authed_fetch = useAuthedFetch()
 
-    const gridWidth = GRID_COLS * CELL_SIZE;
-    const gridHeight = GRID_ROWS * CELL_SIZE;
-
-    // Fit map to screen initially
     useEffect(() => {
-        const container = containerRef.current;
-        if (!container || initialized) return;
+        const savedZoom = sessionStorage.getItem('map_zoom');
+        if (savedZoom) {
+            setZoom(Number(savedZoom));
+        }
 
-        const zoomX = container.clientWidth / gridWidth;
-        const zoomY = container.clientHeight / gridHeight;
-        const initialZoom = Math.min(zoomX, zoomY);
+        const savedOffset = sessionStorage.getItem('map_offset');
+        if (savedOffset) {
+            setOffset(JSON.parse(savedOffset));
+        }
+    }, []);
 
-        const initialOffsetX = (container.clientWidth - gridWidth * initialZoom) / 2;
-        const initialOffsetY = (container.clientHeight - gridHeight * initialZoom) / 2;
+    // Save state to sessionStorage
+    useEffect(() => {
+        sessionStorage.setItem('map_zoom', zoom.toString());
+        sessionStorage.setItem('map_offset', JSON.stringify(offset));
+    }, [zoom, offset]);
 
-        setZoom(initialZoom);
-        setOffset({ x: initialOffsetX, y: initialOffsetY });
-        setInitialized(true);
-    }, [initialized, gridWidth, gridHeight]);
+    // Load map image once
+    useEffect(() => {
+        const img = new Image();
+        img.src = mapSrc;
+        img.onload = () => {
+            imageRef.current = img;
+            draw();
+        };
+    }, [mapSrc]);
 
-    // WebSocket connection for live updates
+    // WebSocket setup
     useEffect(() => {
         const socket = new WebSocket(`${WS_URL}/unit-instances/`);
         socketRef.current = socket;
@@ -55,23 +68,137 @@ export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
         socket.onmessage = (event) => {
             const data = JSON.parse(event.data);
             if (data.type === "unit_moved") {
-                const updated = data.payload;
                 setAssets(prev =>
                     prev.map(asset =>
-                        asset.id === updated.id ? updated : asset
+                        asset.id === data.payload.id ? data.payload : asset
                     )
                 );
             }
         };
 
-        socket.onclose = () => console.log('WebSocket closed');
         return () => socket.close();
     }, [setAssets]);
 
+    function getLabelPart(row: number, col: number, useLowercase = false) {
+        const letter = String.fromCharCode((useLowercase ? 97 : 65) + row); // a-z or A-Z
+        const number = String(col + 1).padStart(2, '0');
+        return `${letter}${number}`;
+    }
+
+
+    const draw = useCallback(() => {
+        const canvas = canvasRef.current;
+        const ctx = canvas?.getContext('2d');
+        if (!canvas || !ctx) return;
+
+        const container = containerRef.current;
+        if (!container) return;
+        canvas.width = container.clientWidth;
+        canvas.height = container.clientHeight;
+
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Draw map image
+        if (imageRef.current) {
+            ctx.save();
+            ctx.translate(offset.x, offset.y);
+            ctx.scale(zoom, zoom);
+            ctx.drawImage(imageRef.current, 0, 0);
+            ctx.restore();
+        }
+
+        // Draw grid
+        if (showGrid) {
+            ctx.save();
+            ctx.translate(offset.x, offset.y);
+            ctx.scale(zoom, zoom);
+
+            const imgW = imageRef.current?.width || 0;
+            const imgH = imageRef.current?.height || 0;
+
+            // Determine grid level based on zoom
+            // Larger zoom = smaller cells
+            let level = 0;
+            if (zoom >= 2) level = 2;       // medium grid
+            else if (zoom >= 1) level = 1;  // coarse grid
+            else level = 0;                 // very coarse
+
+            const cellSize = BASE_CELL_SIZE / Math.pow(2, level);
+
+            ctx.strokeStyle = 'rgba(255,255,255,0.3)';
+            ctx.lineWidth = 1 / zoom;
+            ctx.font = `${10 / zoom}px sans-serif`;
+            ctx.fillStyle = 'white';
+
+            // Vertical lines
+            for (let x = 0; x <= imgW; x += cellSize) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, imgH);
+                ctx.stroke();
+            }
+            // Horizontal lines
+            for (let y = 0; y <= imgH; y += cellSize) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(imgW, y);
+                ctx.stroke();
+            }
+
+            const rows = Math.ceil(imgH / cellSize);
+            const cols = Math.ceil(imgW / cellSize);
+
+            for (let row = 0; row < rows; row++) {
+                for (let col = 0; col < cols; col++) {
+                    let label = "";
+
+                    if (level === 0) {
+                        // Top-level
+                        label = getLabelPart(row, col, false);
+                    }
+                    else if (level === 1) {
+                        // Parent tile coordinates at level 0
+                        const parentRow = Math.floor(row / 2);
+                        const parentCol = Math.floor(col / 2);
+
+                        label = getLabelPart(parentRow, parentCol, false) +
+                            getLabelPart(row % 2, col % 2, false);
+                    }
+                    else if (level === 2) {
+                        // Grandparent at level 0
+                        const grandParentRow = Math.floor(row / 4);
+                        const grandParentCol = Math.floor(col / 4);
+                        const grandParentLabel = getLabelPart(grandParentRow, grandParentCol, false);
+
+                        // Parent at level 1
+                        const parentRow = Math.floor(row / 2) % 2;
+                        const parentCol = Math.floor(col / 2) % 2;
+                        const parentLabel = getLabelPart(parentRow, parentCol, false);
+
+                        // Child (this level)
+                        const childLabel = getLabelPart(row % 2, col % 2, true);
+
+                        label = grandParentLabel + parentLabel + childLabel;
+                    }
+
+                    ctx.fillText(label, col * cellSize + 2, row * cellSize + 12 / zoom);
+                }
+            }
+
+            ctx.restore();
+        }
+    }, [offset, zoom, showGrid]);
+
+
+    // Redraw on changes
+    useEffect(() => {
+        draw();
+    }, [draw]);
+
+    // Zoom
     const handleWheel = (e: React.WheelEvent) => {
-        //e.preventDefault();
         const delta = -e.deltaY * 0.001;
-        const newZoom = Math.min(Math.max(zoom + delta, 0.5), 3);
+        const newZoom = Math.min(Math.max(zoom + delta, MIN_ZOOM), MAX_ZOOM);
 
         const rect = containerRef.current?.getBoundingClientRect();
         if (rect) {
@@ -88,6 +215,7 @@ export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
         setZoom(newZoom);
     };
 
+    // Panning
     const handleMouseDown = (e: React.MouseEvent) => {
         if (elementDragId) return;
         setDragging(true);
@@ -105,9 +233,8 @@ export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
             if (rect) {
                 const mouseX = (e.clientX - rect.left - offset.x) / zoom;
                 const mouseY = (e.clientY - rect.top - offset.y) / zoom;
-
-                const newCol = Math.floor(mouseX / CELL_SIZE);
-                const newRow = Math.floor(mouseY / CELL_SIZE);
+                const newCol = Math.floor(mouseX / BASE_CELL_SIZE);
+                const newRow = Math.floor(mouseY / BASE_CELL_SIZE);
 
                 setAssets(prev =>
                     prev.map(asset =>
@@ -119,7 +246,6 @@ export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
             }
         }
     };
-
 
     const handleMouseUp = async () => {
         setDragging(false);
@@ -138,7 +264,6 @@ export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
                 }),
             });
 
-            // Broadcast over WebSocket
             if (socketRef.current?.readyState === WebSocket.OPEN) {
                 socketRef.current.send(JSON.stringify({
                     type: "unit_moved",
@@ -153,72 +278,32 @@ export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
     };
 
     return (
-        <div className="relative w-full h-full overflow-hidden">
+        <div className="relative w-full h-full overflow-hidden" ref={containerRef}>
             <button
-                onClick={() => setShowGrid(!showGrid)}
+                onClick={() => { setShowGrid(!showGrid); draw(); }}
                 className="absolute top-2 left-2 z-50 bg-neutral-700 text-white px-3 py-1 rounded"
             >
                 Toggle Grid
             </button>
 
-            <div
-                ref={containerRef}
-                className="w-full h-full cursor-grab active:cursor-grabbing select-none"
+            <canvas
+                ref={canvasRef}
+                className="absolute top-0 left-0 w-full h-full"
                 onMouseDown={handleMouseDown}
                 onMouseMove={handleMouseMove}
                 onMouseUp={handleMouseUp}
                 onWheel={handleWheel}
-            >
-                <div
-                    style={{
-                        transform: `translate(${offset.x}px, ${offset.y}px) scale(${zoom})`,
-                        transformOrigin: 'top left',
-                        width: gridWidth,
-                        height: gridHeight,
-                        position: 'relative',
-                        backgroundImage: `url(${mapSrc})`,
-                        backgroundSize: '100% 100%',
-                        backgroundRepeat: 'no-repeat',
-                    }}
-                    className='select-none'
-                >
-                    {/* Grid */}
-                    {showGrid &&
-                        Array.from({ length: GRID_ROWS }).flatMap((_, row) =>
-                            Array.from({ length: GRID_COLS }).map((_, col) => (
-                                <div
-                                    key={`${row}-${col}`}
-                                    style={{
-                                        position: 'absolute',
-                                        left: col * CELL_SIZE,
-                                        top: row * CELL_SIZE,
-                                        width: CELL_SIZE,
-                                        height: CELL_SIZE,
-                                        border: '1px solid rgba(255,255,255,0.1)',
-                                        fontSize: 10,
-                                        color: 'white',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        pointerEvents: 'none',
-                                    }}
-                                >
-                                    {`${String.fromCharCode(65 + row)}${String(col + 1).padStart(2, '0')}`}
-                                </div>
-                            ))
-                        )}
+            />
 
-                    {/* Draggable Units */}
-                    {assets.map(asset => (
-                        <DraggableAsset
-                            key={asset.id}
-                            asset={asset}
-                            cellSize={CELL_SIZE}
-                            onMouseDown={() => setElementDragId(asset.id)}
-                        />
-                    ))}
-                </div>
-            </div>
+            {/* Assets rendered above canvas */}
+            {assets.map(asset => (
+                <DraggableAsset
+                    key={asset.id}
+                    asset={asset}
+                    cellSize={BASE_CELL_SIZE}
+                    onMouseDown={() => setElementDragId(asset.id)}
+                />
+            ))}
         </div>
     );
 }

@@ -1,4 +1,5 @@
 from django.db import models
+from django.contrib.auth.models import User
 from .static import Role, Team, Unit, Tile, Landmark
 
 class GameInstance(models.Model):
@@ -13,7 +14,7 @@ class TeamInstance(models.Model):
     team = models.ForeignKey(Team, on_delete=models.CASCADE)
     # Victory points could also be calculated by querying all LandmarkInstances
     # Whose team_instance matches this teamInstance, then summing their victory_points
-    victory_points = models.FloatField()
+    victory_points = models.FloatField(default=0)
 
     class Meta:
         constraints = [
@@ -26,11 +27,16 @@ class TeamInstance(models.Model):
 class RoleInstance(models.Model):
     team_instance = models.ForeignKey(TeamInstance, on_delete=models.CASCADE)
     role = models.ForeignKey(Role, on_delete=models.CASCADE)
-    user = models.CharField(max_length=255)  # e.g., browser ID or cookie
-    supply_points = models.FloatField()
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
+    supply_points = models.FloatField(default=0)
 
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["team_instance", "user"], name="unique_team_user_pair")
+        ]
+    
     def __str__(self):
-        return f"GameInstance: {self.team_instance.game_instance.join_code} | {self.team_instance.team.name} | {self.role.name} | User: {self.user} | Supply Points: {self.supply_points}"
+        return f"GameInstance: {self.team_instance.game_instance.join_code} | {self.team_instance.team.name} | {self.role.name} | User: {self.user.username} | Supply Points: {self.supply_points}"
 
 class UnitInstance(models.Model):
     team_instance = models.ForeignKey(TeamInstance, on_delete=models.CASCADE)
@@ -71,3 +77,13 @@ class LandmarkInstanceTile(models.Model):
         team_name = self.landmark_instance.team_instance.team.name if self.landmark_instance.team_instance else "No Team"
         return f"GameInstance: {self.landmark_instance.game_instance.join_code} | {team_name} | {self.landmark_instance.landmark.name} | Tile ({self.tile.row}, {self.tile.column})"
 
+
+class Profile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE)
+    game_instance = models.ForeignKey(
+        GameInstance,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="profiles"
+    )

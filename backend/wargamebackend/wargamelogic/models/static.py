@@ -21,20 +21,27 @@ class Role(models.Model):
         return self.name
 
 class Unit(models.Model):
+    BRANCHES = [
+        ("Air Force", "Air Force"),
+        ("Army", "Army"),
+        ("Navy", "Navy"),
+    ]
     DOMAINS = [
         ("Ground", "Ground"),
         ("Air", "Air"),
         ("Sea", "Sea"),
-        ("Logistic", "Logistic"),
     ]
     DEFENDER_TYPES = [
         ("Light", "Light"),
         ("Medium", "Medium"),
         ("Heavy", "Heavy"),
+        ("Structure", "Structure")
     ]
 
     name = models.CharField(max_length=100, unique=True)
+    branch = models.CharField(max_length=20, choices=BRANCHES)
     domain = models.CharField(max_length=20, choices=DOMAINS)
+    is_logistic = models.BooleanField()
     type = models.CharField(max_length=20, choices=DEFENDER_TYPES)
     speed = models.FloatField()
     max_health = models.FloatField()

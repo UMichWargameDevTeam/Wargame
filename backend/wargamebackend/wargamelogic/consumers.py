@@ -1,7 +1,73 @@
 import json
 from channels.generic.websocket import AsyncWebsocketConsumer
-import asyncio
 import datetime
+from django.contrib.auth import get_user_model
+
+connected_users = {}  # {game_id: [{username, team, branch, role, ready}]}
+
+class GameUsersConsumer(AsyncWebsocketConsumer):
+    async def connect(self):
+        self.game_id = self.scope['url_route']['kwargs']['game_id']
+        self.username = self.scope['session'].get('username', 'Guest')
+        
+        # Add to connected users
+        connected_users.setdefault(self.game_id, []).append({
+            "username": self.scope['session'].get('username', 'Guest'),
+            "team": self.scope['session'].get('team', 'Unknown'),
+            "branch": self.scope['session'].get('branch', 'Unknown'),
+            "role": self.scope['session'].get('role', 'Unknown'),
+            "ready": False
+        })
+
+        await self.channel_layer.group_add(self.game_id, self.channel_name)
+        await self.accept()
+        await self.send_user_list()
+
+    async def disconnect(self, close_code):
+        if self.game_id in connected_users:
+            connected_users[self.game_id] = [
+                u for u in connected_users[self.game_id] if u["username"] != self.username
+            ]
+        await self.channel_layer.group_discard(self.game_id, self.channel_name)
+        await self.send_user_list()
+
+    async def receive(self, text_data):
+        data = json.loads(text_data)
+
+        if data.get("type") == "join":
+            self.username = data["username"]
+            connected_users.setdefault(self.game_id, []).append({
+                "username": self.username,
+                "team": data.get("team", "Unknown"),
+                "branch": data.get("branch", "Unknown"),
+                "role": data.get("role", "Unknown"),
+                "ready": data.get("ready", False)
+            })
+            await self.send_user_list()
+
+        elif data.get("type") == "ready_status":
+            for u in connected_users.get(self.game_id, []):
+                if u["username"] == self.username:
+                    u["ready"] = data.get("ready", False)
+            await self.send_user_list()
+
+
+    async def send_user_list(self):
+        # Sort team → branch → role
+        sorted_users = sorted(
+            connected_users.get(self.game_id, []),
+            key=lambda x: (x["team"], x["branch"], x["role"])
+        )
+        await self.channel_layer.group_send(
+            self.game_id,
+            {
+                "type": "user_list",
+                "users": sorted_users
+            }
+        )
+
+    async def user_list(self, event):
+        await self.send(text_data=json.dumps({"type": "user_list", "users": event["users"]}))
 
 class MainMapConsumer(AsyncWebsocketConsumer):
     async def connect(self):

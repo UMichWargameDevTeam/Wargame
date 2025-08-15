@@ -1,7 +1,7 @@
 'use client';
 
+import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 import { useEffect, useState } from 'react';
-import { authed_fetch } from '@/lib/utils';
 
 interface JoinGameDialogProps {
     onClose: () => void;
@@ -13,6 +13,7 @@ export default function JoinGameDialog({ onClose, onSuccess, onLeave }: JoinGame
     const [joinCode, setJoinCode] = useState('');
     const [error, setError] = useState<string | null>(null);
     const [existingCode, setExistingCode] = useState<string | null>(null);
+    const authed_fetch = useAuthedFetch()
 
     useEffect(() => {
         const savedCode = sessionStorage.getItem('gameJoinCode');

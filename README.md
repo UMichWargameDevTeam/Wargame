@@ -85,8 +85,6 @@ In the top-level directory, create a file named .env with the following structur
 SECRET_KEY='your django secret key here'
 # Obtained by going to the Neon project's dashboard, clicking Connect, selecting Django, enable Connection Pooling, and looking at the .env tab
 DATABASE_URL='your neon database connection url, with connection pooling enabled, here'
-# Same as DATABASE_URL, except Connection Pooling is disabled.
-TEST_DATABASE_URL='your neon database connection url, with connection pooling disabled, here'
 # Should be True in development, False in production
 DEBUG=True
 ```
