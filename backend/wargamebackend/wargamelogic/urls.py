@@ -5,6 +5,7 @@ from .views import (
 from rest_framework.routers import DefaultRouter
 from .view_sets import (
     TeamViewSet,
+    TeamInstanceViewSet,
     RoleViewSet,
     RoleInstanceViewSet,
     UnitViewSet,
@@ -20,6 +21,7 @@ from .view_sets import (
 
 router = DefaultRouter()
 router.register(r'teams', TeamViewSet)
+router.register(r'team-instances', TeamInstanceViewSet)
 router.register(r'roles', RoleViewSet)
 router.register(r'role-instances', RoleInstanceViewSet)
 router.register(r'units', UnitViewSet)
@@ -38,7 +40,6 @@ urlpatterns = [
     path('api/register_role/', post.register_role, name='register_role'),
     path("api/join-game-instance/", post.join_game_instance, name="join_game_instance"),
 
-
     path('api/teams/<str:name>/', get.get_team_by_name, name='get_team_by_name'),
     path('api/roles/<str:name>/', get.get_role_by_name, name='get_role_by_name'),
     path('api/units/<str:unit_name>/attacks/<str:attack_name>/', get.get_attack_by_unit_and_name, name='get_attack_by_unit_and_name'),
@@ -55,7 +56,7 @@ urlpatterns = [
     path('api/game-instances/<str:join_code>/landmark-instances/<int:pk>/tiles/', get.get_game_tiles_for_landmark_instance_by_id, name='get_tiles_for_landmark_instance_by_id'),
     path('api/game-instances/<str:join_code>/tiles/<int:row>/<int:column>/landmark-instances/', get.get_game_landmark_instances_for_tile_by_coords, name='get_landmark_instances_for_tile_by_coords'),
 
-    path('api/game/move-unit', post.move_unit, name='move_unit'),
+    path('api/role-instances/create', post.register_role, name='register_role'),
 
     path('api/', include(router.urls)),
 ]

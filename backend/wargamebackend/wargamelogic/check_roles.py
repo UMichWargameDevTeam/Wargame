@@ -1,99 +1,148 @@
 from functools import wraps
-from rest_framework.response import Response
-from rest_framework import status
+from django.http import JsonResponse
+from django.db.models import Model
+from datetime import datetime
+import inspect
+from .models import RoleInstance
 
-# helper function for @role_required and @any_role_required
-def role_matches(request, kwargs, **criteria):
-    """
-    Returns True if the current user's RoleInstance matches the given criteria.
-    Automatically uses join_code and team_name from kwargs if present.
-    Admin users always pass.
-    """
-    from .models.dynamic import RoleInstance, GameInstance
 
-    # Admins bypass all checks
+def _extract_request(args, kwargs, view_func):
+    """
+    Find 'request' in args/kwargs by inspecting the view function's signature.
+    Returns (self_or_none, request) for methods, or (None, request) for functions.
+    Falls back to scanning for first arg/kwarg with `.user`.
+    """
+    try:
+        sig = inspect.signature(view_func)
+        bound_args = sig.bind_partial(*args, **kwargs)
+        bound_args.apply_defaults()
+        request = bound_args.arguments.get('request', None)
+        self_obj = bound_args.arguments.get('self', None)
+        if request is not None:
+            return self_obj, request
+    except (TypeError, ValueError):
+        pass  # Signature inspection failed, fall back to scanning.
+
+    # Fallback: find first object with `.user`
+    for arg in list(args) + list(kwargs.values()):
+        if hasattr(arg, "user"):
+            return (args[0] if args and arg is not args[0] else None), arg
+
+    return None, None
+
+
+def get_nested_attr(obj, attr, default=None):
+    try:
+        for part in attr.split('.'):
+            obj = getattr(obj, part)
+        return obj
+    except AttributeError:
+        return default
+
+
+def _json_safe(value):
+    if value is None or isinstance(value, (bool, int, float, str)):
+        return value
+    if isinstance(value, datetime):
+        return value.isoformat()
+    if isinstance(value, Model):
+        return str(value)
+    return str(value)
+
+
+def _json_safe_dict(d):
+    return {k: _json_safe(v) for k, v in d.items()}
+
+
+def role_instance_matches(request, kwargs, criteria):
     if request.user.is_staff or request.user.is_superuser:
-        return True
+        return True, {}
 
-    # --- Game lookup ---
-    join_code = kwargs.get('join_code')
-    if join_code:
-        try:
-            game_instance = GameInstance.objects.get(join_code=join_code)
-        except GameInstance.DoesNotExist:
-            return False
-    else:
-        game_instance = None
+    role_instances = RoleInstance.objects.filter(user=request.user).select_related(
+        'role', 'team_instance__team', 'team_instance__game_instance'
+    )
 
-    # --- RoleInstance lookup ---
-    query = RoleInstance.objects.filter(user=request.user)
-    if game_instance:
-        query = query.filter(team_instance__game_instance=game_instance)
-    role_instance = query.select_related('role', 'team_instance__team').first()
+    failed_fields = {}
 
-    if not role_instance:
-        return False
+    for role_instance in role_instances:
+        match = True
+        for field, expected in criteria.items():
+            actual_value = get_nested_attr(role_instance, field, None)
+            if callable(expected):
+                try:
+                    expected = expected(request, kwargs)
+                except Exception as e:
+                    failed_fields[field] = f"<error: {e}>"
+                    match = False
+                    continue
+            if actual_value != expected:
+                failed_fields[field] = actual_value
+                match = False
+        if match:
+            return True, {}
+    return False, failed_fields
 
-    # --- Team check (only if provided in URL) ---
-    team_name = kwargs.get('team_name')
-    if team_name and role_instance.team_instance.team.name != team_name:
-        return False
 
-    # --- Role field checks ---
-    for field, expected in criteria.items():
-        if getattr(role_instance.role, field, None) != expected:
-            return False
-
-    return True
-
-# example usage:
-# @role_required(name='Combatant Commander')
-def role_required(**criteria):
+def require_role_instance(criteria):
     def decorator(view_func):
         @wraps(view_func)
-        def _wrapped_view(request, *args, **kwargs):
-            if not role_matches(request, kwargs, **criteria):
-                # Admins bypass check already in role_matches
-                return Response(
-                    {
-                        'error': f'Access denied: requires {criteria}'
-                    },
-                    status=status.HTTP_403_FORBIDDEN
-                )
-            return view_func(request, *args, **kwargs)
+        def _wrapped_view(*args, **kwargs):
+            self, request = _extract_request(args, kwargs, view_func)
+            matches, failed_fields = role_instance_matches(request, kwargs, criteria)
+            if matches:
+                return view_func(*args, **kwargs)
+
+            computed_criteria = {}
+            for k, v in criteria.items():
+                if callable(v):
+                    try:
+                        result = v(request, kwargs)
+                        computed_criteria[k] = result
+                    except Exception as e:
+                        computed_criteria[k] = f"<error: {e}>"
+                else:
+                    computed_criteria[k] = v
+
+            return JsonResponse({
+                "detail": "You do not have the required role",
+                "allowed_role": _json_safe_dict(computed_criteria),
+                "failed_fields": _json_safe_dict(failed_fields)
+            }, status=403)
         return _wrapped_view
     return decorator
 
 
-# example usage:
-# @any_role_required([
-#     {'branch': 'Army', 'is_commander': True},
-#     {'branch': 'Navy', 'is_commander': True}
-# ])
-def any_role_required(criteria_list):
-    """
-    Allows access if ANY criteria in the list passes.
-    Automatically uses join_code and team_name from kwargs if present.
-    Admins always pass.
-    """
+def require_any_role_instance(criteria_list):
     def decorator(view_func):
         @wraps(view_func)
-        def _wrapped_view(request, *args, **kwargs):
-            # Admin bypass
-            if request.user.is_staff or request.user.is_superuser:
-                return view_func(request, *args, **kwargs)
+        def _wrapped_view(*args, **kwargs):
+            self, request = _extract_request(args, kwargs, view_func)
 
+            all_failed_fields = []
             for criteria in criteria_list:
-                if role_matches(request, kwargs, **criteria):
-                    return view_func(request, *args, **kwargs)
+                matches, failed_fields = role_instance_matches(request, kwargs, criteria)
+                if matches:
+                    return view_func(*args, **kwargs)
+                all_failed_fields.append(_json_safe_dict(failed_fields))
 
-            # If none matched, return all allowed combinations in the error
-            return Response(
-                {
-                    'error': 'Access denied: no role criteria matched',
-                    'allowed_roles': criteria_list
-                },
-                status=status.HTTP_403_FORBIDDEN
-            )
+            serialized_criteria_list = []
+            for criteria in criteria_list:
+                computed_criteria = {}
+                for k, v in criteria.items():
+                    if callable(v):
+                        try:
+                            result = v(request, kwargs)
+                            computed_criteria[k] = result
+                        except Exception as e:
+                            computed_criteria[k] = f"<error: {e}>"
+                    else:
+                        computed_criteria[k] = v
+                serialized_criteria_list.append(_json_safe_dict(computed_criteria))
+
+            return JsonResponse({
+                "detail": "You do not have a required role",
+                "allowed_roles": serialized_criteria_list,
+                "failed_fields": all_failed_fields
+            }, status=403)
         return _wrapped_view
     return decorator

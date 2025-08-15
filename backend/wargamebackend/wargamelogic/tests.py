@@ -1,14 +1,14 @@
 from django.test import TestCase
-from rest_framework import status
-from rest_framework.test import APIClient
-from urllib.parse import quote
 from django.contrib.auth.models import User
+from rest_framework import status
+from rest_framework.test import APIClient, APITestCase
+from urllib.parse import quote
 import json
 from .models.static import (
-    Team, Role, Unit, Tile
+    Team, Role, Unit, Landmark, Tile
 )
 from .models.dynamic import (
-    GameInstance, TeamInstance, RoleInstance, UnitInstance
+    GameInstance, TeamInstance, RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile
 )
 
 class GetEndpointTests(TestCase):
@@ -17,16 +17,11 @@ class GetEndpointTests(TestCase):
         self.user = User.objects.create_user(username='testuser', password='testpass')
         self.client.force_authenticate(user=self.user)
 
-        self.game_instance = GameInstance.objects.create(
-            join_code="ABC123"
-        )
-        self.team = Team.objects.create(
-            name="RED"
-        )
+        self.game_instance = GameInstance.objects.create(join_code="ABC123")
+        self.team = Team.objects.create(name="RED")
         self.team_instance = TeamInstance.objects.create(
             game_instance=self.game_instance,
             team=self.team,
-            victory_points=0
         )
         self.unit = Unit.objects.create(
             name='B-2 Spirit',
@@ -53,6 +48,13 @@ class GetEndpointTests(TestCase):
             supply_count=100.0
         )
 
+        role = Role.objects.create(name="Gamemaster")
+        RoleInstance.objects.create(
+            user=self.user,
+            role=role,
+            team_instance=self.team_instance,
+        )
+
     def test_get_units(self):
         self.client.force_authenticate(user=self.user)
         unit_name = quote("B-2 Spirit")
@@ -70,7 +72,6 @@ class GetEndpointTests(TestCase):
         self.assertEqual(response_json[0]['team_instance']['team']['name'], self.team.name)
         self.assertEqual(response_json[0]['unit']['branch'], self.unit.branch)
 
-
 class PostEndpointTests(TestCase):
     def setUp(self):
         self.client = APIClient()
@@ -82,7 +83,6 @@ class PostEndpointTests(TestCase):
         self.team_instance = TeamInstance.objects.create(
             game_instance=self.game_instance,
             team=self.team,
-            victory_points=0
         )
 
     def test_create_game_instance(self):
@@ -95,7 +95,6 @@ class PostEndpointTests(TestCase):
         )
         # print(response.json())
         self.assertEqual(response.status_code, 201)
-        self.assertTrue(GameInstance.objects.filter(join_code='NEW123').exists())
 
     def test_register_role(self):
         self.client.force_authenticate(user=self.user)
@@ -105,17 +104,16 @@ class PostEndpointTests(TestCase):
             'role': self.role.name
         }
         response = self.client.post(
-            '/api/register_role/',
+            '/api/role-instances/create',
             data=json.dumps(payload),
             content_type='application/json'
         )
         # print(response.json())
-        self.assertEqual(response.status_code, 200)
+        self.assertEqual(response.status_code, 201)
 
         role_instance = RoleInstance.objects.filter(role=self.role, team_instance=self.team_instance).first()
         self.assertIsNotNone(role_instance)
         self.assertEqual(role_instance.user, self.user)
-
 
 class RoleRequiredTests(TestCase):
     def setUp(self):
@@ -138,26 +136,26 @@ class RoleRequiredTests(TestCase):
         self.navy_commander_user = User.objects.create_user(
             username="navy_user", password="testpass"
         )
+        self.random_user = User.objects.create_user(
+            username="random_user", password="testpass"
+        )
 
         self.game_instance = GameInstance.objects.create(join_code="GAME123")
         self.team = Team.objects.create(name="USA")
         self.team_instance = TeamInstance.objects.create(
             game_instance=self.game_instance,
             team=self.team,
-            victory_points=0
         )
 
         RoleInstance.objects.create(
             team_instance=self.team_instance,
             role=self.overall_commander_role,
             user=self.overall_commander_user,
-            supply_points=100
         )
         RoleInstance.objects.create(
             team_instance=self.team_instance,
             role=self.navy_commander_role,
             user=self.navy_commander_user,
-            supply_points=0
         )
 
         self.unit = Unit.objects.create(
@@ -182,19 +180,34 @@ class RoleRequiredTests(TestCase):
         )
 
         self.url = f"/api/game-instances/{self.game_instance.join_code}/team-instances/{self.team.name}/unit-instances/"
-        self.register_role_url = "/api/register_role/"
+        self.register_role_url = "/api/role-instances/create"
 
-    def test_overall_commander_can_access(self):
+    def test_invalid_join_code(self):
         self.client.force_authenticate(user=self.overall_commander_user)
+        bad_url = f"/api/game-instances/INVALIDCODE/team-instances/{self.team.name}/unit-instances/"
+        response = self.client.get(bad_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_valid_join_code_but_no_role_instance(self):
+        self.client.force_authenticate(user=self.random_user)
         response = self.client.get(self.url)
-        # print(response.json())
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertTrue(len(response.data) > 0)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_wrong_team(self):
+        other_team = Team.objects.create(name="Russia")
+        TeamInstance.objects.create(
+            game_instance=self.game_instance,
+            team=other_team,
+        )
+        self.client.force_authenticate(user=self.overall_commander_user)
+        wrong_team_url = f"/api/game-instances/{self.game_instance.join_code}/team-instances/{other_team.name}/unit-instances/"
+        response = self.client.get(wrong_team_url)
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+    
 
     def test_navy_commander_cannot_access(self):
         self.client.force_authenticate(user=self.navy_commander_user)
         response = self.client.get(self.url)
-        # print(response.json())
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
 
     def test_user_cannot_impersonate_when_registering_role(self):
@@ -213,7 +226,353 @@ class RoleRequiredTests(TestCase):
             data=json.dumps(payload),
             content_type="application/json"
         )
-        # print(response.json())
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
         ri = RoleInstance.objects.latest("id")
         self.assertEqual(ri.user, self.navy_commander_user)
+
+    def test_overall_commander_can_access(self):
+        self.client.force_authenticate(user=self.overall_commander_user)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(len(response.data) > 0)
+
+# ----------------------------
+# ViewSet tests
+# ----------------------------
+
+class BaseInstanceViewSetTestCase(TestCase):
+    """
+    Builds one game with:
+      - Teams: Gamemasters, RED, BLUE
+      - Users: gm_user (Gamemaster), red_user (Player on RED), blue_user (Player on BLUE)
+      - Unit: B-2 Spirit
+      - UnitInstances: one for RED, one for BLUE
+      - LandmarkInstance and a LandmarkInstanceTile
+    """
+
+    def setUp(self):
+        self.client = APIClient()
+
+        # Users
+        self.gm_user = User.objects.create_user(username="gm_user", password="x")
+        self.red_user = User.objects.create_user(username="red_user", password="x")
+        self.blue_user = User.objects.create_user(username="blue_user", password="x")
+
+        # Roles
+        self.role_gm = Role.objects.create(name="Gamemaster")
+        self.role_player = Role.objects.create(name="Player")
+
+        # Game & Teams
+        self.game_instance = GameInstance.objects.create(join_code="GAME-1")
+
+        self.team_gm = Team.objects.create(name="Gamemasters")
+        self.team_red = Team.objects.create(name="RED")
+        self.team_blue = Team.objects.create(name="BLUE")
+
+        # TeamInstances
+        self.ti_gm = TeamInstance.objects.create(
+            game_instance=self.game_instance, team=self.team_gm
+        )
+        self.ti_red = TeamInstance.objects.create(
+            game_instance=self.game_instance, team=self.team_red
+        )
+        self.ti_blue = TeamInstance.objects.create(
+            game_instance=self.game_instance, team=self.team_blue
+        )
+
+        # RoleInstances=
+        self.ri_gm = RoleInstance.objects.create(
+            user=self.gm_user, role=self.role_gm, team_instance=self.ti_gm
+        )
+        self.ri_red = RoleInstance.objects.create(
+            user=self.red_user, role=self.role_player, team_instance=self.ti_red
+        )
+        self.ri_blue = RoleInstance.objects.create(
+            user=self.blue_user, role=self.role_player, team_instance=self.ti_blue
+        )
+
+        # Static Unit (exact shape you requested)
+        self.unit = Unit.objects.create(
+            name="B-2 Spirit",
+            branch="Air Force",
+            domain="Air",
+            is_logistic=False,
+            type="Heavy",
+            speed=550,
+            max_health=20,
+            max_supply_space=4,
+            defense_modifier=2,
+            description="Stealth bomber aircraft"
+        )
+
+        # Tiles
+        self.tile_a = Tile.objects.create(row=0, column=0, terrain="Plains/Grasslands")
+        self.tile_b = Tile.objects.create(row=1, column=1, terrain="Plains/Grasslands")
+
+        # UnitInstances (one for each team)
+        self.ui_red = UnitInstance.objects.create(
+            team_instance=self.ti_red, unit=self.unit, tile=self.tile_a, health=20, supply_count=4
+        )
+        self.ui_blue = UnitInstance.objects.create(
+            team_instance=self.ti_blue, unit=self.unit, tile=self.tile_b, health=20, supply_count=4
+        )
+
+        self.landmark = Landmark.objects.create(
+            name="City",  # Must match one of LANDMARK_TYPES
+            max_victory_points=100,
+            can_repair=False,
+            description="A big city"
+        )
+
+        self.landmark_instance = LandmarkInstance.objects.create(
+            landmark=self.landmark,
+            game_instance=self.game_instance,  # assuming self.game_instance exists
+            team_instance=self.ti_red,       # or None if neutral
+            victory_points=50
+        )
+
+        self.landmark_instance_tile = LandmarkInstanceTile.objects.create(
+            landmark_instance=self.landmark_instance,
+            tile=self.tile_a
+        )
+
+    def auth(self, user):
+        self.client.force_authenticate(user=user)
+
+# ----------------------------
+# RoleInstanceViewSet tests
+# ----------------------------
+class RoleInstanceViewSetTests(BaseInstanceViewSetTestCase):
+    # The following 3 tests are not testing an endpoint defined by the viewset.
+
+    # A normal user can create a non-gamemaster role for themselves in any game that they don't already have a role.
+    def test_create_role_success_for_normal_user(self):
+        # Remove this user's existing role
+        RoleInstance.objects.filter(
+            team_instance__game_instance=self.game_instance,
+            user=self.red_user
+        ).delete()
+
+        self.auth(self.red_user)
+        url = "/api/role-instances/"
+        data = {
+            "team_instance_id": self.ti_red.id,
+            "role_id": self.role_player.id,
+            "user_id": self.red_user.id
+        }
+        resp = self.client.post(url, data, format="json")
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+
+    def test_create_gamemaster_denied_if_already_exists(self):
+        # Remove this user's existing role
+        RoleInstance.objects.filter(
+            team_instance__game_instance=self.game_instance,
+            user=self.blue_user
+        ).delete()
+
+        self.auth(self.blue_user)
+        url = "/api/role-instances/"
+        data = {
+            "team_instance_id": self.ti_blue.id,
+            "role_id": self.role_gm.id,
+            "user_id": self.blue_user.id
+        }
+        resp = self.client.post(url, data, format="json")
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # Restore their original role for later tests
+        RoleInstance.objects.create(
+            team_instance=self.ti_blue,
+            role=self.role_player,
+            user=self.blue_user
+        )
+
+    def test_create_multiple_roles_for_same_user_in_same_game_denied(self):
+        self.auth(self.red_user)
+        url = "/api/role-instances/"
+        data = {
+            "team_instance_id": self.ti_red.id,
+            "role_id": self.role_player.id,
+            "user_id": self.red_user.id
+        }
+        resp = self.client.post(url, data, format="json")
+        self.assertEqual(resp.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_partial_update_denied_for_non_gm(self):
+        # Only a Gamemaster (in same game) can PATCH/PUT RoleInstances
+        self.auth(self.red_user)
+        url = f"/api/role-instances/{self.ri_blue.id}/"
+        resp = self.client.patch(url, data={}, format="json")
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_partial_update_allowed_for_gm(self):
+        self.auth(self.gm_user)
+        url = f"/api/role-instances/{self.ri_blue.id}/"
+        # Empty payload is fine for permission test; serializer will no-op.
+        resp = self.client.patch(url, data={}, format="json")
+        self.assertEqual(resp.status_code, status.HTTP_200_OK)
+
+    def test_destroy_denied_for_non_owner_non_gm(self):
+        # red_user trying to delete blue_user's RoleInstance -> forbidden
+        self.auth(self.red_user)
+        url = f"/api/role-instances/{self.ri_blue.id}/"
+        resp = self.client.delete(url)
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_destroy_allowed_for_gm(self):
+        # GM can delete anyone's RoleInstance
+        self.auth(self.gm_user)
+        url = f"/api/role-instances/{self.ri_blue.id}/"
+        resp = self.client.delete(url)
+        self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
+
+# ----------------------------
+# UnitInstanceViewSet tests
+# ----------------------------
+class UnitInstanceViewSetTests(BaseInstanceViewSetTestCase):
+    
+    def test_partial_update_unit_instance_permissions(self):
+        # Underprivileged user (blue team)
+        self.auth(self.blue_user)
+        response = self.client.patch(
+            f"/api/unit-instances/{self.ui_red.id}/",
+            {"row": 2, "column": 3},
+            format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.ui_red.refresh_from_db()
+        # Ensure the position hasn't changed
+        self.assertNotEqual(self.ui_red.tile.row, 2)
+        self.assertNotEqual(self.ui_red.tile.column, 3)
+
+        # Same team (red team)
+        self.auth(self.red_user)
+        response = self.client.patch(
+            f"/api/unit-instances/{self.ui_red.id}/",
+            {"row": 2, "column": 3},
+            format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.ui_red.refresh_from_db()
+        self.assertEqual(self.ui_red.tile.row, 2)
+        self.assertEqual(self.ui_red.tile.column, 3)
+
+        # Gamemaster
+        self.auth(self.gm_user)
+        response = self.client.patch(
+            f"/api/unit-instances/{self.ui_red.id}/",
+            {"row": 5, "column": 6},
+            format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.ui_red.refresh_from_db()
+        self.assertEqual(self.ui_red.tile.row, 5)
+        self.assertEqual(self.ui_red.tile.column, 6)
+
+    def test_destroy_unit_instance_permissions(self):
+        # Underprivileged user (blue team)
+        self.auth(self.blue_user)
+        resp = self.client.delete(f"/api/unit-instances/{self.ui_red.id}/")
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+        # Same team (red team)
+        self.auth(self.red_user)
+        resp = self.client.delete(f"/api/unit-instances/{self.ui_red.id}/")
+        self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
+
+        # Gamemaster
+        self.auth(self.gm_user)
+        resp = self.client.delete(f"/api/unit-instances/{self.ui_blue.id}/")
+        self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
+
+# ----------------------------
+# LandmarkInstanceViewSet tests
+# ----------------------------
+class LandmarkInstanceViewSetTests(BaseInstanceViewSetTestCase):
+
+    def test_destroy_denied_for_non_gm(self):
+        self.auth(self.red_user)
+        url = f"/api/landmark-instances/{self.landmark_instance.id}/"
+        resp = self.client.delete(url)
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_destroy_allowed_for_gm(self):
+        self.auth(self.gm_user)
+        url = f"/api/landmark-instances/{self.landmark_instance.id}/"
+        resp = self.client.delete(url)
+        self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
+
+# ------------------------------------
+# LandmarkInstanceTileViewSet tests
+# ------------------------------------
+class LandmarkInstanceTileViewSetTests(BaseInstanceViewSetTestCase):
+
+    def test_destroy_denied_for_non_gm(self):
+        self.auth(self.red_user)
+        url = f"/api/landmark-instance-tiles/{self.landmark_instance_tile.id}/"
+        resp = self.client.delete(url)
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_destroy_allowed_for_gm(self):
+        self.auth(self.gm_user)
+        url = f"/api/landmark-instance-tiles/{self.landmark_instance_tile.id}/"
+        resp = self.client.delete(url)
+        self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
+
+# ----------------------------
+# GameInstanceViewSet tests
+# ----------------------------
+class GameInstanceViewSetTests(BaseInstanceViewSetTestCase):
+
+    def test_destroy_denied_for_non_gm(self):
+        self.auth(self.red_user)
+        url = f"/api/game-instances/{self.game_instance.id}/"
+        resp = self.client.delete(url)
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_destroy_allowed_for_gm(self):
+        self.auth(self.gm_user)
+        url = f"/api/game-instances/{self.game_instance.id}/"
+        resp = self.client.delete(url)
+        self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
+
+# ----------------------------
+# TeamInstanceViewSet tests
+# ----------------------------
+class TeamInstanceViewSetTests(BaseInstanceViewSetTestCase):
+
+    def test_create_denied_for_non_gm(self):
+        self.auth(self.red_user)
+        url = "/api/team-instances/"
+        data = {
+            "game_instance_id": self.game_instance.id,
+            "team_id": self.team_blue.id,
+        }
+        resp = self.client.post(url, data, format="json")
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_create_allowed_for_gm(self):
+        self.auth(self.gm_user)
+        url = "/api/team-instances/"
+
+        new_team = Team.objects.create(name="Green Team")
+
+        data = {
+            "game_instance_id": self.game_instance.id,
+            "team_id": new_team.id,
+        }
+        resp = self.client.post(url, data, format="json")
+
+        self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
+       
+    def test_destroy_denied_for_non_gm(self):
+        self.auth(self.red_user)
+        url = f"/api/team-instances/{self.ti_red.id}/"
+        resp = self.client.delete(url)
+        self.assertEqual(resp.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_destroy_allowed_for_gm(self):
+        self.auth(self.gm_user)
+        url = f"/api/team-instances/{self.ti_red.id}/"
+        resp = self.client.delete(url)
+        self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)

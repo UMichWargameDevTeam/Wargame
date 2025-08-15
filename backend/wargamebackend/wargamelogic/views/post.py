@@ -1,4 +1,5 @@
 from django.http import JsonResponse
+from django.shortcuts import get_object_or_404, get_list_or_404
 from django.db import IntegrityError
 from django.views.decorators.csrf import csrf_exempt
 from rest_framework.decorators import api_view, permission_classes
@@ -14,9 +15,13 @@ from ..game_logic import (
     move_unit_instance
 )
 from ..check_roles import (
-    role_required, any_role_required
+    require_role_instance, require_any_role_instance
 )
 
+# any user can create a role for themselves for any game,
+# but they cannot create a gamemaster role for a game that already has a gamemaster,
+# and they cannot create multiple roles for themselves in the same game.
+# if they want to change their role, a gamemaster or admin must do it.
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 @csrf_exempt
@@ -58,18 +63,28 @@ def register_role(request):
             except TeamInstance.DoesNotExist:
                 return JsonResponse({'error': f'TeamInstance not found for team "{team_name}" in game "{game_join_code}"'}, status=404)
 
-            try:
-                RoleInstance.objects.create(
-                    team_instance=team_instance,
-                    role=role,
-                    user=request.user,
-                    supply_points=0
-                )
-            except IntegrityError:
-                return JsonResponse({'error': f'Role already assigned for user {request.user.username}'}, status=400)
+            if role.name == "Gamemaster":
+                if RoleInstance.objects.filter(
+                    team_instance__game_instance=game_instance,
+                    role__name="Gamemaster"
+                ).exists():
+                    return JsonResponse({'error': 'This game already has a Gamemaster'}, status=400)
+
+            # Check if the user already has a role in this game
+            if RoleInstance.objects.filter(
+                team_instance__game_instance=game_instance,
+                user=request.user
+            ).exists():
+                return JsonResponse({'error': f'User {request.user.username} already has a role in this game'}, status=400)
+
+            RoleInstance.objects.create(
+                team_instance=team_instance,
+                role=role,
+                user=request.user,
+            )
 
             print(f"[Backend] Role registered: {role_name} for team: {team_name} by user: {request.user.username}")
-            return JsonResponse({'status': 'ok', 'role': role_name, 'team': team_name})
+            return JsonResponse({'status': 'ok', 'role': role_name, 'team': team_name}, status=201)
 
         except Exception as e:
             return JsonResponse({'error': str(e)}, status=400)
