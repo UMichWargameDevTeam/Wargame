@@ -1,6 +1,6 @@
 from functools import wraps
 from django.http import JsonResponse
-from django.db.models import Model
+from django.db.models import Model, QuerySet
 from datetime import datetime
 import inspect
 from .models import RoleInstance
@@ -47,6 +47,10 @@ def _json_safe(value):
         return value.isoformat()
     if isinstance(value, Model):
         return str(value)
+    if isinstance(value, QuerySet):
+        return [str(v) for v in value]
+    if isinstance(value, (list, set, tuple)):
+        return [str(v) for v in value]
     return str(value)
 
 
@@ -75,9 +79,14 @@ def role_instance_matches(request, kwargs, criteria):
                     failed_fields[field] = f"<error: {e}>"
                     match = False
                     continue
-            if actual_value != expected:
-                failed_fields[field] = actual_value
-                match = False
+            if isinstance(expected, (QuerySet, list, set, tuple)):
+                if actual_value not in expected:
+                    failed_fields[field] = actual_value
+                    match = False
+            else:
+                if actual_value != expected:
+                    failed_fields[field] = actual_value
+                    match = False
         if match:
             return True, {}
     return False, failed_fields
