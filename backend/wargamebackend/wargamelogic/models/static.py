@@ -7,6 +7,12 @@ class Team(models.Model):
     def __str__(self):
         return self.name
 
+class Branch(models.Model):
+    name = models.CharField(max_length=100, unique=True)
+
+    def __str__(self):
+        return self.name
+
 class Role(models.Model):
     BRANCHES = [
         ("Army", "Army"),
@@ -15,7 +21,7 @@ class Role(models.Model):
     ]
 
     name = models.CharField(max_length=100, unique=True)
-    branch = models.CharField(max_length=20, null=True, blank=True, choices=BRANCHES)
+    branch = models.ForeignKey(Branch, null=True, blank=True, on_delete=models.CASCADE)
 
     is_chief_of_staff = models.BooleanField(default=False)
     is_commander = models.BooleanField(default=False)
@@ -43,11 +49,6 @@ class Role(models.Model):
         return self.name
 
 class Unit(models.Model):
-    BRANCHES = [
-        ("Air Force", "Air Force"),
-        ("Army", "Army"),
-        ("Navy", "Navy"),
-    ]
     DOMAINS = [
         ("Ground", "Ground"),
         ("Air", "Air"),
@@ -61,7 +62,7 @@ class Unit(models.Model):
     ]
 
     name = models.CharField(max_length=100, unique=True)
-    branch = models.CharField(max_length=20, choices=BRANCHES)
+    cost = models.FloatField()
     domain = models.CharField(max_length=20, choices=DOMAINS)
     is_logistic = models.BooleanField()
     type = models.CharField(max_length=20, choices=DEFENDER_TYPES)
@@ -71,8 +72,20 @@ class Unit(models.Model):
     defense_modifier = models.FloatField()
     description = models.TextField()
 
+    # allows us to use Unit.branches.all()
+    branches = models.ManyToManyField(Branch, through="UnitBranch")
+
     def __str__(self):
         return self.name
+
+class UnitBranch(models.Model):
+    unit = models.ForeignKey(Unit, on_delete=models.CASCADE)
+    branch = models.ForeignKey(Branch, on_delete=models.CASCADE)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(fields=["unit", "branch"], name="unique_unit_branch")
+        ]
 
 class Attack(models.Model):
     ATTACK_TYPES = [
@@ -116,6 +129,24 @@ class Ability(models.Model):
     def __str__(self):
         return f"{self.unit.name} - {self.name}"
 
+class Landmark(models.Model):
+    LANDMARK_TYPES = [
+        ("City", "City"),
+        ("Port", "Port"),
+        ("Ground Base", "Ground Base"),
+        ("Airfield", "Airfield"),
+        ("Supply Node", "Supply Node"),
+        ("Stockpile", "Stockpile"),
+    ]
+
+    name = models.CharField(max_length=100, choices=LANDMARK_TYPES, unique=True)
+    max_victory_points = models.FloatField()
+    can_repair = models.BooleanField()
+    description = models.TextField()
+
+    def __str__(self):
+        return self.name
+
 class Tile(models.Model):
     TERRAIN_TYPES = [
         ("Ocean", "Ocean"),
@@ -139,21 +170,3 @@ class Tile(models.Model):
 
     def __str__(self):
         return f"Tile ({self.row}, {self.column})"
-
-class Landmark(models.Model):
-    LANDMARK_TYPES = [
-        ("City", "City"),
-        ("Port", "Port"),
-        ("Ground Base", "Ground Base"),
-        ("Airfield", "Airfield"),
-        ("Supply Node", "Supply Node"),
-        ("Stockpile", "Stockpile"),
-    ]
-
-    name = models.CharField(max_length=100, choices=LANDMARK_TYPES, unique=True)
-    max_victory_points = models.FloatField()
-    can_repair = models.BooleanField()
-    description = models.TextField()
-
-    def __str__(self):
-        return self.name

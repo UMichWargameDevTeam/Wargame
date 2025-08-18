@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
 from .models.static import (
-    Team, Role, Unit, Attack, Ability, Landmark, Tile
+    Team, Branch, Role, Unit, UnitBranch, Attack, Ability, Landmark, Tile
 )
 from .models.dynamic import (
     GameInstance, TeamInstance, RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile
@@ -15,15 +15,35 @@ class TeamSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ['id']
 
+class BranchSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Branch
+        fields = '__all__'
+        read_only_fields = ['id']
+
 class RoleSerializer(serializers.ModelSerializer):
+    branch = BranchSerializer(read_only=True)
+
     class Meta:
         model = Role
         fields = '__all__'
         read_only_fields = ['id']
 
 class UnitSerializer(serializers.ModelSerializer):
+    branches = BranchSerializer(many=True, read_only=True)
+
     class Meta:
         model = Unit
+        fields = ['name', 'cost', 'domain', 'is_logistic', 'type', 'speed', 'max_health', 'max_supply_space', 'defense_modifier', 'description', 
+                  'branches']
+        read_only_fields = ['id']
+
+class UnitBranchSerializer(serializers.ModelSerializer):
+    unit = UnitSerializer(read_only=True)
+    branch = BranchSerializer(read_only=True)
+
+    class Meta:
+        model = UnitBranch
         fields = '__all__'
         read_only_fields = ['id']
 

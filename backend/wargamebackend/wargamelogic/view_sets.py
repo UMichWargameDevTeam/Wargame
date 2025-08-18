@@ -3,19 +3,21 @@ from rest_framework.response import Response
 import rest_framework.decorators
 from rest_framework import viewsets, status
 from .models.static import (
-  Team, Role, Unit, Attack, Ability, Landmark, Tile
+  Team, Branch, Role, Unit, UnitBranch, Attack, Ability, Landmark, Tile
 )
 from .models.dynamic import (
   GameInstance, TeamInstance, RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile
 )
 from .serializers import (
     TeamSerializer,
+    BranchSerializer,
     RoleSerializer,
     UnitSerializer,
+    UnitBranchSerializer,
     AttackSerializer,
     AbilitySerializer,
-    LandmarkSerializer,
     TileSerializer,
+    LandmarkSerializer,
 
     GameInstanceSerializer,
     TeamInstanceSerializer,
@@ -40,6 +42,16 @@ class TeamViewSet(viewsets.ModelViewSet):
             return [IsAdminUser()]
         return [IsAuthenticated()]
 
+class BranchViewSet(viewsets.ModelViewSet):
+    queryset = Branch.objects.all()
+    serializer_class = BranchSerializer
+    http_method_names = ['get', 'post', 'patch', 'put', 'delete']
+
+    def get_permissions(self):
+        if self.request.method not in SAFE_METHODS:
+            return [IsAdminUser()]
+        return [IsAuthenticated()]
+
 class RoleViewSet(viewsets.ModelViewSet):
     queryset = Role.objects.all()
     serializer_class = RoleSerializer
@@ -53,6 +65,16 @@ class RoleViewSet(viewsets.ModelViewSet):
 class UnitViewSet(viewsets.ModelViewSet):
     queryset = Unit.objects.all()
     serializer_class = UnitSerializer
+    http_method_names = ['get', 'post', 'patch', 'put', 'delete']
+
+    def get_permissions(self):
+        if self.request.method not in SAFE_METHODS:
+            return [IsAdminUser()]
+        return [IsAuthenticated()]
+
+class UnitBranchViewSet(viewsets.ModelViewSet):
+    queryset = UnitBranch.objects.all()
+    serializer_class = UnitBranchSerializer
     http_method_names = ['get', 'post', 'patch', 'put', 'delete']
 
     def get_permissions(self):

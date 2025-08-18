@@ -6,7 +6,7 @@ from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from ..models.static import (
-  Team, Role, Unit, Attack, Ability, Landmark, Tile
+  Team, Branch, Role, UnitBranch, Unit, Attack, Ability, Landmark, Tile
 )
 from ..models.dynamic import (
   GameInstance, TeamInstance, RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile
@@ -15,7 +15,9 @@ from ..serializers import (
     TeamSerializer,
     RoleSerializer,
     RoleInstanceSerializer,
+    BranchSerializer,
     UnitSerializer,
+    UnitBranchSerializer,
     UnitInstanceSerializer,
     AttackSerializer,
     AbilitySerializer,
@@ -148,21 +150,18 @@ def get_game_unit_instances_by_team_name(request, join_code, team_name):
     {
         'team_instance.game_instance': lambda request, kwargs: get_object_or_404(GameInstance, join_code=kwargs['join_code']),
         'team_instance.team': lambda request, kwargs: get_object_or_404(Team, name=kwargs['team_name']),
-        'role.branch': lambda request, kwargs: kwargs['branch'],
+        'role.branch': lambda request, kwargs: get_object_or_404(Branch, name=kwargs['branch']),
         'role.is_branch_commander': True
     }
 ])
 def get_game_unit_instances_by_team_name_and_branch(request, join_code, team_name, branch):
-    valid_branches = [b[0] for b in Unit.BRANCHES]
-    if branch not in valid_branches:
-        return Response(
-            {'error': f'Invalid branch: {branch}. Must be one of {valid_branches}'},
-            status=status.HTTP_400_BAD_REQUEST
-        )
     game_instance = get_object_or_404(GameInstance, join_code=join_code)
     team = get_object_or_404(Team, name=team_name)
     team_instance = get_object_or_404(TeamInstance, game_instance=game_instance, team=team)
-    unit_instances = UnitInstance.objects.filter(team_instance=team_instance, unit__branch=branch)
+    unit_instances = UnitInstance.objects.filter(
+        team_instance=team_instance,
+        unit__branches__name=branch
+    )
     serializer = UnitInstanceSerializer(unit_instances, many=True)
     return Response(serializer.data)
 
