@@ -119,11 +119,17 @@ def get_game_unit_instances(request, join_code):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-@require_role_instance({
-    'team_instance.game_instance': lambda request, kwargs: get_object_or_404(GameInstance, join_code=kwargs['join_code']),
-    'team_instance.team': lambda request, kwargs: get_object_or_404(Team, name=kwargs['team_name']),
-    'role.name':'Overall Commander'
-})
+@require_any_role_instance([
+    {
+        'team_instance.game_instance': lambda request, kwargs: get_object_or_404(GameInstance, join_code=kwargs['join_code']),
+        'role.name': 'Gamemaster'
+    },
+    {
+        'team_instance.game_instance': lambda request, kwargs: get_object_or_404(GameInstance, join_code=kwargs['join_code']),
+        'team_instance.team': lambda request, kwargs: get_object_or_404(Team, name=kwargs['team_name']),
+        'role.name':'Combatant Commander'
+    }
+])
 def get_game_unit_instances_by_team_name(request, join_code, team_name):
     game_instance = get_object_or_404(GameInstance, join_code=join_code)
     team = get_object_or_404(Team, name=team_name)
@@ -134,13 +140,18 @@ def get_game_unit_instances_by_team_name(request, join_code, team_name):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-@require_role_instance({
-    'team_instance.game_instance': lambda request, kwargs: get_object_or_404(GameInstance, join_code=kwargs['join_code']),
-    'team_instance.team': lambda request, kwargs: get_object_or_404(Team, name=kwargs['team_name']),
-    # TODO: uncomment when the Role model gets updated
-    # branch=lambda request, kwargs: kwargs['branch'],
-    # is_branch_commander=True
-})
+@require_any_role_instance([
+    {
+        'team_instance.game_instance': lambda request, kwargs: get_object_or_404(GameInstance, join_code=kwargs['join_code']),
+        'role.name': 'Gamemaster'
+    },
+    {
+        'team_instance.game_instance': lambda request, kwargs: get_object_or_404(GameInstance, join_code=kwargs['join_code']),
+        'team_instance.team': lambda request, kwargs: get_object_or_404(Team, name=kwargs['team_name']),
+        'role.branch': lambda request, kwargs: kwargs['branch'],
+        'role.is_branch_commander': True
+    }
+])
 def get_game_unit_instances_by_team_name_and_branch(request, join_code, team_name, branch):
     valid_branches = [b[0] for b in Unit.BRANCHES]
     if branch not in valid_branches:

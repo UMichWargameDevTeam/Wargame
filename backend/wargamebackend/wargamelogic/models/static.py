@@ -1,4 +1,5 @@
 from django.db import models
+from django.core.exceptions import ValidationError
 
 class Team(models.Model):
     name = models.CharField(max_length=100, unique=True)
@@ -7,15 +8,36 @@ class Team(models.Model):
         return self.name
 
 class Role(models.Model):
-    ACCESS_LEVELS = [
-        ("Strategic", "Strategic"),
-        ("Operational", "Operational"),
-        ("Tactical", "Tactical"),
+    BRANCHES = [
+        ("Army", "Army"),
+        ("Air Force", "Air Force"),
+        ("Navy", "Navy"),
     ]
 
     name = models.CharField(max_length=100, unique=True)
-    access_level = models.CharField(max_length=20, choices=ACCESS_LEVELS)
+    branch = models.CharField(max_length=20, null=True, blank=True, choices=BRANCHES)
+
+    is_chief_of_staff = models.BooleanField(default=False)
+    is_commander = models.BooleanField(default=False)
+    is_vice_commander = models.BooleanField(default=False)
+
+    is_operations = models.BooleanField(default=False)
+    is_logistics = models.BooleanField(default=False)
+
     description = models.TextField()
+
+    def clean(self):
+        super().clean()
+
+        # Enforce at most one of CoS / CC / CV
+        role_flags = [self.is_chief_of_staff, self.is_commander, self.is_vice_commander]
+        if sum(flag for flag in role_flags if flag) > 1:
+            raise ValidationError("A role can only be one of: Chief of Staff, CC, CV.")
+
+        # Enforce at most one of Ops / Log
+        duty_flags = [self.is_operations, self.is_logistics]
+        if sum(flag for flag in duty_flags if flag) > 1:
+            raise ValidationError("A role can only be one of: Ops, Log.")
 
     def __str__(self):
         return self.name

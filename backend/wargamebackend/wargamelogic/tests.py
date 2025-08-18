@@ -48,7 +48,9 @@ class GetEndpointTests(TestCase):
             supply_count=100.0
         )
 
-        role = Role.objects.create(name="Gamemaster")
+        role = Role.objects.create(
+            name="Gamemaster",
+        )
         RoleInstance.objects.create(
             user=self.user,
             role=role,
@@ -119,19 +121,18 @@ class RoleRequiredTests(TestCase):
     def setUp(self):
         self.client = APIClient()
 
-        self.overall_commander_role = Role.objects.create(
-            name="Overall Commander",
-            access_level="Strategic",
+        self.combatant_commander_role = Role.objects.create(
+            name="Combatant Commander",
             description="Chooses how to divide supply points amongst the three branch commanders."
         )
         self.navy_commander_role = Role.objects.create(
             name="Navy Commander",
-            access_level="Operational",
-            description="Allocates the supply points given by the Overall Commander among the Navy operations and logistics teams."
+            is_chief_of_staff=True,
+            description="Allocates the supply points given by the Combatant Commander among the Navy operations and logistics teams."
         )
 
-        self.overall_commander_user = User.objects.create_user(
-            username="overall_user", password="testpass"
+        self.combatant_commander_user = User.objects.create_user(
+            username="combatant_commander_user", password="testpass"
         )
         self.navy_commander_user = User.objects.create_user(
             username="navy_user", password="testpass"
@@ -149,8 +150,8 @@ class RoleRequiredTests(TestCase):
 
         RoleInstance.objects.create(
             team_instance=self.team_instance,
-            role=self.overall_commander_role,
-            user=self.overall_commander_user,
+            role=self.combatant_commander_role,
+            user=self.combatant_commander_user,
         )
         RoleInstance.objects.create(
             team_instance=self.team_instance,
@@ -183,7 +184,7 @@ class RoleRequiredTests(TestCase):
         self.register_role_url = "/api/role-instances/create"
 
     def test_invalid_join_code(self):
-        self.client.force_authenticate(user=self.overall_commander_user)
+        self.client.force_authenticate(user=self.combatant_commander_user)
         bad_url = f"/api/game-instances/INVALIDCODE/team-instances/{self.team.name}/unit-instances/"
         response = self.client.get(bad_url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
@@ -199,7 +200,7 @@ class RoleRequiredTests(TestCase):
             game_instance=self.game_instance,
             team=other_team,
         )
-        self.client.force_authenticate(user=self.overall_commander_user)
+        self.client.force_authenticate(user=self.combatant_commander_user)
         wrong_team_url = f"/api/game-instances/{self.game_instance.join_code}/team-instances/{other_team.name}/unit-instances/"
         response = self.client.get(wrong_team_url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
@@ -218,8 +219,8 @@ class RoleRequiredTests(TestCase):
         payload = {
             "join-code": self.game_instance.join_code,
             "team": self.team.name,
-            "role": self.overall_commander_role.name,
-            "user": "overall_user"  # Ignored
+            "role": self.combatant_commander_role.name,
+            "user": "combatant_commander_user"  # Ignored
         }
         response = self.client.post(
             self.register_role_url,
@@ -230,8 +231,8 @@ class RoleRequiredTests(TestCase):
         ri = RoleInstance.objects.latest("id")
         self.assertEqual(ri.user, self.navy_commander_user)
 
-    def test_overall_commander_can_access(self):
-        self.client.force_authenticate(user=self.overall_commander_user)
+    def test_combatant_commander_can_access(self):
+        self.client.force_authenticate(user=self.combatant_commander_user)
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(len(response.data) > 0)
