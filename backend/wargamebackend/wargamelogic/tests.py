@@ -5,7 +5,7 @@ from rest_framework.test import APIClient, APITestCase
 from urllib.parse import quote
 import json
 from .models.static import (
-    Team, Role, Unit, Landmark, Tile
+    Team, Branch, Role, Unit, UnitBranch, Landmark, Tile
 )
 from .models.dynamic import (
     GameInstance, TeamInstance, RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile
@@ -23,9 +23,10 @@ class GetEndpointTests(TestCase):
             game_instance=self.game_instance,
             team=self.team,
         )
+        self.branch = Branch.objects.create(name="Air Force")
         self.unit = Unit.objects.create(
             name='B-2 Spirit',
-            branch='Air Force',
+            cost=0,
             is_logistic=False,
             domain='Air',
             type='Heavy',
@@ -34,6 +35,10 @@ class GetEndpointTests(TestCase):
             max_supply_space=500.0,
             defense_modifier=1.2,
             description='Stealth bomber aircraft'
+        )
+        UnitBranch.objects.create(
+            unit=self.unit,
+            branch=self.branch
         )
         self.tile = Tile.objects.create(
             row=0,
@@ -65,14 +70,17 @@ class GetEndpointTests(TestCase):
         self.assertEqual(response.status_code, 200)
     
     def test_get_unit_instances_by_team_and_branch(self):
-        url = f'/api/game-instances/{self.game_instance.join_code}/team-instances/{self.team.name}/branch/{self.unit.branch}/unit-instances/'
+        url = f'/api/game-instances/{self.game_instance.join_code}/team-instances/{self.team.name}/branch/{self.unit.branches.all()[0].name}/unit-instances/'
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 
         response_json = response.json()
         # print(response_json)
         self.assertEqual(response_json[0]['team_instance']['team']['name'], self.team.name)
-        self.assertEqual(response_json[0]['unit']['branch'], self.unit.branch)
+        self.assertEqual(
+            response_json[0]['unit']['branches'][0]['name'],
+            self.unit.branches.all()[0].name
+        )
 
 class PostEndpointTests(TestCase):
     def setUp(self):
@@ -121,12 +129,16 @@ class RoleRequiredTests(TestCase):
     def setUp(self):
         self.client = APIClient()
 
+        self.navy_branch = Branch.objects.create(name="Navy")
+        self.air_force_branch = Branch.objects.create(name="Air Force")
+
         self.combatant_commander_role = Role.objects.create(
             name="Combatant Commander",
             description="Chooses how to divide supply points amongst the three branch commanders."
         )
         self.navy_commander_role = Role.objects.create(
             name="Navy Commander",
+            branch=self.navy_branch,
             is_chief_of_staff=True,
             description="Allocates the supply points given by the Combatant Commander among the Navy operations and logistics teams."
         )
@@ -161,7 +173,7 @@ class RoleRequiredTests(TestCase):
 
         self.unit = Unit.objects.create(
             name="B-2 Spirit",
-            branch="Air Force",
+            cost=0,
             domain="Air",
             is_logistic=False,
             type="Heavy",
@@ -170,6 +182,10 @@ class RoleRequiredTests(TestCase):
             max_supply_space=4,
             defense_modifier=2,
             description="Stealth bomber aircraft"
+        )
+        UnitBranch.objects.create(
+            unit=self.unit,
+            branch=self.air_force_branch
         )
         self.tile = Tile.objects.create(row=0, column=0, terrain="Plains/Grasslands")
         UnitInstance.objects.create(
@@ -259,6 +275,9 @@ class BaseInstanceViewSetTestCase(TestCase):
         self.red_user = User.objects.create_user(username="red_user", password="x")
         self.blue_user = User.objects.create_user(username="blue_user", password="x")
 
+        # Branches
+        self.air_force_branch = Branch.objects.create(name="Air Force") 
+
         # Roles
         self.role_gm = Role.objects.create(name="Gamemaster")
         self.role_player = Role.objects.create(name="Player")
@@ -295,7 +314,7 @@ class BaseInstanceViewSetTestCase(TestCase):
         # Static Unit (exact shape you requested)
         self.unit = Unit.objects.create(
             name="B-2 Spirit",
-            branch="Air Force",
+            cost=0,
             domain="Air",
             is_logistic=False,
             type="Heavy",
@@ -304,6 +323,10 @@ class BaseInstanceViewSetTestCase(TestCase):
             max_supply_space=4,
             defense_modifier=2,
             description="Stealth bomber aircraft"
+        )
+        UnitBranch.objects.create(
+            unit=self.unit,
+            branch=self.air_force_branch
         )
 
         # Tiles
