@@ -41,8 +41,6 @@ router.register(r'game-instances', GameInstanceViewSet)
 
 urlpatterns = [
     path('api/mainmap/', get.main_map, name='main_map'),
-    path('api/register_role/', post.register_role, name='register_role'),
-    path("api/join-game-instance/", post.join_game_instance, name="join_game_instance"),
 
     path('api/teams/<str:name>/', get.get_team_by_name, name='get_team_by_name'),
     path('api/roles/<str:name>/', get.get_role_by_name, name='get_role_by_name'),
@@ -60,7 +58,13 @@ urlpatterns = [
     path('api/game-instances/<str:join_code>/landmark-instances/<int:pk>/tiles/', get.get_game_tiles_for_landmark_instance_by_id, name='get_tiles_for_landmark_instance_by_id'),
     path('api/game-instances/<str:join_code>/tiles/<int:row>/<int:column>/landmark-instances/', get.get_game_landmark_instances_for_tile_by_coords, name='get_landmark_instances_for_tile_by_coords'),
 
-    path('api/role-instances/create', post.register_role, name='register_role'),
+    path("api/game-instances/create/", post.create_game_instance, name="create_game_instance"),
+    path("api/game-instances/join/", post.join_game_instance, name="join_game_instance"),
+    path('api/role-instances/create/', post.create_role_instance, name='create_role_instance'),
+    path('api/unit-instances/create/', post.create_unit_instance, name='create_unit_instance'),
+
+    path('api/unit-instances/<int:pk>/move/tiles/<int:row>/<int:column>/', patch.move_unit_instance, name='move_unit_instance'),
+    path('api/unit-instances/<int:pk>/attacks/<str:attack_name>/use/', patch.use_attack, name='use_attack'),
 
     path('api/', include(router.urls)),
 ]

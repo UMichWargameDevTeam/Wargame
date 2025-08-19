@@ -89,6 +89,7 @@ class PostEndpointTests(TestCase):
 
         self.role = Role.objects.create(name='Gamemaster')
         self.team = Team.objects.create(name='USA')
+        self.gamemaster_team = Team.objects.create(name='Gamemasters')
         self.game_instance = GameInstance.objects.create(join_code='ABC123')
         self.team_instance = TeamInstance.objects.create(
             game_instance=self.game_instance,
@@ -99,26 +100,26 @@ class PostEndpointTests(TestCase):
         self.client.force_authenticate(user=self.user)
         payload = {'join_code': 'NEW123'}
         response = self.client.post(
-            '/api/game-instances/',
+            '/api/game-instances/create/',
             data=json.dumps(payload),
             content_type='application/json'
         )
         # print(response.json())
         self.assertEqual(response.status_code, 201)
 
-    def test_register_role(self):
+    def test_create_role_instance(self):
         self.client.force_authenticate(user=self.user)
         payload = {
-            'join-code': self.game_instance.join_code,
-            'team': self.team.name,
-            'role': self.role.name
+            'join_code': self.game_instance.join_code,
+            'team_name': self.team.name,
+            'role_name': self.role.name
         }
         response = self.client.post(
-            '/api/role-instances/create',
+            '/api/role-instances/create/',
             data=json.dumps(payload),
             content_type='application/json'
         )
-        # print(response.json())
+        print(response.json())
         self.assertEqual(response.status_code, 201)
 
         role_instance = RoleInstance.objects.filter(role=self.role, team_instance=self.team_instance).first()
@@ -197,7 +198,7 @@ class RoleRequiredTests(TestCase):
         )
 
         self.url = f"/api/game-instances/{self.game_instance.join_code}/team-instances/{self.team.name}/unit-instances/"
-        self.register_role_url = "/api/role-instances/create"
+        self.create_role_instance_url = "/api/role-instances/create/"
 
     def test_invalid_join_code(self):
         self.client.force_authenticate(user=self.combatant_commander_user)
@@ -233,13 +234,13 @@ class RoleRequiredTests(TestCase):
 
         self.client.force_authenticate(user=self.navy_commander_user)
         payload = {
-            "join-code": self.game_instance.join_code,
-            "team": self.team.name,
-            "role": self.combatant_commander_role.name,
+            "join_code": self.game_instance.join_code,
+            "team_name": self.team.name,
+            "role_name": self.combatant_commander_role.name,
             "user": "combatant_commander_user"  # Ignored
         }
         response = self.client.post(
-            self.register_role_url,
+            self.create_role_instance_url,
             data=json.dumps(payload),
             content_type="application/json"
         )
@@ -280,7 +281,7 @@ class BaseInstanceViewSetTestCase(TestCase):
 
         # Roles
         self.role_gm = Role.objects.create(name="Gamemaster")
-        self.role_player = Role.objects.create(name="Player")
+        self.role_player = Role.objects.create(name="Player", branch=self.air_force_branch, is_operations=True)
 
         # Game & Teams
         self.game_instance = GameInstance.objects.create(join_code="GAME-1")
@@ -302,13 +303,13 @@ class BaseInstanceViewSetTestCase(TestCase):
 
         # RoleInstances=
         self.ri_gm = RoleInstance.objects.create(
-            user=self.gm_user, role=self.role_gm, team_instance=self.ti_gm
+            user=self.gm_user, team_instance=self.ti_gm, role=self.role_gm
         )
         self.ri_red = RoleInstance.objects.create(
-            user=self.red_user, role=self.role_player, team_instance=self.ti_red
+            user=self.red_user, team_instance=self.ti_red, role=self.role_player
         )
         self.ri_blue = RoleInstance.objects.create(
-            user=self.blue_user, role=self.role_player, team_instance=self.ti_blue
+            user=self.blue_user, team_instance=self.ti_blue, role=self.role_player
         )
 
         # Static Unit (exact shape you requested)
@@ -332,6 +333,8 @@ class BaseInstanceViewSetTestCase(TestCase):
         # Tiles
         self.tile_a = Tile.objects.create(row=0, column=0, terrain="Plains/Grasslands")
         self.tile_b = Tile.objects.create(row=1, column=1, terrain="Plains/Grasslands")
+        Tile.objects.create(row=2, column=3, terrain="Plains/Grasslands")
+        Tile.objects.create(row=5, column=6, terrain="Plains/Grasslands")
 
         # UnitInstances (one for each team)
         self.ui_red = UnitInstance.objects.create(
@@ -378,11 +381,11 @@ class RoleInstanceViewSetTests(BaseInstanceViewSetTestCase):
         ).delete()
 
         self.auth(self.red_user)
-        url = "/api/role-instances/"
+        url = "/api/role-instances/create/"
         data = {
-            "team_instance_id": self.ti_red.id,
-            "role_id": self.role_player.id,
-            "user_id": self.red_user.id
+            "join_code": self.game_instance.join_code,
+            "team_name": self.team_red.name,
+            "role_name": self.role_player.name
         }
         resp = self.client.post(url, data, format="json")
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
@@ -395,7 +398,7 @@ class RoleInstanceViewSetTests(BaseInstanceViewSetTestCase):
         ).delete()
 
         self.auth(self.blue_user)
-        url = "/api/role-instances/"
+        url = "/api/role-instances/create/"
         data = {
             "team_instance_id": self.ti_blue.id,
             "role_id": self.role_gm.id,
@@ -413,7 +416,7 @@ class RoleInstanceViewSetTests(BaseInstanceViewSetTestCase):
 
     def test_create_multiple_roles_for_same_user_in_same_game_denied(self):
         self.auth(self.red_user)
-        url = "/api/role-instances/"
+        url = "/api/role-instances/create/"
         data = {
             "team_instance_id": self.ti_red.id,
             "role_id": self.role_player.id,
@@ -458,11 +461,7 @@ class UnitInstanceViewSetTests(BaseInstanceViewSetTestCase):
     def test_partial_update_unit_instance_permissions(self):
         # Underprivileged user (blue team)
         self.auth(self.blue_user)
-        response = self.client.patch(
-            f"/api/unit-instances/{self.ui_red.id}/",
-            {"row": 2, "column": 3},
-            format="json"
-        )
+        response = self.client.patch(f"/api/unit-instances/{self.ui_red.id}/move/tiles/2/3/")
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
         self.ui_red.refresh_from_db()
         # Ensure the position hasn't changed
@@ -471,11 +470,7 @@ class UnitInstanceViewSetTests(BaseInstanceViewSetTestCase):
 
         # Same team (red team)
         self.auth(self.red_user)
-        response = self.client.patch(
-            f"/api/unit-instances/{self.ui_red.id}/",
-            {"row": 2, "column": 3},
-            format="json"
-        )
+        response = self.client.patch(f"/api/unit-instances/{self.ui_red.id}/move/tiles/2/3/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.ui_red.refresh_from_db()
         self.assertEqual(self.ui_red.tile.row, 2)
@@ -483,11 +478,7 @@ class UnitInstanceViewSetTests(BaseInstanceViewSetTestCase):
 
         # Gamemaster
         self.auth(self.gm_user)
-        response = self.client.patch(
-            f"/api/unit-instances/{self.ui_red.id}/",
-            {"row": 5, "column": 6},
-            format="json"
-        )
+        response = self.client.patch(f"/api/unit-instances/{self.ui_red.id}/move/tiles/5/6/")
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.ui_red.refresh_from_db()
         self.assertEqual(self.ui_red.tile.row, 5)

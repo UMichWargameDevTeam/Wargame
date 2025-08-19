@@ -10,6 +10,9 @@ class Team(models.Model):
 class Branch(models.Model):
     name = models.CharField(max_length=100, unique=True)
 
+    class Meta:
+        verbose_name_plural = "branches"
+
     def __str__(self):
         return self.name
 
@@ -91,6 +94,7 @@ class UnitBranch(models.Model):
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE)
 
     class Meta:
+        verbose_name_plural = "unit branches"
         constraints = [
             models.UniqueConstraint(fields=["unit", "branch"], name="unique_unit_branch")
         ]
@@ -133,6 +137,7 @@ class Ability(models.Model):
     description = models.TextField(blank=True, null=False)
 
     class Meta:
+        verbose_name_plural = "abilities"
         constraints = [
             models.UniqueConstraint(fields=["unit", "name"], name="unique_unit_ability_pair")
         ]

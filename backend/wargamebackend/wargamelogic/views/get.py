@@ -12,6 +12,7 @@ from ..models.dynamic import (
   GameInstance, TeamInstance, RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile
 )
 from ..serializers import (
+    GameInstanceSerializer,
     TeamSerializer,
     RoleSerializer,
     RoleInstanceSerializer,
@@ -26,7 +27,6 @@ from ..serializers import (
     LandmarkInstanceSerializer,
     TileSerializer,
 )
-from ..game_logic import *
 from ..check_roles import require_role_instance, require_any_role_instance
 
 def main_map(request):
@@ -110,7 +110,7 @@ def get_game_role_instances_by_team_and_role(request, join_code, team_name, role
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @require_role_instance({
-    'team_instance.game_instance': lambda request, kwargs: get_object_or_404(GameInstance, join_code=kwargs['join_code']),
+    'team_instance.game_instance.join_code': lambda request, kwargs: kwargs['join_code'],
     'role.name':'Gamemaster'
 })
 def get_game_unit_instances(request, join_code):
@@ -123,12 +123,12 @@ def get_game_unit_instances(request, join_code):
 @permission_classes([IsAuthenticated])
 @require_any_role_instance([
     {
-        'team_instance.game_instance': lambda request, kwargs: get_object_or_404(GameInstance, join_code=kwargs['join_code']),
+        'team_instance.game_instance.join_code': lambda request, kwargs: kwargs['join_code'],
         'role.name': 'Gamemaster'
     },
     {
-        'team_instance.game_instance': lambda request, kwargs: get_object_or_404(GameInstance, join_code=kwargs['join_code']),
-        'team_instance.team': lambda request, kwargs: get_object_or_404(Team, name=kwargs['team_name']),
+        'team_instance.game_instance.join_code': lambda request, kwargs: kwargs['join_code'],
+        'team_instance.team.name': lambda request, kwargs: kwargs['team_name'],
         'role.name':'Combatant Commander'
     }
 ])
@@ -144,13 +144,13 @@ def get_game_unit_instances_by_team_name(request, join_code, team_name):
 @permission_classes([IsAuthenticated])
 @require_any_role_instance([
     {
-        'team_instance.game_instance': lambda request, kwargs: get_object_or_404(GameInstance, join_code=kwargs['join_code']),
+        'team_instance.game_instance.join_code': lambda request, kwargs: kwargs['join_code'],
         'role.name': 'Gamemaster'
     },
     {
-        'team_instance.game_instance': lambda request, kwargs: get_object_or_404(GameInstance, join_code=kwargs['join_code']),
-        'team_instance.team': lambda request, kwargs: get_object_or_404(Team, name=kwargs['team_name']),
-        'role.branch': lambda request, kwargs: get_object_or_404(Branch, name=kwargs['branch']),
+        'team_instance.game_instance.join_code': lambda request, kwargs: kwargs['join_code'],
+        'team_instance.team.name': lambda request, kwargs: kwargs['team_name'],
+        'role.branch.name': lambda request, kwargs: kwargs['branch'],
         'role.is_branch_commander': True
     }
 ])

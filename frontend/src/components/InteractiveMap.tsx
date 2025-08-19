@@ -255,7 +255,7 @@ export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
         if (!asset) return;
 
         try {
-            await authed_fetch(`/api/unit-instances/${asset.id}/`, {
+            await authed_fetch(`/api/unit-instances/${asset.id}/move/`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({

@@ -33,7 +33,7 @@ export default function CreateGamePage() {
     }, []);
 
     const handleCreate = async () => {
-        const response = await authed_fetch('/api/game-instances/', {
+        const response = await authed_fetch('/api/game-instances/create/', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ join_code: joinCode }),
