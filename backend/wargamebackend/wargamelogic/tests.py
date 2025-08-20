@@ -1,11 +1,13 @@
 from django.test import TestCase
+from django.test.utils import CaptureQueriesContext
+from django.db import connection
 from django.contrib.auth.models import User
 from rest_framework import status
 from rest_framework.test import APIClient, APITestCase
 from urllib.parse import quote
 import json
 from .models.static import (
-    Team, Branch, Role, Unit, UnitBranch, Landmark, Tile
+    Team, Branch, Role, Unit, Attack, Ability, UnitBranch, Landmark, Tile
 )
 from .models.dynamic import (
     GameInstance, TeamInstance, RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile
@@ -253,6 +255,109 @@ class RoleRequiredTests(TestCase):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(len(response.data) > 0)
+
+
+class UseAttackQueryCountTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+
+        # Users
+        self.gm_user = User.objects.create_user(username="gm", password="pass")
+        self.ops_user = User.objects.create_user(username="ops", password="pass")
+
+        # Core objects
+        self.team = Team.objects.create(name="USA")
+        self.branch = Branch.objects.create(name="Army")
+        self.gm_role = Role.objects.create(name="Gamemaster")
+        self.ops_role = Role.objects.create(
+            name="Infantry Commander",
+            branch=self.branch,
+            is_operations=True,
+        )
+        self.tile = Tile.objects.create(row=0, column=0)
+
+        self.game_instance = GameInstance.objects.create(join_code="TEST123")
+        self.team_instance = TeamInstance.objects.create(
+            game_instance=self.game_instance, team=self.team
+        )
+
+        # Assign GM role
+        self.gm_role_instance = RoleInstance.objects.create(
+            role=self.gm_role,
+            team_instance=self.team_instance,
+            user=self.gm_user,
+            supply_points=50
+        )
+
+        # Assign non-GM ops role
+        self.ops_role_instance = RoleInstance.objects.create(
+            role=self.ops_role,
+            team_instance=self.team_instance,
+            user=self.ops_user,
+            supply_points=50
+        )
+
+        # Unit + attack
+        self.unit = Unit.objects.create(
+            name="Infantry",
+            cost=0,
+            domain="Ground",
+            is_logistic=False,
+            type="Light",
+            max_health=20,
+            max_supply_space=4,
+            speed=30,
+            defense_modifier=0,
+            description="The Queen of the Battlefield."
+        )
+        self.unit_branch = UnitBranch.objects.create(
+            unit=self.unit,
+            branch=self.branch
+        )
+
+        self.attack = Attack.objects.create(
+            unit=self.unit,
+            name="Standard",
+            cost=1,
+            to_hit=3,
+            shots=6,
+            min_damage=1,
+            max_damage=1,
+            range=2,
+            type="Light",
+            attack_modifier=0,
+            attack_modifier_applies_to="None"
+        )
+
+        self.unit_instance = UnitInstance.objects.create(
+            unit=self.unit,
+            team_instance=self.team_instance,
+            tile=self.tile,
+            health=self.unit.max_health,
+            supply_count=self.unit.max_supply_space
+        )
+
+    def test_use_attack_query_count_gm(self):
+        """GM should match first criteria; caching isn’t really tested here."""
+        self.client.force_authenticate(self.gm_user)
+
+        with self.assertNumQueries(8):  # baseline for GM path
+            resp = self.client.patch(
+                f"/api/unit-instances/{self.unit_instance.pk}/attacks/{self.attack.name}/use/"
+            )
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn("attack_used", resp.json())
+
+    def test_use_attack_query_count_ops(self):
+        """Ops user should match second criteria; multiple cached_get_object_or_404 calls collapse."""
+        self.client.force_authenticate(self.ops_user)
+
+        with self.assertNumQueries(10):  # should be fewer than without caching
+            resp = self.client.patch(
+                f"/api/unit-instances/{self.unit_instance.pk}/attacks/{self.attack.name}/use/"
+            )
+            self.assertEqual(resp.status_code, 200)
+            self.assertIn("attack_used", resp.json())
 
 # ----------------------------
 # ViewSet tests
