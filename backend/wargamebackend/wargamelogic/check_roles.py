@@ -1,10 +1,13 @@
-from functools import wraps
-from django.http import JsonResponse
+import inspect
+from rest_framework import status
+from rest_framework.response import Response
 from django.db.models import Model, QuerySet
 from django.shortcuts import get_object_or_404
+from functools import wraps
 from datetime import datetime
-import inspect
-from .models import RoleInstance
+from .models import (
+    RoleInstance
+)
 
 
 # ------------------------
@@ -198,11 +201,11 @@ def require_role_instance(criteria):
                     else:
                         computed_criteria[k] = v
 
-                return JsonResponse({
+                return Response({
                     "detail": "You do not have the required role",
                     "allowed_role": _json_safe_dict(computed_criteria),
                     "failed_fields": _json_safe_dict(failed_fields)
-                }, status=403)
+                }, status=status.HTTP_403_FORBIDDEN)
             finally:
                 if hasattr(request, "_role_check_cache"):
                     delattr(request, "_role_check_cache")
@@ -237,11 +240,11 @@ def require_any_role_instance(criteria_list):
                             computed_criteria[k] = v
                     serialized_criteria_list.append(_json_safe_dict(computed_criteria))
 
-                return JsonResponse({
+                return Response({
                     "detail": "You do not have a required role",
                     "allowed_roles": serialized_criteria_list,
                     "failed_fields": all_failed_fields
-                }, status=403)
+                }, status=status.HTTP_403_FORBIDDEN)
             finally:
                 if hasattr(request, "_role_check_cache"):
                     delattr(request, "_role_check_cache")

@@ -1,32 +1,17 @@
-from rest_framework.permissions import IsAuthenticated, IsAdminUser, SAFE_METHODS
-from rest_framework.response import Response
 import rest_framework.decorators
-from rest_framework import viewsets, status
+from rest_framework import viewsets
+from rest_framework.permissions import IsAuthenticated, IsAdminUser, SAFE_METHODS
+from django.shortcuts import get_object_or_404
 from .models.static import (
-  Team, Branch, Role, Unit, UnitBranch, Attack, Ability, Landmark, Tile
+    Team, Branch, Role, Unit, UnitBranch, Attack, Ability, Landmark, Tile
 )
 from .models.dynamic import (
-  GameInstance, TeamInstance, RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile
+    GameInstance, TeamInstance, RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile
 )
 from .serializers import (
-    TeamSerializer,
-    BranchSerializer,
-    RoleSerializer,
-    UnitSerializer,
-    UnitBranchSerializer,
-    AttackSerializer,
-    AbilitySerializer,
-    TileSerializer,
-    LandmarkSerializer,
-
-    GameInstanceSerializer,
-    TeamInstanceSerializer,
-    RoleInstanceSerializer,
-    UnitInstanceSerializer,
-    LandmarkInstanceSerializer,
-    LandmarkInstanceTileSerializer,
+    TeamSerializer, BranchSerializer, RoleSerializer, UnitSerializer, UnitBranchSerializer, AttackSerializer, AbilitySerializer, TileSerializer, LandmarkSerializer,
+    GameInstanceSerializer, TeamInstanceSerializer, RoleInstanceSerializer, UnitInstanceSerializer, LandmarkInstanceSerializer, LandmarkInstanceTileSerializer,
 )
-from django.shortcuts import get_object_or_404
 from .check_roles import (
     require_role_instance, require_any_role_instance, get_object_and_related_with_cache_or_404
 )

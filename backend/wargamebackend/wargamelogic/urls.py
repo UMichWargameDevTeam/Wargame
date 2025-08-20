@@ -1,42 +1,30 @@
+from rest_framework.routers import DefaultRouter
 from django.urls import path, include
 from .views import (
     get, post, patch
 )
-from rest_framework.routers import DefaultRouter
 from .view_sets import (
-    TeamViewSet,
-    TeamInstanceViewSet,
-    BranchViewSet,
-    RoleViewSet,
-    RoleInstanceViewSet,
-    UnitViewSet,
-    UnitBranchViewSet,
-    UnitInstanceViewSet,
-    AttackViewSet,
-    AbilityViewSet,
-    TileViewSet,
-    LandmarkViewSet,
-    LandmarkInstanceViewSet,
-    LandmarkInstanceTileViewSet,
-    GameInstanceViewSet
+    TeamViewSet, BranchViewSet, RoleViewSet, UnitViewSet, UnitBranchViewSet, AttackViewSet, AbilityViewSet, LandmarkViewSet, TileViewSet,
+    GameInstanceViewSet, TeamInstanceViewSet, RoleInstanceViewSet, UnitInstanceViewSet, LandmarkInstanceViewSet, LandmarkInstanceTileViewSet
 )
 
 router = DefaultRouter()
 router.register(r'teams', TeamViewSet)
-router.register(r'team-instances', TeamInstanceViewSet)
+router.register(r'branches', BranchViewSet)
 router.register(r'roles', RoleViewSet)
-router.register(r'role-instances', RoleInstanceViewSet)
 router.register(r'units', UnitViewSet)
-router.register(r'unit-instances', UnitInstanceViewSet)
+router.register(r'unit-branches', UnitBranchViewSet)
 router.register(r'attacks', AttackViewSet)
 router.register(r'abilities', AbilityViewSet)
-router.register(r'branches', BranchViewSet)
-router.register(r'unit-branches', UnitBranchViewSet)
 router.register(r'landmarks', LandmarkViewSet)
-router.register(r'landmark-instances', LandmarkInstanceViewSet)
 router.register(r'tiles', TileViewSet)
-router.register(r'landmark-instance-tiles', LandmarkInstanceTileViewSet)
+
 router.register(r'game-instances', GameInstanceViewSet)
+router.register(r'team-instances', TeamInstanceViewSet)
+router.register(r'role-instances', RoleInstanceViewSet)
+router.register(r'unit-instances', UnitInstanceViewSet)
+router.register(r'landmark-instances', LandmarkInstanceViewSet)
+router.register(r'landmark-instance-tiles', LandmarkInstanceTileViewSet)
 
 
 urlpatterns = [

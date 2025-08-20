@@ -1,21 +1,9 @@
 from django.contrib import admin
 from .models.static import (
-    Team,
-    Branch,
-    Role,
-    Unit,
-    UnitBranch,
-    Attack,
-    Ability,
-    Tile,
-    Landmark,
+    Team, Branch, Role, Unit, UnitBranch, Attack, Ability, Tile, Landmark,
 )
 from .models.dynamic import (
-    RoleInstance,
-    UnitInstance,
-    LandmarkInstance,
-    LandmarkInstanceTile,
-    GameInstance
+    GameInstance, RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile
 )
 
 
@@ -124,8 +112,8 @@ admin.site.register(Branch)
 admin.site.register(UnitBranch)
 admin.site.register(Tile)
 
+admin.site.register(GameInstance)
 admin.site.register(RoleInstance)
 admin.site.register(UnitInstance)
 admin.site.register(LandmarkInstance)
 admin.site.register(LandmarkInstanceTile)
-admin.site.register(GameInstance)

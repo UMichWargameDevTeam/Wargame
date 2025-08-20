@@ -1,6 +1,8 @@
 from django.db import models
 from django.contrib.auth.models import User
-from .static import Role, Team, Unit, Tile, Landmark
+from .static import (
+    Team, Role, Unit, Landmark, Tile
+)
 
 class GameInstance(models.Model):
     join_code = models.CharField(max_length=20, unique=True)

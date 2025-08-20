@@ -36,7 +36,6 @@ LongTermWargame/
 
 - Python 3.10+ with virtualenv
 - Node.js 18+ and npm
-- Daphne (`pip install daphne`)
 - Make (preinstalled on macOS and most Linux systems)
 
 ---
@@ -46,8 +45,7 @@ LongTermWargame/
 ```bash
 python -m venv env
 source env/bin/activate  # or env\Scripts\activate on Windows
-cd backend/wargamebackend
-pip install -r requirements.txt
+pip install -r backend/requirements.txt
 ```
 
 To run the backend (ASGI server):
@@ -65,10 +63,15 @@ make back
 ```bash
 cd frontend
 npm install
+```
+
+To run the frontend:
+
+```
 npm run dev
 ```
 
-Or use:
+or use
 
 ```bash
 make front
@@ -78,7 +81,7 @@ make front
 
 ## .env file Setup
 
-In the top-level directory, create a file named .env with the following structure:
+In the root of the project, create a file named .env with the following structure:
 
 ```
 # Initially obtained from backend/wargamebackend/wargamebackend/settings.py
@@ -124,7 +127,7 @@ Use these from the root of the project:
 ```bash
 make backend     # Run Daphne ASGI backend
 make frontend    # Run Next.js frontend
-make both         # Run both in parallel (UNIX/macOS only)
+make both        # Run both in parallel (UNIX/macOS only). Probably the one you'll use most
 ```
 
 ---

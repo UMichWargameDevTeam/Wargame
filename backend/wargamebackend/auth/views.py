@@ -13,7 +13,7 @@ class RegisterView(APIView):
             return Response({"error": "Username and password required"}, status=status.HTTP_400_BAD_REQUEST)
 
         if User.objects.filter(username=username).exists():
-            return Response({"error": "Username taken"}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "Username taken"}, status=status.HTTP_400_BAD_REQUEST)
 
         user = User.objects.create_user(username=username, password=password)
         refresh = RefreshToken.for_user(user)

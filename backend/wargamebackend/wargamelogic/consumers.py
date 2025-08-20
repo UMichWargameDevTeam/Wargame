@@ -1,7 +1,6 @@
 import json
-from channels.generic.websocket import AsyncWebsocketConsumer
 import datetime
-from django.contrib.auth import get_user_model
+from channels.generic.websocket import AsyncWebsocketConsumer
 
 connected_users = {}  # {game_id: [{username, team, branch, role, ready}]}
 

@@ -4,13 +4,13 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from ..models.static import (
-    Attack, Tile
+    Tile
 )
 from ..models.dynamic import (
-    RoleInstance, UnitInstance
+    UnitInstance
 )
 from ..check_roles import (
-    require_role_instance, require_any_role_instance, get_object_and_related_with_cache_or_404, get_user_role_instances
+    require_any_role_instance, get_object_and_related_with_cache_or_404, get_user_role_instances
 )
 
 
@@ -66,17 +66,14 @@ def use_attack(request, pk, attack_name):
     role_instances = get_user_role_instances(request)
     role_instance = next((ri for ri in role_instances if ri.team_instance_id == unit_instance.team_instance_id), None)
     if role_instance is None:
-        return Response({"detail": "RoleInstance not found."}, status=404)
+        return Response({"error": "RoleInstance not found."}, status=status.HTTP_404_NOT_FOUND)
     
     attack = next((a for a in unit_instance.unit.attacks.all() if a.name == attack_name), None)
     if attack is None:
-        return Response({"detail": f"Attack '{attack_name}' not found for unit '{unit_instance.unit.name}'."}, status=404)
+        return Response({"error": f"Attack '{attack_name}' not found for unit '{unit_instance.unit.name}'."}, status=status.HTTP_404_NOT_FOUND)
 
     if role_instance.supply_points < attack.cost:
-        return Response(
-            {"detail": "Not enough supply points to perform this attack."},
-            status=status.HTTP_400_BAD_REQUEST
-        )
+        return Response({"detail": "Not enough supply points to perform this attack."}, status=status.HTTP_400_BAD_REQUEST)
 
     role_instance.supply_points -= attack.cost
     # TODO: actual attack logic here

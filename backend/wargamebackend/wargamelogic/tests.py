@@ -1,13 +1,11 @@
-from django.test import TestCase
-from django.test.utils import CaptureQueriesContext
-from django.db import connection
-from django.contrib.auth.models import User
-from rest_framework import status
-from rest_framework.test import APIClient, APITestCase
-from urllib.parse import quote
 import json
+from rest_framework import status
+from rest_framework.test import APIClient
+from django.test import TestCase
+from django.contrib.auth.models import User
+from urllib.parse import quote
 from .models.static import (
-    Team, Branch, Role, Unit, Attack, Ability, UnitBranch, Landmark, Tile
+    Team, Branch, Role, Unit, Attack, UnitBranch, Landmark, Tile
 )
 from .models.dynamic import (
     GameInstance, TeamInstance, RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile
@@ -68,7 +66,6 @@ class GetEndpointTests(TestCase):
         self.client.force_authenticate(user=self.user)
         unit_name = quote("B-2 Spirit")
         response = self.client.get(f'/api/units/{unit_name}/')
-        # print(response.json())
         self.assertEqual(response.status_code, 200)
     
     def test_get_unit_instances_by_team_and_branch(self):
@@ -77,7 +74,6 @@ class GetEndpointTests(TestCase):
         self.assertEqual(response.status_code, 200)
 
         response_json = response.json()
-        # print(response_json)
         self.assertEqual(response_json[0]['team_instance']['team']['name'], self.team.name)
         self.assertEqual(
             response_json[0]['unit']['branches'][0]['name'],
@@ -106,7 +102,6 @@ class PostEndpointTests(TestCase):
             data=json.dumps(payload),
             content_type='application/json'
         )
-        # print(response.json())
         self.assertEqual(response.status_code, 201)
 
     def test_create_role_instance(self):
@@ -121,7 +116,6 @@ class PostEndpointTests(TestCase):
             data=json.dumps(payload),
             content_type='application/json'
         )
-        print(response.json())
         self.assertEqual(response.status_code, 201)
 
         role_instance = RoleInstance.objects.filter(role=self.role, team_instance=self.team_instance).first()

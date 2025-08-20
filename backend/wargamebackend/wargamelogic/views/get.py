@@ -1,36 +1,24 @@
-
-from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, get_list_or_404
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from ..models.static import (
-  Team, Branch, Role, UnitBranch, Unit, Attack, Ability, Landmark, Tile
+    Team, Role, Unit, Attack, Ability, Landmark, Tile
 )
 from ..models.dynamic import (
-  GameInstance, TeamInstance, RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile
+    GameInstance, TeamInstance, RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile
 )
 from ..serializers import (
-    GameInstanceSerializer,
-    TeamSerializer,
-    RoleSerializer,
-    RoleInstanceSerializer,
-    BranchSerializer,
-    UnitSerializer,
-    UnitBranchSerializer,
-    UnitInstanceSerializer,
-    AttackSerializer,
-    AbilitySerializer,
-    LandmarkSerializer,
-    TeamInstanceSerializer,
-    LandmarkInstanceSerializer,
-    TileSerializer,
+    TeamSerializer, RoleSerializer, UnitSerializer, AttackSerializer, AbilitySerializer, LandmarkSerializer, TileSerializer,
+    TeamInstanceSerializer, RoleInstanceSerializer, UnitInstanceSerializer, LandmarkInstanceSerializer,
 )
-from ..check_roles import require_role_instance, require_any_role_instance
+from ..check_roles import (
+    require_role_instance, require_any_role_instance
+)
 
 def main_map(request):
-    return JsonResponse({"message": "Hello from Django view!"})
+    return Response({"message": "Hello from Django view!"}, status=status.HTTP_200_OK)
 
 # GET static table data
 
