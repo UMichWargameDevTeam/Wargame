@@ -341,7 +341,7 @@ class UseAttackQueryCountTests(TestCase):
         """GM should match first criteria; caching isn’t really tested here."""
         self.client.force_authenticate(self.gm_user)
 
-        with self.assertNumQueries(8):  # baseline for GM path
+        with self.assertNumQueries(4):
             resp = self.client.patch(
                 f"/api/unit-instances/{self.unit_instance.pk}/attacks/{self.attack.name}/use/"
             )
@@ -349,10 +349,9 @@ class UseAttackQueryCountTests(TestCase):
             self.assertIn("attack_used", resp.json())
 
     def test_use_attack_query_count_ops(self):
-        """Ops user should match second criteria; multiple cached_get_object_or_404 calls collapse."""
         self.client.force_authenticate(self.ops_user)
 
-        with self.assertNumQueries(10):  # should be fewer than without caching
+        with self.assertNumQueries(6):
             resp = self.client.patch(
                 f"/api/unit-instances/{self.unit_instance.pk}/attacks/{self.attack.name}/use/"
             )

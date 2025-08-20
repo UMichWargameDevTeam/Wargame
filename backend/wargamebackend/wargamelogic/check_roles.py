@@ -16,23 +16,55 @@ def _get_request_cache(request):
         request._role_check_cache = {}
     return request._role_check_cache
 
+def _normalize_select_related(sel):
+    """
+    Expand each select_related path into all its prefixes.
+    ['a__b__c'] → {'a', 'a__b', 'a__b__c'}
+    """
+    expanded = set()
+    for path in sel:
+        parts = path.split("__")
+        for i in range(1, len(parts) + 1):
+            expanded.add("__".join(parts[:i]))
+    return expanded
 
-def cached_call(request, func, *args, **kwargs):
-    """
-    Cache the result of calling `func(*args, **kwargs)` for this request.
-    """
+
+def get_object_and_related_with_cache_or_404(request, model, *args, select_related=None, **kwargs):
     cache = _get_request_cache(request)
-    key = (func, args, frozenset(kwargs.items()))
-    if key not in cache:
-        cache[key] = func(*args, **kwargs)
-    return cache[key]
 
+    # Build cache key (include select to detect new needs)
+    key = (model, frozenset(kwargs.items()), args)
+    entry = cache.get(key)
 
-def cached_get_object_or_404(request, model, *args, **kwargs):
-    """
-    Like get_object_or_404 but cached for the duration of the request.
-    """
-    return cached_call(request, get_object_or_404, model, *args, **kwargs)
+    sel = _normalize_select_related(select_related or [])
+
+    if entry is None:
+        qs = model.objects.all()
+        if sel:
+            qs = qs.select_related(*sel)
+        
+        obj = get_object_or_404(qs, *args, **kwargs)
+        cache[key] = {
+            "obj": obj,
+            "select_related": sel
+        }
+        return obj
+
+    # Combine previous select_relateds
+    want_sel = entry["select_related"] | sel
+
+    if want_sel != entry["select_related"]:
+        qs = model.objects.all()
+        qs = qs.select_related(*sorted(want_sel))
+        
+        obj = get_object_or_404(qs, *args, **kwargs)
+        cache[key] = {
+            "obj": obj,
+            "select_related": want_sel
+        }
+        return obj
+
+    return entry["obj"]
 
 
 # ------------------------
@@ -95,7 +127,7 @@ def _json_safe_dict(d):
 # Core role checking
 # ------------------------
 
-def _get_user_role_instances(request):
+def get_user_role_instances(request):
     """
     Fetch and cache the requesting user's RoleInstances for this request.
     """
@@ -113,7 +145,7 @@ def role_instance_matches(request, kwargs, criteria):
     if request.user.is_staff or request.user.is_superuser:
         return True, {}
 
-    role_instances = _get_user_role_instances(request)
+    role_instances = get_user_role_instances(request)
 
     failed_fields = {}
 

@@ -10,7 +10,7 @@ from ..models.dynamic import (
     RoleInstance, UnitInstance
 )
 from ..check_roles import (
-    require_role_instance, require_any_role_instance, cached_get_object_or_404
+    require_role_instance, require_any_role_instance, get_object_and_related_with_cache_or_404, get_user_role_instances
 )
 
 
@@ -18,18 +18,18 @@ from ..check_roles import (
 @permission_classes([IsAuthenticated])
 @require_any_role_instance([
     {
-        "team_instance.game_instance": lambda request, kwargs: cached_get_object_or_404(request, UnitInstance, pk=kwargs["pk"]).team_instance.game_instance,
+        "team_instance.game_instance": lambda request, kwargs: get_object_and_related_with_cache_or_404(request, UnitInstance, pk=kwargs["pk"], select_related=['team_instance__game_instance', 'unit']).team_instance.game_instance,
         "role.name": "Gamemaster",
     },
     {
-        "team_instance": lambda request, kwargs: cached_get_object_or_404(request, UnitInstance, pk=kwargs["pk"]).team_instance,
-        "role.branch": lambda request, kwargs: cached_get_object_or_404(request, UnitInstance, pk=kwargs["pk"]).unit.branches.all(),
-        "role.is_operations": lambda request, kwargs: not cached_get_object_or_404(request, UnitInstance, pk=kwargs["pk"]).unit.is_logistic,
-        "role.is_logistics": lambda request, kwargs: cached_get_object_or_404(request, UnitInstance, pk=kwargs["pk"]).unit.is_logistic 
+        "team_instance": lambda request, kwargs: get_object_and_related_with_cache_or_404(request, UnitInstance, pk=kwargs["pk"]).team_instance,
+        "role.branch": lambda request, kwargs: get_object_and_related_with_cache_or_404(request, UnitInstance, pk=kwargs["pk"]).unit.branches.all(),
+        "role.is_operations": lambda request, kwargs: not get_object_and_related_with_cache_or_404(request, UnitInstance, pk=kwargs["pk"]).unit.is_logistic,
+        "role.is_logistics": lambda request, kwargs: get_object_and_related_with_cache_or_404(request, UnitInstance, pk=kwargs["pk"]).unit.is_logistic 
     }
 ])
 def move_unit_instance(request, pk, row, column):
-    unit_instance = cached_get_object_or_404(request, UnitInstance, pk=pk)
+    unit_instance = get_object_and_related_with_cache_or_404(request, UnitInstance, pk=pk)
     target_tile = get_object_or_404(Tile, row=row, column=column)
     unit_instance.tile = target_tile
     unit_instance.save()
@@ -50,27 +50,27 @@ def move_unit_instance(request, pk, row, column):
 @permission_classes([IsAuthenticated])
 @require_any_role_instance([
     {
-        "team_instance.game_instance": lambda request, kwargs: cached_get_object_or_404(request, UnitInstance, pk=kwargs["pk"]).team_instance.game_instance,
+        "team_instance.game_instance": lambda request, kwargs: get_object_and_related_with_cache_or_404(request, UnitInstance, pk=kwargs["pk"], select_related=['team_instance__game_instance', 'unit']).team_instance.game_instance,
         "role.name": "Gamemaster",
     },
     {
-        "team_instance": lambda request, kwargs: cached_get_object_or_404(request, UnitInstance, pk=kwargs["pk"]).team_instance,
-        "role.branch": lambda request, kwargs: cached_get_object_or_404(request, UnitInstance, pk=kwargs["pk"]).unit.branches.all(),
-        "role.is_operations": lambda request, kwargs: not cached_get_object_or_404(request, UnitInstance, pk=kwargs["pk"]).unit.is_logistic,
-        "role.is_logistics": lambda request, kwargs: cached_get_object_or_404(request, UnitInstance, pk=kwargs["pk"]).unit.is_logistic,
+        "team_instance": lambda request, kwargs: get_object_and_related_with_cache_or_404(request, UnitInstance, pk=kwargs["pk"]).team_instance,
+        "role.branch": lambda request, kwargs: get_object_and_related_with_cache_or_404(request, UnitInstance, pk=kwargs["pk"]).unit.branches.all(),
+        "role.is_operations": lambda request, kwargs: not get_object_and_related_with_cache_or_404(request, UnitInstance, pk=kwargs["pk"]).unit.is_logistic,
+        "role.is_logistics": lambda request, kwargs: get_object_and_related_with_cache_or_404(request, UnitInstance, pk=kwargs["pk"]).unit.is_logistic,
     }
 ])
 def use_attack(request, pk, attack_name):
-    unit_instance = cached_get_object_or_404(request, UnitInstance, pk=pk)
-    try:
-        attack = unit_instance.unit.attacks.get(name=attack_name)
-    except Attack.DoesNotExist:
-        return Response(
-            {"detail": f"Attack '{attack_name}' not found for unit '{unit_instance.unit.name}'."},
-            status=status.HTTP_404_NOT_FOUND
-        )
+    unit_instance = get_object_and_related_with_cache_or_404(request, UnitInstance, pk=pk)
 
-    role_instance = cached_get_object_or_404(request, RoleInstance, user=request.user, team_instance=unit_instance.team_instance)
+    role_instances = get_user_role_instances(request)
+    role_instance = next((ri for ri in role_instances if ri.team_instance_id == unit_instance.team_instance_id), None)
+    if role_instance is None:
+        return Response({"detail": "RoleInstance not found."}, status=404)
+    
+    attack = next((a for a in unit_instance.unit.attacks.all() if a.name == attack_name), None)
+    if attack is None:
+        return Response({"detail": f"Attack '{attack_name}' not found for unit '{unit_instance.unit.name}'."}, status=404)
 
     if role_instance.supply_points < attack.cost:
         return Response(

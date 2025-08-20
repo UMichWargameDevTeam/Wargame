@@ -28,7 +28,7 @@ from .serializers import (
 )
 from django.shortcuts import get_object_or_404
 from .check_roles import (
-    require_role_instance, require_any_role_instance, cached_get_object_or_404
+    require_role_instance, require_any_role_instance, get_object_and_related_with_cache_or_404
 )
 
 # static model view sets
@@ -232,11 +232,11 @@ class UnitInstanceViewSet(viewsets.ModelViewSet):
     
     @require_any_role_instance([
         {
-            'team_instance.game_instance': lambda request, kwargs: cached_get_object_or_404(request, UnitInstance, pk=kwargs['pk']).team_instance.game_instance,
+            'team_instance.game_instance': lambda request, kwargs: get_object_and_related_with_cache_or_404(request, UnitInstance, pk=kwargs['pk'], select_related=['team_instance__game_instance']).team_instance.game_instance,
             'role.name':'Gamemaster'
         },
         {
-            'team_instance': lambda request, kwargs: cached_get_object_or_404(request, UnitInstance, pk=kwargs['pk']).team_instance
+            'team_instance': lambda request, kwargs: get_object_and_related_with_cache_or_404(request, UnitInstance, pk=kwargs['pk']).team_instance
         }
     ])
     def retrieve(self, request, *args, **kwargs):
@@ -244,11 +244,11 @@ class UnitInstanceViewSet(viewsets.ModelViewSet):
 
     @require_any_role_instance([
         {
-            'team_instance.game_instance': lambda request, kwargs: cached_get_object_or_404(request, UnitInstance, pk=kwargs['pk']).team_instance.game_instance,
+            'team_instance.game_instance': lambda request, kwargs: get_object_and_related_with_cache_or_404(request, UnitInstance, pk=kwargs['pk'], select_related=['team_instance__game_instance']).team_instance.game_instance,
             'role.name':'Gamemaster'
         },
         {
-            'team_instance': lambda request, kwargs: cached_get_object_or_404(request, UnitInstance, pk=kwargs['pk']).team_instance
+            'team_instance': lambda request, kwargs: get_object_and_related_with_cache_or_404(request, UnitInstance, pk=kwargs['pk']).team_instance
         }
     ])
     def destroy(self, request, *args, **kwargs):
