@@ -2,81 +2,157 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import JoinGameDialog from '@/components/dialogs/JoinGameDialog';
-
-const branchCommandRoles: Record<string, string> = {
-    USA: 'USA-CC',
-    USN: 'USN-CC',
-    USAF: 'USAF-CC',
-    JTF: 'JTF-CC',
-};
+import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 
 export default function RoleSelectPage() {
     const router = useRouter();
+    const authed_fetch = useAuthedFetch();
 
-    const [team, setTeam] = useState<string>('Red');
-    const [selectedBranch, setSelectedBranch] = useState<string>('USA');
+    const [teams, setTeams] = useState<any[]>([]);
+    const [branches, setBranches] = useState<any[]>([]);
+    const [roles, setRoles] = useState<any[]>([]);
+
+    const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
+    const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
     const [selectedRole, setSelectedRole] = useState<string | null>(null);
-    const [showDialog, setShowDialog] = useState(false);
-    const [joinCode, setJoinCode] = useState<string | null>(null);
-    const [gameInstance, setGameInstance] = useState<string | null>(null);
+
+    const [createCode, setCreateCode] = useState('');
+    const [createError, setCreateError] = useState<string | null>(null);
+
+    const [join_code, set_join_code] = useState('');
+    const [joinError, setJoinError] = useState<string | null>(null);
+
     const [username, setUsername] = useState<string>('');
 
     useEffect(() => {
-        const storedRole = sessionStorage.getItem('role');
-        const storedBranch = sessionStorage.getItem('branch');
-        const storedTeam = sessionStorage.getItem('team');
-        const storedGameId = sessionStorage.getItem('gameInstanceId');
-        const storedCode = sessionStorage.getItem('gameJoinCode');
         const storedUsername = sessionStorage.getItem('username') || 'Unknown';
+        const stored_join_code = sessionStorage.getItem('join_code');
+        const storedTeam = sessionStorage.getItem('team_name');
+        const storedBranch = sessionStorage.getItem('branch_name');
+        const storedRole = sessionStorage.getItem('role_name');
 
-        if (storedRole) setSelectedRole(storedRole);
+        if (stored_join_code) set_join_code(stored_join_code);
+        if (storedTeam) setSelectedTeam(storedTeam);
         if (storedBranch) setSelectedBranch(storedBranch);
-        if (storedTeam) setTeam(storedTeam);
-        if (storedGameId) setGameInstance(storedGameId);
-        if (storedCode) setJoinCode(storedCode);
+        if (storedRole) setSelectedRole(storedRole);
         setUsername(storedUsername);
+
+        authed_fetch('/api/teams/')
+            .then(res => res.json())
+            .then(data => setTeams(Array.isArray(data) ? data : data.results || []))
+            .catch(err => console.error("Failed to fetch teams", err));
+          
+        authed_fetch('/api/branches/')
+            .then(res => res.json())
+            .then(data => setBranches(Array.isArray(data) ? data : data.results || []))
+            .catch(err => console.error("Failed to fetch branches", err));
+
+        authed_fetch('/api/roles/')
+            .then(res => res.json())
+            .then(data => setRoles(Array.isArray(data) ? data : data.results || []))
+            .catch(err => console.error("Failed to fetch roles", err));
     }, []);
 
-    const handleRoleSelect = (role: string) => {
+    const handleRoleSelect = (role: string | null = null, branch: string | null = null) => {
         setSelectedRole(role);
-        sessionStorage.setItem('role', role);
-        sessionStorage.setItem('team', team);
-        sessionStorage.setItem('branch', selectedBranch);
+        setSelectedBranch(branch)
     };
 
-    const handleContinue = () => {
-        if (!selectedRole || !gameInstance) {
-            alert("Please select a role and join a game before continuing.");
+    const handleCreateGame = async () => {
+        if (!createCode.trim()) {
+            alert("Please enter a Join Code game before trying to create a game!");
             return;
         }
 
-        // Save all details to sessionStorage
-        sessionStorage.setItem('team', team);
-        sessionStorage.setItem('branch', selectedBranch);
-        sessionStorage.setItem('role', selectedRole);
-        sessionStorage.setItem('gameInstanceId', gameInstance);
-        sessionStorage.setItem('username', username);
+        try {
+            const res = await authed_fetch('/api/game-instances/create/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ join_code: createCode }),
+            });
 
-        // Optionally send "joined" event before redirect
-        const socket = new WebSocket(`ws://localhost:8000/ws/game/${gameInstance}/`);
+            if (!res.ok) {
+                const errorData = await res.json();
+                setCreateError(errorData.error || errorData.detail || errorData.message || "Failed to create game");
+                return;
+            }
 
-        socket.onopen = () => {
-            socket.send(JSON.stringify({
-                type: 'join',
-                username: sessionStorage.getItem('username'),
-                team,
-                branch: selectedBranch,
-                role: selectedRole,
-                ready: false,
-            }));
-            router.push('/mainmap');
-        };
+            const data = await res.json();
+
+            sessionStorage.setItem('username', data.username);
+            sessionStorage.setItem('join_code', data.join_code);
+            sessionStorage.setItem('team_name', data.team_name);
+            sessionStorage.setItem('branch_name', data.branch_name);
+            sessionStorage.setItem('role_name', data.role_name);
+
+            // Optionally send "joined" event before redirect
+            const socket = new WebSocket(`ws://localhost:8000/ws/game/${data.join_code}/`);
+            socket.onopen = () => {
+                socket.send(JSON.stringify({
+                    type: 'join',
+                    username: data.username,
+                    join_code: data.join_code,
+                    team_name: data.team_name,
+                    branch_name: data.branch_name,
+                    role_name: data.role_name,
+                    ready: false,
+                }));
+                router.push('/mainmap');
+            };
+        } catch (err: any) {
+            setCreateError(err.error || err.detail || err.message || "Something went wrong");
+        }
     };
 
-    const handleJoinSuccess = (id: string, code: string) => {
-        setGameInstance(id);
-        setJoinCode(code);
+    const handleJoinGame = async () => {
+        if (!join_code.trim()) {
+            alert("Please enter a Join Code before trying to join a game!");
+            return;
+        }
+
+        try {
+            // Make sure a RoleInstance exists in the DB
+            const res = await authed_fetch('/api/role-instances/create/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    join_code: join_code,
+                    team_name: selectedTeam,
+                    role_name: selectedRole,
+                }),
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json();
+                setJoinError(errorData.error || errorData.detail || errorData.message || "Failed to join game");
+                return;
+            }
+
+            const data = await res.json();
+
+            sessionStorage.setItem('username', data.username);
+            sessionStorage.setItem('join_code', data.join_code);
+            sessionStorage.setItem('team_name', data.team_name);
+            sessionStorage.setItem('branch_name', data.branch_name);
+            sessionStorage.setItem('role_name', data.role_name);
+
+            // Optionally send "joined" event before redirect
+            const socket = new WebSocket(`ws://localhost:8000/ws/game/${data.join_code}/`);
+            socket.onopen = () => {
+                socket.send(JSON.stringify({
+                    type: 'join',
+                    username: data.username,
+                    join_code: data.join_code,
+                    team_name: data.team_name,
+                    branch_name: data.branch_name,
+                    role_name: data.role_name,
+                    ready: false,
+                }));
+                router.push('/mainmap');
+            };
+        } catch (err: any) {
+            setJoinError(err.error || err.detail || err.message || "Something went wrong");
+        }
     };
 
     const handleLogout = () => {
@@ -86,23 +162,15 @@ export default function RoleSelectPage() {
         router.push('/login');
     };
 
-    const handleLeave = () => {
-        setJoinCode(null);
-        setGameInstance(null);
-        sessionStorage.removeItem('gameJoinCode');
-        sessionStorage.removeItem('gameInstanceId');
-    };
-
     return (
-        <div className="h-screen w-screen flex flex-col bg-neutral-900 text-white">
+        <div className="h-screen w-screen flex flex-col bg-neutral-900 text-white overflow-auto">
             {/* Header */}
             <div className="text-center py-6 bg-neutral-800 text-3xl font-bold border-b border-neutral-700">
                 Welcome to the Digital Wargame
             </div>
 
-            {/* Main content */}
-            <div className="flex flex-1 overflow-hidden">
-                {/* Left: Rules / Tips */}
+            <div className="flex flex-1 overflow-auto">
+                {/* LEFT SIDE */}
                 <div className="w-1/2 p-6 overflow-y-auto border-r border-neutral-700">
                     <h2 className="text-2xl font-semibold mb-4">Rules & Tips</h2>
                     <div className="space-y-6 text-lg leading-relaxed">
@@ -118,107 +186,149 @@ export default function RoleSelectPage() {
                     </div>
                 </div>
 
-                {/* Right side: Game + Team + Roles */}
-                <div className="w-1/2 p-6 flex flex-col">
-                    <h2 className="text-xl font-semibold mb-2">Create or Join Game</h2>
-                    {/* Game Mode Buttons */}
-                    <div className="mb-6 flex gap-4">
-                        <button onClick={() => router.push('/creategame')}
-                            className="px-4 py-2 bg-purple-700 rounded hover:bg-purple-600 transition">
-                            Create New Game as Gamemaster
-                        </button>
-                        <button
-                            className="px-4 py-2 bg-orange-700 rounded hover:bg-orange-600 transition"
-                            onClick={() => setShowDialog(true)}
-                        >
-                            {joinCode ? `Leave (${joinCode})` : 'Join Game'}
-                        </button>
-
-                        {showDialog && (
-                            <JoinGameDialog
-                                onClose={() => setShowDialog(false)}
-                                onSuccess={handleJoinSuccess}
-                                onLeave={handleLeave}
+                {/* RIGHT SIDE */}
+                <div className="w-1/2 p-6 flex flex-col overflow-y-auto gap-6">
+                    <div>
+                        {/* Create game input */}
+                        <h2 className="text-xl font-semibold mb-2">Create a new game as Gamemaster</h2>
+                        <div className="flex items-center gap-2 mb-2">
+                            <label className="whitespace-nowrap">Join Code:</label>
+                            <input
+                                type="text"
+                                value={createCode}
+                                onChange={(e) => setCreateCode(e.target.value)}
+                                placeholder="Enter your new game's join code..."
+                                className="flex-1 px-4 py-2 rounded bg-white text-black"
                             />
-                        )}
-                        {/* Continue Button */}
-                        <button
-                            onClick={handleContinue}
-                            disabled={!team || !selectedRole || !gameInstance}
-                            className={`px-4 py-2 rounded text-lg font-semibold transition ${team && selectedRole && gameInstance
-                                ? 'bg-green-600 hover:bg-green-700'
-                                : 'bg-gray-600 text-gray-400 cursor-not-allowed'
-                                }`}
-                        >
-                            Continue
-                        </button>
-                    </div>
-
-                    {/* Team Selection */}
-                    <div className="mb-6">
-                        <h2 className="text-xl font-semibold mb-2">Select Your Team</h2>
-                        <div className="flex gap-4">
                             <button
-                                onClick={() => setTeam('Red')}
-                                className={`px-4 py-2 rounded ${team === 'Red' ? 'bg-red-700' : 'bg-gray-600 text-gray-400 cursor-not-allowed'}`}
-                                disabled={team === 'Red'}
+                                onClick={handleCreateGame}
+                                disabled={!createCode.trim()}
+                                className={`px-4 py-2 rounded transition
+                                    ${!createCode.trim()
+                                        ? "bg-gray-500 cursor-not-allowed"
+                                        : "bg-purple-700 hover:bg-purple-600 cursor-pointer"
+                                    }`}
                             >
-                                Red Team
-                            </button>
-                            <button
-                                onClick={() => setTeam('Blue')}
-                                className={`px-4 py-2 rounded ${team === 'Blue' ? 'bg-blue-700' : 'bg-gray-600 text-gray-400 cursor-not-allowed'}`}
-                                disabled={team === 'Blue'}
-                            >
-                                Blue Team
+                                Create Game
                             </button>
                         </div>
+                        {createError && <p className="text-red-400 mb-2">{createError}</p>}
                     </div>
 
-                    {/* Branch Tabs */}
-                    <div className="mb-4">
-                        <h2 className="text-xl font-semibold mb-2">Select Your Branch and Role</h2>
-                        <div className="flex gap-4 mb-2">
-                            {['USA', 'USN', 'USAF', 'JTF'].map(branch => (
-                                <button
-                                    key={branch}
-                                    onClick={() => setSelectedBranch(branch)}
-                                    className={`px-4 py-2 rounded ${selectedBranch === branch ? 'bg-yellow-600 text-black font-bold' : 'bg-gray-600 hover:bg-gray-500'}`}
-                                >
-                                    {branch}
-                                </button>
-                            ))}
+                    <div>
+                        {/* Join game input */}
+                        <h2 className="text-xl font-semibold mb-2">Join an existing game</h2>
+                        <div className="flex items-center gap-2 mb-2">
+                            <label className="whitespace-nowrap">Join Code:</label>
+                            <input
+                                type="text"
+                                value={join_code}
+                                onChange={(e) => set_join_code(e.target.value)}
+                                placeholder="Enter the game's join code here..."
+                                className="flex-1 px-4 py-2 rounded bg-white text-black"
+                            />
                         </div>
 
-                        {/* Role Buttons for Selected Branch */}
-                        <div className="space-y-3">
-                            <button
-                                onClick={() => handleRoleSelect('Ops')}
-                                className={`w-full py-3 rounded bg-blue-700 hover:bg-blue-600 text-lg font-medium ${selectedRole === 'Ops' ? 'ring-2 ring-white' : ''}`}
-                            >
-                                Ops
-                            </button>
-                            <button
-                                onClick={() => handleRoleSelect('Logistics')}
-                                className={`w-full py-3 rounded bg-green-700 hover:bg-green-600 text-lg font-medium ${selectedRole === 'Logistics' ? 'ring-2 ring-white' : ''}`}
-                            >
-                                Logistics
-                            </button>
-                            <button
-                                onClick={() => handleRoleSelect(branchCommandRoles[selectedBranch])}
-                                className={`w-full py-3 rounded bg-yellow-500 hover:bg-yellow-400 text-black font-semibold text-lg ${selectedRole === branchCommandRoles[selectedBranch] ? 'ring-2 ring-white' : ''}`}
-                            >
-                                {branchCommandRoles[selectedBranch]}
-                            </button>
+                        <div className="mt-4">
+                            {/* Team Selector */}
+                            <h3 className="text-lg font-semibold mb-1">Select Your Team</h3>
+                            <div className="flex flex-wrap gap-2 mb-3">
+                                {teams
+                                    .filter((t: any) => t.name !== 'Gamemasters')
+                                    .map((t: any) => (
+                                        <button
+                                            key={t.id}
+                                            onClick={() => setSelectedTeam(t.name !== selectedTeam ? t.name : null)}
+                                            className={`px-4 py-2 rounded cursor-pointer ${selectedTeam === t.name ? 'bg-green-600' : 'bg-gray-600 hover:bg-gray-500'}`}
+                                        >
+                                            {t.name}
+                                        </button>
+                                    ))}
+                            </div>
+
+                            {/* Branch-neutral role selector */}
+                            <h3 className="text-lg font-semibold mb-1">Branch-neutral Roles</h3>
+                            <div className="flex flex-wrap gap-2 mb-3">
+                                {roles
+                                    .filter((r: any) => r.branch === null && r.name !== 'Gamemaster')
+                                    .map((r: any) => (
+                                        <button
+                                            key={r.id}
+                                            onClick={() => handleRoleSelect(r.name !== selectedRole ? r.name : null, null)}
+                                            className={`px-4 py-2 rounded cursor-pointer ${selectedRole === r.name ? 'bg-green-600' : 'bg-gray-600 hover:bg-gray-500'}`}
+                                        >
+                                            {r.name}
+                                        </button>
+                                    ))}
+                            </div>
+
+                            <div className="mb-6">
+                                <h3 className="text-lg font-semibold mb-2">Branch-specific Roles</h3>
+                                <div className="mb-2">
+                                    {/* Branch Selector */}
+                                    <h4 className="text-md font-medium mb-1">Branch</h4>
+                                    <div className="flex gap-2 flex-wrap">
+                                        {branches
+                                            .map((b: any) => (
+                                                <button
+                                                    key={b.id}
+                                                    onClick={() => handleRoleSelect(null, b.name !== selectedBranch ? b.name : null)}
+                                                    className={`px-4 py-2 rounded cursor-pointer ${selectedBranch === b.name ? 'bg-green-600' : 'bg-gray-600 hover:bg-gray-500'}`}
+                                                >
+                                                    {b.name}
+                                                </button>
+                                            ))
+                                        }
+                                    </div>
+                                </div>
+
+                                <div>
+                                    {/* Branch-specific role selector */}
+                                    <h4 className="text-md font-medium mb-1">Role</h4>
+                                    <div className="flex flex-wrap gap-2">
+                                        {selectedBranch ? (
+                                            roles
+                                                .filter((r: any) => r.branch?.name === selectedBranch)
+                                                .map((r: any) => (
+                                                    <button
+                                                        key={r.id}
+                                                        onClick={() => handleRoleSelect(r.name !== selectedRole ? r.name : null, r.branch.name)}
+                                                        className={`px-4 py-2 rounded cursor-pointer ${selectedRole === r.name ? 'bg-green-600' : 'bg-gray-600 hover:bg-gray-500'}`}
+                                                    >
+                                                        {r.name}
+                                                    </button>
+                                                ))
+                                        ) : (
+                                            <span className="text-gray-400">Please select a branch first...</span>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
+
                         </div>
                     </div>
+                    
+                    {/* Join game button */}
+                    <button
+                        onClick={handleJoinGame}
+                        disabled={!join_code.trim()}
+                        className={`px-4 py-2 rounded transition
+                            ${!join_code.trim()
+                                ? "bg-gray-500 cursor-not-allowed"
+                                : "bg-blue-600 hover:bg-blue-700 cursor-pointer"
+                            }`}
+                    >
+                        Join Game
+                    </button>
+                    {joinError && <p className="text-red-400 mb-2">{joinError}</p>}
+
                 </div>
             </div>
 
             {/* Logout Button */}
             <button
                 onClick={handleLogout}
-                className="absolute bottom-6 right-6 text-sm bg-red-600 px-4 py-2 rounded hover:bg-red-700 transition"
+                className="absolute bottom-6 left-6 text-sm bg-red-600 px-4 py-2 rounded cursor-pointer hover:bg-red-700 transition"
             >
                 Logout
             </button>
