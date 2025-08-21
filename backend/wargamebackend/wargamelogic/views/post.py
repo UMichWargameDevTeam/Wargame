@@ -19,6 +19,9 @@ def create_game_instance(request):
     join_code = request.data.get("join_code")
     if not join_code:
         return Response({"error": "join_code is required."}, status=status.HTTP_400_BAD_REQUEST)
+    
+    if len(join_code.trim()) < 1:
+        return Response({"detail": "join_code must contain least one non-whitespace character."}, status=status.HTTP_400_BAD_REQUEST)
 
     if GameInstance.objects.filter(join_code=join_code).exists():
         return Response({"detail": f"GameInstance with join_code '{join_code}' already exists."}, status=status.HTTP_400_BAD_REQUEST)

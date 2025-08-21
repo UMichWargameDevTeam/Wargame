@@ -1,8 +1,9 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
+import { WS_URL } from '@/lib/utils';
 
 export default function RoleSelectPage() {
     const router = useRouter();
@@ -22,20 +23,11 @@ export default function RoleSelectPage() {
     const [join_code, set_join_code] = useState('');
     const [joinError, setJoinError] = useState<string | null>(null);
 
-    const [username, setUsername] = useState<string>('');
-
     useEffect(() => {
-        const storedUsername = sessionStorage.getItem('username') || 'Unknown';
         const stored_join_code = sessionStorage.getItem('join_code');
         const storedTeam = sessionStorage.getItem('team_name');
         const storedBranch = sessionStorage.getItem('branch_name');
         const storedRole = sessionStorage.getItem('role_name');
-
-        if (stored_join_code) set_join_code(stored_join_code);
-        if (storedTeam) setSelectedTeam(storedTeam);
-        if (storedBranch) setSelectedBranch(storedBranch);
-        if (storedRole) setSelectedRole(storedRole);
-        setUsername(storedUsername);
 
         authed_fetch('/api/teams/')
             .then(res => res.json())
@@ -86,7 +78,7 @@ export default function RoleSelectPage() {
             sessionStorage.setItem('role_name', data.role_name);
 
             // Optionally send "joined" event before redirect
-            const socket = new WebSocket(`ws://localhost:8000/ws/game/${data.join_code}/`);
+            const socket = new WebSocket(`${WS_URL}/game-instances/${data.join_code}/users/`);
             socket.onopen = () => {
                 socket.send(JSON.stringify({
                     type: 'join',
@@ -97,8 +89,9 @@ export default function RoleSelectPage() {
                     role_name: data.role_name,
                     ready: false,
                 }));
-                router.push('/mainmap');
+                router.push(`/game-instances/${data.join_code}/mainmap/`);
             };
+
         } catch (err: any) {
             setCreateError(err.error || err.detail || err.message || "Something went wrong");
         }
@@ -111,7 +104,6 @@ export default function RoleSelectPage() {
         }
 
         try {
-            // Make sure a RoleInstance exists in the DB
             const res = await authed_fetch('/api/role-instances/create/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -137,7 +129,7 @@ export default function RoleSelectPage() {
             sessionStorage.setItem('role_name', data.role_name);
 
             // Optionally send "joined" event before redirect
-            const socket = new WebSocket(`ws://localhost:8000/ws/game/${data.join_code}/`);
+            const socket = new WebSocket(`${WS_URL}/game-instances/${data.join_code}/users/`);
             socket.onopen = () => {
                 socket.send(JSON.stringify({
                     type: 'join',
@@ -148,8 +140,9 @@ export default function RoleSelectPage() {
                     role_name: data.role_name,
                     ready: false,
                 }));
-                router.push('/mainmap');
+                router.push(`/game-instances/${data.join_code}/mainmap/`);
             };
+
         } catch (err: any) {
             setJoinError(err.error || err.detail || err.message || "Something went wrong");
         }

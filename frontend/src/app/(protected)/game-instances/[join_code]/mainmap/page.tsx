@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useParams } from 'next/navigation';
 import MapSelector from '@/components/MapSelector';
 import AssetDisplay from '@/components/AssetDisplay';
 import FooterControls from '@/components/FooterControls';
@@ -18,6 +19,10 @@ export default function MainMapPage() {
     // const [socket, setSocket] = useState<WebSocket | null>(null);
     //const [messages, setMessages] = useState<string[]>([]);
     // const [input, setInput] = useState('');
+
+    const params = useParams();
+    const join_code = params.join_code as string;
+
     const [role, setRole] = useState<string | null>(null);
     const [mapSrc, setMapSrc] = useState('/maps/taiwan_middle_clean.png');
     const [assets, setAssets] = useState<Asset[]>([]);
@@ -25,7 +30,7 @@ export default function MainMapPage() {
     const authed_fetch = useAuthedFetch()
 
     useEffect(() => {
-        authed_fetch(`/api/unit-instances/`)
+        authed_fetch(`/api/game-instances/${join_code}/unit-instances/`)
             .then(res => res.json())
             .then(data => {
                 if (Array.isArray(data)) {
@@ -43,7 +48,7 @@ export default function MainMapPage() {
 
 
     useEffect(() => {
-        const storedRole = sessionStorage.getItem('role');
+        const storedRole = sessionStorage.getItem('role_name');
         setRole(storedRole);
         const storedMap = sessionStorage.getItem('mapSrc');
         if (storedMap) {
@@ -53,7 +58,7 @@ export default function MainMapPage() {
 
     // effect for timer
     useEffect(() => {
-        const ws = new WebSocket(`${WS_URL}/timer/`);
+        const ws = new WebSocket(`${WS_URL}/game-instances/${join_code}/global-timer/`);
         ws.onmessage = (event) => {
             const data = JSON.parse(event.data);
             setTimer(data.remaining_seconds);
@@ -93,10 +98,8 @@ export default function MainMapPage() {
                     </div>
                 )}
                 <div className="w-full h-full bg-neutral-800 rounded-lg overflow-hidden">
-                    <InteractiveMap mapSrc={mapSrc} assets={assets} setAssets={setAssets} />
+                    <InteractiveMap mapSrc={mapSrc} join_code={join_code} assets={assets} setAssets={setAssets} />
                 </div>
-
-
 
                 {/* Footer for Ops/Logs */}
                 {canViewRestrictedComponents(role) && (

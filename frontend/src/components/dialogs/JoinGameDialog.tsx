@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 
 interface JoinGameDialogProps {
     onClose: () => void;
-    onSuccess: (gameInstanceId: string, joinCode: string) => void;
+    onSuccess: (joinCode: string) => void;
     onLeave: () => void;
 }
 
@@ -16,9 +16,8 @@ export default function JoinGameDialog({ onClose, onSuccess, onLeave }: JoinGame
     const authed_fetch = useAuthedFetch()
 
     useEffect(() => {
-        const savedCode = sessionStorage.getItem('gameJoinCode');
-        const savedId = sessionStorage.getItem('gameInstanceId');
-        if (savedCode && savedId) {
+        const savedCode = sessionStorage.getItem('join_code');
+        if (savedCode) {
             setExistingCode(savedCode);
         }
     }, []);
@@ -31,9 +30,8 @@ export default function JoinGameDialog({ onClose, onSuccess, onLeave }: JoinGame
             const data = await res.json();
             if (data.length === 0) throw new Error('No matching join code');
 
-            sessionStorage.setItem('gameInstanceId', data[0].id);
-            sessionStorage.setItem('gameJoinCode', data[0].join_code);
-            onSuccess(data[0].id, data[0].join_code);
+            sessionStorage.setItem('join_code', data[0].join_code);
+            onSuccess(data[0].join_code);
             onClose();
         } catch (err) {
             setError((err as Error).message);
@@ -41,8 +39,7 @@ export default function JoinGameDialog({ onClose, onSuccess, onLeave }: JoinGame
     };
 
     const handleLeaveGame = () => {
-        sessionStorage.removeItem('gameInstanceId');
-        sessionStorage.removeItem('gameJoinCode');
+        sessionStorage.removeItem('join_code');
         setExistingCode(null);
         setJoinCode('');
         onClose();

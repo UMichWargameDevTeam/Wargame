@@ -6,9 +6,9 @@ import { Asset } from "@/lib/Types";
 import { WS_URL } from '@/lib/utils';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 
-
 interface Props {
     mapSrc: string;
+    join_code: string;
     assets: Asset[];
     setAssets: React.Dispatch<React.SetStateAction<Asset[]>>;
 }
@@ -18,7 +18,7 @@ const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 5;
 
 
-export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
+export default function InteractiveMap({ mapSrc, join_code, assets, setAssets }: Props) {
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const socketRef = useRef<WebSocket | null>(null);
@@ -62,7 +62,7 @@ export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
 
     // WebSocket setup
     useEffect(() => {
-        const socket = new WebSocket(`${WS_URL}/unit-instances/`);
+        const socket = new WebSocket(`${WS_URL}/game-instances/${join_code}/unit-instances/`);
         socketRef.current = socket;
 
         socket.onmessage = (event) => {

@@ -17,7 +17,7 @@ from ..check_roles import (
     require_role_instance, require_any_role_instance
 )
 
-def main_map(request):
+def main_map(request, join_code):
     return Response({"message": "Hello from Django view!"}, status=status.HTTP_200_OK)
 
 # GET static table data
