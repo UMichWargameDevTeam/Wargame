@@ -1,19 +1,34 @@
-import rest_framework.decorators
-from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, SAFE_METHODS
-from django.shortcuts import get_object_or_404
+from rest_framework.response import Response
+import rest_framework.decorators
+from rest_framework import viewsets, status
 from .models.static import (
-    Team, Branch, Role, Unit, UnitBranch, Attack, Ability, Landmark, Tile
+  Team, Branch, Role, Unit, UnitBranch, Attack, Ability, Landmark, Tile
 )
 from .models.dynamic import (
-    GameInstance, TeamInstance, RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile
+  GameInstance, TeamInstance, RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile
 )
 from .serializers import (
-    TeamSerializer, BranchSerializer, RoleSerializer, UnitSerializer, UnitBranchSerializer, AttackSerializer, AbilitySerializer, TileSerializer, LandmarkSerializer,
-    GameInstanceSerializer, TeamInstanceSerializer, RoleInstanceSerializer, UnitInstanceSerializer, LandmarkInstanceSerializer, LandmarkInstanceTileSerializer,
+    TeamSerializer,
+    BranchSerializer,
+    RoleSerializer,
+    UnitSerializer,
+    UnitBranchSerializer,
+    AttackSerializer,
+    AbilitySerializer,
+    TileSerializer,
+    LandmarkSerializer,
+
+    GameInstanceSerializer,
+    TeamInstanceSerializer,
+    RoleInstanceSerializer,
+    UnitInstanceSerializer,
+    LandmarkInstanceSerializer,
+    LandmarkInstanceTileSerializer,
 )
+from django.shortcuts import get_object_or_404
 from .check_roles import (
-    require_role_instance, require_any_role_instance, get_object_and_related_with_cache_or_404
+    require_role_instance, require_any_role_instance
 )
 
 # static model view sets
@@ -182,7 +197,63 @@ class RoleInstanceViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = RoleInstance.objects.all()
     serializer_class = RoleInstanceSerializer
-    http_method_names = ['get', 'patch', 'put', 'delete']
+    http_method_names = ['get', 'post', 'patch', 'put', 'delete']
+
+    def create(self, request, *args, **kwargs):
+        role_id = request.data.get("role_id")
+        team_instance_id = request.data.get("team_instance_id")
+        user_id = request.data.get("user_id")
+
+        if not role_id or not team_instance_id or not user_id:
+            return Response(
+                {"error": "Missing role_id, team_instance_id, or user_id"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        if int(user_id) != request.user.id:
+            return Response(
+                {"error": "You cannot create a role for another user"},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        try:
+            role = Role.objects.get(id=role_id)
+        except Role.DoesNotExist:
+            return Response(
+                {"error": f"Role not found with id: {role_id}"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        try:
+            team_instance = TeamInstance.objects.select_related("game_instance").get(id=team_instance_id)
+        except TeamInstance.DoesNotExist:
+            return Response(
+                {"error": f"TeamInstance not found with id: {team_instance_id}"},
+                status=status.HTTP_404_NOT_FOUND
+            )
+
+        game_instance = team_instance.game_instance
+
+        if role.name == "Gamemaster":
+            if RoleInstance.objects.filter(
+                team_instance__game_instance=game_instance,
+                role__name="Gamemaster"
+            ).exists():
+                return Response(
+                    {"error": "This game already has a Gamemaster"},
+                    status=status.HTTP_400_BAD_REQUEST
+                )
+
+        if RoleInstance.objects.filter(
+            team_instance__game_instance=game_instance,
+            user=request.user
+        ).exists():
+            return Response(
+                {"error": f"User {request.user.username} already has a role in this game"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        return super().create(request, *args, **kwargs)
 
     @require_role_instance({
         'team_instance.game_instance': lambda request, kwargs: get_object_or_404(RoleInstance, pk=kwargs['pk']).team_instance.game_instance,
@@ -209,31 +280,67 @@ class UnitInstanceViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = UnitInstance.objects.all()
     serializer_class = UnitInstanceSerializer
-    http_method_names = ['get', 'delete']
+    http_method_names = ['get', 'post', 'patch', 'put', 'delete']
+
+    # TODO: restrict the get method of this endpoint once we receive more info from mechanics team
+    # TODO: restrict the post method of this endpoint once we receive more info from mechanics team
 
     @rest_framework.decorators.permission_classes([IsAuthenticated, IsAdminUser])
     def list(self, request, *args, **kwargs):
         return super().list(request, *args, **kwargs)
-    
-    @require_any_role_instance([
-        {
-            'team_instance.game_instance': lambda request, kwargs: get_object_and_related_with_cache_or_404(request, UnitInstance, pk=kwargs['pk'], select_related=['team_instance__game_instance']).team_instance.game_instance,
-            'role.name':'Gamemaster'
-        },
-        {
-            'team_instance': lambda request, kwargs: get_object_and_related_with_cache_or_404(request, UnitInstance, pk=kwargs['pk']).team_instance
-        }
-    ])
-    def retrieve(self, request, *args, **kwargs):
-        return super().retrieve(request, *args, **kwargs)
 
     @require_any_role_instance([
         {
-            'team_instance.game_instance': lambda request, kwargs: get_object_and_related_with_cache_or_404(request, UnitInstance, pk=kwargs['pk'], select_related=['team_instance__game_instance']).team_instance.game_instance,
+            'team_instance.game_instance': lambda request, kwargs: get_object_or_404(UnitInstance, pk=kwargs['pk']).team_instance.game_instance,
             'role.name':'Gamemaster'
         },
         {
-            'team_instance': lambda request, kwargs: get_object_and_related_with_cache_or_404(request, UnitInstance, pk=kwargs['pk']).team_instance
+            'team_instance': lambda request, kwargs: get_object_or_404(UnitInstance, pk=kwargs['pk']).team_instance
+            # TODO: add more criteria here once we get more info from the mechanics team
+        }
+    ])
+    def partial_update(self, request, *args, **kwargs):
+        instance = self.get_object()
+
+        row = request.data.get("row")
+        column = request.data.get("column")
+
+        if row is not None and column is not None:
+            tile, created = Tile.objects.get_or_create(
+                row=row,
+                column=column,
+                defaults={"terrain": "Plains/Grasslands"}  # default
+            )
+            instance.tile = tile
+            instance.save()
+
+        serializer = self.get_serializer(instance, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+        self.perform_update(serializer)
+
+        return Response(serializer.data)
+
+    @require_any_role_instance([
+        {
+            'team_instance.game_instance': lambda request, kwargs: get_object_or_404(UnitInstance, pk=kwargs['pk']).team_instance.game_instance,
+            'role.name':'Gamemaster'
+        },
+        {
+            'team_instance': lambda request, kwargs: get_object_or_404(UnitInstance, pk=kwargs['pk']).team_instance
+            # TODO: add more criteria here once we get more info from the mechanics team
+        }
+    ])
+    def update(self, request, *args, **kwargs):
+        # Make PUT behave the same way
+        return self.partial_update(request, *args, **kwargs)
+    
+    @require_any_role_instance([
+        {
+            'team_instance.game_instance': lambda request, kwargs: get_object_or_404(UnitInstance, pk=kwargs['pk']).team_instance.game_instance,
+            'role.name':'Gamemaster'
+        },
+        {
+            'team_instance': lambda request, kwargs: get_object_or_404(UnitInstance, pk=kwargs['pk']).team_instance
         }
     ])
     def destroy(self, request, *args, **kwargs):
@@ -246,12 +353,7 @@ class LandmarkInstanceViewSet(viewsets.ModelViewSet):
     serializer_class = LandmarkInstanceSerializer
     http_method_names = ['get', 'post', 'patch', 'put', 'delete']
 
-    @require_role_instance({
-        'team_instance.game_instance': lambda request, kwargs: get_object_or_404(LandmarkInstance, pk=kwargs['pk']).game_instance,
-        'role.name': 'Gamemaster'
-    })
-    def create(self, request, *args, **kwargs):
-        return super().create(request, *args, **kwargs)
+    # TODO: think more about how we'll actually create landmark instances and who should have permission to do so
 
     @require_role_instance({
         'team_instance.game_instance': lambda request, kwargs: get_object_or_404(LandmarkInstance, pk=kwargs['pk']).game_instance,
@@ -280,12 +382,7 @@ class LandmarkInstanceTileViewSet(viewsets.ModelViewSet):
     serializer_class = LandmarkInstanceTileSerializer
     http_method_names = ['get', 'post', 'patch', 'put', 'delete']
 
-    @require_role_instance({
-        'team_instance.game_instance': lambda request, kwargs: get_object_or_404(LandmarkInstanceTile, pk=kwargs['pk']).landmark_instance.game_instance,
-        'role.name': 'Gamemaster'
-    })
-    def create(self, request, *args, **kwargs):
-        return super().create(request, *args, **kwargs)
+    # TODO: think more about how we'll actually create landmark instances and who should have permission to do so
 
     @require_role_instance({
         'team_instance.game_instance': lambda request, kwargs: get_object_or_404(LandmarkInstanceTile, pk=kwargs['pk']).landmark_instance.game_instance,

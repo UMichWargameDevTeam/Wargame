@@ -19,7 +19,8 @@ export default function RegisterForm() {
         setError("");
 
         try {
-            const res = await fetch(`${BACKEND_URL}/api/auth/register/`,
+            const res = await fetch(
+                `${BACKEND_URL}/api/auth/register/`,
                 {
                     method: "POST",
                     headers: {
@@ -30,12 +31,12 @@ export default function RegisterForm() {
             );
 
             if (!res.ok) {
-                const data = await res.json();
-                throw new Error(data.error || data.detail || data.message || "Registration failed. Username may already be taken.");
+                throw new Error("Registration failed");
             }
 
             router.push("/"); // back to login after register
         } catch (err) {
+            setError("Registration failed. Username may already be taken.");
             console.error(err);
         } finally {
             setLoading(false);
@@ -76,7 +77,7 @@ export default function RegisterForm() {
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-blue-400 cursor-pointer hover:underline"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-blue-400 hover:underline"
                             >
                                 {showPassword ? "Hide" : "Show"}
                             </button>
@@ -90,7 +91,7 @@ export default function RegisterForm() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-blue-600 text-white py-2 rounded-lg cursor-pointer hover:bg-blue-700 transition duration-200"
+                        className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition duration-200"
                     >
                         {loading ? "Registering..." : "Register"}
                     </button>

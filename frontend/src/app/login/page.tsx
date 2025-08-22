@@ -38,20 +38,19 @@ export default function LoginForm() {
                 }
             );
 
-            const data = await res.json();
-
             if (!res.ok) {
-                throw new Error(data.error || data.detail || data.message || "Login failed");
+                throw new Error("Login failed");
             }
 
+            const data = await res.json();
             localStorage.setItem("accessToken", data.access);
             localStorage.setItem("refreshToken", data.refresh);
             sessionStorage.setItem("username", username);
 
             router.push('/roleselect') // after login
-        } catch (err: any) {
+        } catch (err) {
+            setError("Invalid username or password.");
             console.error(err);
-            setError(err.message);
         } finally {
             setLoading(false);
         }
@@ -91,7 +90,7 @@ export default function LoginForm() {
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-blue-400 cursor-pointer hover:underline"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-blue-400 hover:underline"
                             >
                                 {showPassword ? "Hide" : "Show"}
                             </button>
@@ -105,7 +104,7 @@ export default function LoginForm() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-blue-600 text-white py-2 rounded-lg cursor-pointer hover:bg-blue-700 transition duration-200"
+                        className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition duration-200"
                     >
                         {loading ? "Logging in..." : "Log In"}
                     </button>

@@ -1,13 +1,11 @@
 from django.db import models
 from django.contrib.auth.models import User
-from .static import (
-    Team, Role, Unit, Landmark, Tile
-)
+from .static import Role, Team, Unit, Tile, Landmark
 
 class GameInstance(models.Model):
     join_code = models.CharField(max_length=20, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
-    is_started = models.BooleanField(default=False)
+    is_started = models.BooleanField(default=False) 
 
     def __str__(self):
         return f"GameInstance: {self.join_code}"
@@ -28,18 +26,18 @@ class TeamInstance(models.Model):
         return f"GameInstance: {self.game_instance.join_code} | {self.team.name} | Victory Points: {self.victory_points}"
 
 class RoleInstance(models.Model):
-    user = models.ForeignKey(User, on_delete=models.CASCADE)
     team_instance = models.ForeignKey(TeamInstance, on_delete=models.CASCADE)
     role = models.ForeignKey(Role, on_delete=models.CASCADE)
+    user = models.ForeignKey(User, on_delete=models.CASCADE)
     supply_points = models.FloatField(default=0)
 
     class Meta:
         constraints = [
-            models.UniqueConstraint(fields=["user", "team_instance"], name="unique_user_team_instance_pair")
+            models.UniqueConstraint(fields=["team_instance", "user"], name="unique_team_user_pair")
         ]
     
     def __str__(self):
-        return f"GameInstance: {self.team_instance.game_instance.join_code} | User: {self.user.username} | {self.team_instance.team.name} | {self.role.name} | Supply Points: {self.supply_points}"
+        return f"GameInstance: {self.team_instance.game_instance.join_code} | {self.team_instance.team.name} | {self.role.name} | User: {self.user.username} | Supply Points: {self.supply_points}"
 
 class UnitInstance(models.Model):
     team_instance = models.ForeignKey(TeamInstance, on_delete=models.CASCADE)

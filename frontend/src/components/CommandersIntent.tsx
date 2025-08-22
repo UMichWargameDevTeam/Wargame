@@ -1,33 +1,31 @@
 'use client';
 
-import { RoleInstance } from '@/lib/Types'
-
 interface CommandersIntentProps {
-    roleInstance: RoleInstance | null;
+    role: string | null;
 }
 
-export default function CommandersIntent({ roleInstance }: CommandersIntentProps) {
+export default function CommandersIntent({ role }: CommandersIntentProps) {
     let intent = "Default intent."; // Default fallback value
 
-    // Conditional logic based on roleName
-    if (roleInstance?.role.is_operations) {
+    // Conditional logic based on role
+    if (role === 'Ops') {
         intent = "Coordinate operations to achieve mission objectives.";
-    } else if (roleInstance?.role.is_logistics) {
+    } else if (role === 'Logistics') {
         intent = "Ensure continuous support for forces in area of operations.";
-    } else if (roleInstance?.role.is_chief_of_staff && roleInstance?.role.branch.name == "Army") {
+    } else if (role === 'USA-CC') {
         intent = "Secure landmass control in southern Taiwan.";
-    } else if (roleInstance?.role.is_chief_of_staff && roleInstance?.role.branch.name == "Air Force") {
+    } else if (role === 'USAF-CC') {
         intent = "Establish air superiority in southern Taiwan.";
-    } else if (roleInstance?.role.is_chief_of_staff && roleInstance?.role.branch.name == "Navy") {
+    } else if (role === 'USN-CC') {
         intent = "Ensure naval dominance in southern Taiwan.";
-    } else if (roleInstance?.role.name == "Combatant Commander") {
+    } else if (role === 'JTF-CC') {
         intent = "Ensure joint force superiority in southern Taiwan.";
     }
 
     return (
         <div className="w-full bg-yellow-800 text-white px-6 py-3 rounded-lg shadow-md mb-4">
             <h2 className="text-base font-bold truncate overflow-hidden whitespace-nowrap">
-                {roleInstance?.role.name} Intent: <span className="font-normal">{intent}</span>
+                Role Intent: <span className="font-normal">{intent}</span>
             </h2>
         </div>
     );
