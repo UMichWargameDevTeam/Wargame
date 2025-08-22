@@ -28,8 +28,8 @@ router.register(r'landmark-instance-tiles', LandmarkInstanceTileViewSet)
 
 
 urlpatterns = [
-    path('api/game-instances/<str:join_code>/mainmap/', get.main_map, name='main_map'),
-    # TODO: make role checking endpoint here
+    path('api/game-instances/<str:join_code>/main-map/', get.main_map, name='main_map'),
+    path('api/game-instances/<str:join_code>/validate-map-access/', get.validate_map_access, name='validate-map-access'),
 
     path('api/teams/<str:name>/', get.get_team_by_name, name='get_team_by_name'),
     path('api/roles/<str:name>/', get.get_role_by_name, name='get_role_by_name'),

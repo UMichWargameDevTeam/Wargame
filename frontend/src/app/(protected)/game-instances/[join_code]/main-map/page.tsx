@@ -27,25 +27,40 @@ export default function MainMapPage() {
     const [mapSrc, setMapSrc] = useState('/maps/taiwan_middle_clean.png');
     const [assets, setAssets] = useState<Asset[]>([]);
     const [timer, setTimer] = useState<number>(600); // 10 minutes in seconds
+    const [mapValidationError, setMapValidationError] = useState<string | null>(null);
     const authed_fetch = useAuthedFetch()
 
     useEffect(() => {
-        authed_fetch(`/api/game-instances/${join_code}/unit-instances/`)
-            .then(res => res.json())
-            .then(data => {
-                if (Array.isArray(data)) {
-                    setAssets(data);
-                } else {
-                    console.error('Expected array but got:', data);
-                    setAssets([]); // fallback to empty array
+        const fetchData = async () => {
+            try {
+                // First validate map access
+                const validationRes = await authed_fetch(`/api/game-instances/${join_code}/validate-map-access/`);
+                if (validationRes.status !== 204) {
+                    const data = await validationRes.json();
+                    throw new Error(data.error || data.detail || "Access denied");
                 }
-            })
-            .catch(err => {
-                console.error('Failed to fetch unit instances:', err);
-                setAssets([]); // fallback to empty array on error
-            });
-    }, []);
 
+                // If validation passed, fetch unit instances
+                const unitsRes = await authed_fetch(`/api/game-instances/${join_code}/unit-instances/`);
+                if (!unitsRes.ok) {
+                    throw new Error(`Unit fetch failed with ${unitsRes.status}`);
+                }
+
+                const units = await unitsRes.json();
+                if (Array.isArray(units)) {
+                    setAssets(units);
+                } else {
+                    setAssets([]);
+                    throw new Error(`Expected array from Unit fetch but got: ${units}`);
+                }
+            } catch (err: any) {
+                console.error(err);
+                setMapValidationError(err.message);
+            }
+        };
+
+        fetchData();
+    }, [join_code, authed_fetch]);
 
     useEffect(() => {
         const storedRole = sessionStorage.getItem('role_name');
@@ -78,6 +93,14 @@ export default function MainMapPage() {
     const canViewRestrictedComponents = (role: string | null) => {
         return role === 'Ops' || role === 'Logistics';
     };
+
+    if (mapValidationError) {
+        return ( 
+            <div className="flex items-center justify-center h-screen text-white bg-neutral-900">
+                <h1 className="text-xl font-bold">{mapValidationError}</h1> 
+            </div>
+        );
+    }
 
     return (
         <div className="flex h-screen w-screen bg-neutral-900 text-white p-4 space-x-4">

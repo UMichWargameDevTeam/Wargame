@@ -65,7 +65,7 @@ export default function RoleSelectPage() {
 
             if (!res.ok) {
                 const errorData = await res.json();
-                setCreateError(errorData.error || errorData.detail || errorData.message || "Failed to create game");
+                setCreateError(errorData.error || errorData.detail || "Failed to create game");
                 return;
             }
 
@@ -89,7 +89,7 @@ export default function RoleSelectPage() {
                     role_name: data.role_name,
                     ready: false,
                 }));
-                router.push(`/game-instances/${data.join_code}/mainmap/`);
+                router.push(`/game-instances/${data.join_code}/main-map/`);
             };
 
         } catch (err: any) {
@@ -116,7 +116,7 @@ export default function RoleSelectPage() {
 
             if (!res.ok) {
                 const errorData = await res.json();
-                setJoinError(errorData.error || errorData.detail || errorData.message || "Failed to join game");
+                setJoinError(errorData.error || errorData.detail || "Failed to join game");
                 return;
             }
 
@@ -140,7 +140,7 @@ export default function RoleSelectPage() {
                     role_name: data.role_name,
                     ready: false,
                 }));
-                router.push(`/game-instances/${data.join_code}/mainmap/`);
+                router.push(`/game-instances/${data.join_code}/main-map/`);
             };
 
         } catch (err: any) {

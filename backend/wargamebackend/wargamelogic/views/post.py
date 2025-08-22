@@ -20,11 +20,11 @@ def create_game_instance(request):
     if not join_code:
         return Response({"error": "join_code is required."}, status=status.HTTP_400_BAD_REQUEST)
     
-    if len(join_code.trim()) < 1:
+    if len(join_code.strip()) < 1:
         return Response({"detail": "join_code must contain least one non-whitespace character."}, status=status.HTTP_400_BAD_REQUEST)
 
     if GameInstance.objects.filter(join_code=join_code).exists():
-        return Response({"detail": f"GameInstance with join_code '{join_code}' already exists."}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail": f"GameInstance with join code '{join_code}' already exists."}, status=status.HTTP_400_BAD_REQUEST)
 
     # Step 1: Create GameInstance
     game_instance = GameInstance.objects.create(join_code=join_code)
@@ -82,7 +82,7 @@ def join_game_instance(request):
     request.user.game_instance = game_instance
     request.user.save(update_fields=["game_instance"])
 
-    return Response(status=status.HTTP_200_OK)
+    return Response(status=status.HTTP_204_NO_CONTENT)
     
 
 # any user can create a role for themselves for any game,

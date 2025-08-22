@@ -17,8 +17,28 @@ from ..check_roles import (
     require_role_instance, require_any_role_instance
 )
 
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def main_map(request, join_code):
     return Response({"message": "Hello from Django view!"}, status=status.HTTP_200_OK)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def validate_map_access(request, join_code):
+    try:
+        game_instance = GameInstance.objects.get(join_code=join_code)
+    except GameInstance.DoesNotExist:
+        return Response({"error": f"There is no game with join code: {join_code}"}, status=status.HTTP_404_NOT_FOUND)
+
+    role_instance = RoleInstance.objects.filter(
+        team_instance__game_instance=game_instance,
+        user=request.user
+    ).exists()
+    
+    if not role_instance:
+        return Response({"error": f"You do not have a role in the game with join code: {join_code}"}, status=status.HTTP_403_FORBIDDEN)
+    
+    return Response(status=status.HTTP_204_NO_CONTENT)
 
 # GET static table data
 

@@ -35,9 +35,8 @@ export default function RegisterForm() {
             }
 
             router.push("/"); // back to login after register
-        } catch (err) {
-            setError("Registration failed. Username may already be taken.");
-            console.error(err);
+        } catch (err: any) {
+            console.error(err.error || err.detail || err.message || "Registration failed. Username may already be taken.");
         } finally {
             setLoading(false);
         }

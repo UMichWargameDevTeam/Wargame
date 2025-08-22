@@ -70,7 +70,7 @@ class GameUsersConsumer(AsyncWebsocketConsumer):
 class MainMapConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         self.join_code = self.scope["url_route"]["kwargs"]["join_code"]
-        self.room_group_name = f"mainmap_{self.join_code}"
+        self.room_group_name = f"main-map_{self.join_code}"
         await self.channel_layer.group_add(self.room_group_name, self.channel_name)
         await self.accept()
 

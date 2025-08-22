@@ -97,7 +97,7 @@ DEBUG=True
 ## 🔗 Access
 
 - **Frontend app**: http://localhost:3000
-- **Backend WebSocket endpoint**: ws://localhost:8000/ws/<join_code>/mainmap/
+- **Backend WebSocket endpoint**: ws://localhost:8000/ws/<join_code>/main-map/
 
 ---
 
@@ -106,7 +106,7 @@ DEBUG=True
 - The root page (`/`) shows a role selector.
 - When a user selects a role (Commander, Observer, Field Unit), it's stored in `sessionStorage`.
 - This allows each device/tab to act independently.
-- After role selection, users are redirected to `/game-instances/<join_code>/mainmap/`, where the map is shown and role-specific UI can be rendered.
+- After role selection, users are redirected to `/game-instances/<join_code>/main-map/`, where the map is shown and role-specific UI can be rendered.
 
 ---
 
@@ -114,7 +114,7 @@ DEBUG=True
 
 WebSocket code is included but currently disabled in the frontend. It supports:
 
-- Bi-directional real-time messaging via `/ws/game-instances/<join_code>/mainmap/`
+- Bi-directional real-time messaging via `/ws/game-instances/<join_code>/main-map/`
 - Broadcast to all connected devices
 - Handled by Django Channels + Daphne using ASGI
 
