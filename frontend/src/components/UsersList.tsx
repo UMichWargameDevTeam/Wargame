@@ -3,6 +3,10 @@
 import { useEffect, useState } from 'react';
 import { WS_URL } from '@/lib/utils';
 
+interface Props {
+    join_code: string;
+}
+
 interface User {
     username: string;
     team: string;
@@ -11,13 +15,12 @@ interface User {
     ready: boolean;
 }
 
-export default function UsersList() {
+export default function UsersList({ join_code } : Props) {
     const [users, setUsers] = useState<User[]>([]);
-    const gameInstanceId = typeof window !== 'undefined' ? sessionStorage.getItem('gameInstanceId') : null;
 
     useEffect(() => {
-        if (!gameInstanceId) return;
-        const socket = new WebSocket(`${WS_URL}/game/${gameInstanceId}/`);
+        if (!join_code) return;
+        const socket = new WebSocket(`${WS_URL}/game-instances/${join_code}/users/`);
 
         socket.onmessage = (event) => {
             const data = JSON.parse(event.data);
@@ -29,7 +32,7 @@ export default function UsersList() {
         return () => {
             socket.close();
         };
-    }, [gameInstanceId]);
+    }, [join_code]);
 
     // Group users by team > branch > role
     const groupedUsers = users.reduce((acc, user) => {
@@ -44,7 +47,7 @@ export default function UsersList() {
     const teamColor = (team: string) => {
         if (team.toLowerCase() === 'red') return 'text-red-400';
         if (team.toLowerCase() === 'blue') return 'text-blue-400';
-        if (team.toLowerCase() === 'gamemaster') return 'text-indigo-400';
+        if (team.toLowerCase() === 'gamemasters') return 'text-indigo-400';
         return 'text-gray-300';
     };
 
