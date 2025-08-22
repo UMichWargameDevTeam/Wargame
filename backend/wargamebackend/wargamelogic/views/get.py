@@ -1,42 +1,36 @@
+
+from django.http import JsonResponse
 from django.shortcuts import get_object_or_404, get_list_or_404
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from ..models.static import (
-    Team, Role, Unit, Attack, Ability, Landmark, Tile
+  Team, Branch, Role, UnitBranch, Unit, Attack, Ability, Landmark, Tile
 )
 from ..models.dynamic import (
-    GameInstance, TeamInstance, RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile
+  GameInstance, TeamInstance, RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile
 )
 from ..serializers import (
-    TeamSerializer, RoleSerializer, UnitSerializer, AttackSerializer, AbilitySerializer, LandmarkSerializer, TileSerializer,
-    TeamInstanceSerializer, RoleInstanceSerializer, UnitInstanceSerializer, LandmarkInstanceSerializer,
+    TeamSerializer,
+    RoleSerializer,
+    RoleInstanceSerializer,
+    BranchSerializer,
+    UnitSerializer,
+    UnitBranchSerializer,
+    UnitInstanceSerializer,
+    AttackSerializer,
+    AbilitySerializer,
+    LandmarkSerializer,
+    TeamInstanceSerializer,
+    LandmarkInstanceSerializer,
+    TileSerializer,
 )
-from ..check_roles import (
-    require_role_instance, require_any_role_instance
-)
+from ..game_logic import *
+from ..check_roles import require_role_instance, require_any_role_instance
 
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def main_map(request, join_code):
-    return Response({"message": "Hello from Django view!"}, status=status.HTTP_200_OK)
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def validate_map_access(request, join_code):
-    try:
-        game_instance = GameInstance.objects.get(join_code=join_code)
-    except GameInstance.DoesNotExist:
-        return Response({"error": f"There is no game with join code '{join_code}'"}, status=status.HTTP_404_NOT_FOUND)
-
-    try:
-        role_instance = RoleInstance.objects.get(team_instance__game_instance=game_instance, user=request.user)
-    except RoleInstance.DoesNotExist:
-        return Response({"error": f"You do not have a role in the game with join code'{join_code}'"}, status=status.HTTP_403_FORBIDDEN)
-    
-    serializer = RoleInstanceSerializer(role_instance)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+def main_map(request):
+    return JsonResponse({"message": "Hello from Django view!"})
 
 # GET static table data
 
@@ -104,24 +98,6 @@ def get_game_team_instance_by_name(request, join_code, team_name):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
-def get_game_role_instances(request, join_code):
-    game_instance = get_object_or_404(GameInstance, join_code=join_code)
-    role_instances = get_list_or_404(RoleInstance, team_instance__game_instance=game_instance)
-    serializer = RoleInstanceSerializer(role_instances, many=True)
-    return Response(serializer.data)
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
-def get_game_role_instances_by_team(request, join_code, team_name):
-    game_instance = get_object_or_404(GameInstance, join_code=join_code)
-    team = get_object_or_404(Team, name=team_name)
-    team_instance = get_object_or_404(TeamInstance, game_instance=game_instance, team=team)
-    role_instances = get_list_or_404(RoleInstance, team_instance=team_instance)
-    serializer = RoleInstanceSerializer(role_instances, many=True)
-    return Response(serializer.data)
-
-@api_view(['GET'])
-@permission_classes([IsAuthenticated])
 def get_game_role_instances_by_team_and_role(request, join_code, team_name, role_name):
     game_instance = get_object_or_404(GameInstance, join_code=join_code)
     team = get_object_or_404(Team, name=team_name)
@@ -134,7 +110,8 @@ def get_game_role_instances_by_team_and_role(request, join_code, team_name, role
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @require_role_instance({
-    'team_instance.game_instance.join_code': lambda request, kwargs: kwargs['join_code']
+    'team_instance.game_instance': lambda request, kwargs: get_object_or_404(GameInstance, join_code=kwargs['join_code']),
+    'role.name':'Gamemaster'
 })
 def get_game_unit_instances(request, join_code):
     game_instance = get_object_or_404(GameInstance, join_code=join_code)
@@ -142,17 +119,16 @@ def get_game_unit_instances(request, join_code):
     serializer = UnitInstanceSerializer(unit_instances, many=True)
     return Response(serializer.data)
 
-# may remove this view if it's unnecessary or modify who can access it
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @require_any_role_instance([
     {
-        'team_instance.game_instance.join_code': lambda request, kwargs: kwargs['join_code'],
+        'team_instance.game_instance': lambda request, kwargs: get_object_or_404(GameInstance, join_code=kwargs['join_code']),
         'role.name': 'Gamemaster'
     },
     {
-        'team_instance.game_instance.join_code': lambda request, kwargs: kwargs['join_code'],
-        'team_instance.team.name': lambda request, kwargs: kwargs['team_name'],
+        'team_instance.game_instance': lambda request, kwargs: get_object_or_404(GameInstance, join_code=kwargs['join_code']),
+        'team_instance.team': lambda request, kwargs: get_object_or_404(Team, name=kwargs['team_name']),
         'role.name':'Combatant Commander'
     }
 ])
@@ -164,18 +140,17 @@ def get_game_unit_instances_by_team_name(request, join_code, team_name):
     serializer = UnitInstanceSerializer(unit_instances, many=True)
     return Response(serializer.data)
 
-# may remove this view if it's unnecessary or modify who can access it
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @require_any_role_instance([
     {
-        'team_instance.game_instance.join_code': lambda request, kwargs: kwargs['join_code'],
+        'team_instance.game_instance': lambda request, kwargs: get_object_or_404(GameInstance, join_code=kwargs['join_code']),
         'role.name': 'Gamemaster'
     },
     {
-        'team_instance.game_instance.join_code': lambda request, kwargs: kwargs['join_code'],
-        'team_instance.team.name': lambda request, kwargs: kwargs['team_name'],
-        'role.branch.name': lambda request, kwargs: kwargs['branch'],
+        'team_instance.game_instance': lambda request, kwargs: get_object_or_404(GameInstance, join_code=kwargs['join_code']),
+        'team_instance.team': lambda request, kwargs: get_object_or_404(Team, name=kwargs['team_name']),
+        'role.branch': lambda request, kwargs: get_object_or_404(Branch, name=kwargs['branch']),
         'role.is_branch_commander': True
     }
 ])
