@@ -49,9 +49,11 @@ export default function LoginForm() {
             sessionStorage.setItem("username", username);
 
             router.push('/roleselect') // after login
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
-            setError(err.message);
+            if (err instanceof Error) {
+                setError(err.message);
+            }
         } finally {
             setLoading(false);
         }

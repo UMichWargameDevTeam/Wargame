@@ -13,7 +13,7 @@ const SendResourcePoints = () => {
     useEffect(() => {
         const fetchBranches = async () => {
             try {
-                const data: Branch[] = await getSessionStorageOrFetch('branches', async () => {
+                const data = await getSessionStorageOrFetch<Branch[]>('branches', async () => {
                     const res = await authedFetch("/api/branches/");
                     return res.json();
                 });
@@ -30,7 +30,7 @@ const SendResourcePoints = () => {
         };
 
         fetchBranches();
-    }, []);
+    }, [authedFetch]);
 
     const handleChange = (branch: string, value: string) => {
         setInputs(prev => ({

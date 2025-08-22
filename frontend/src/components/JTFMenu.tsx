@@ -13,10 +13,11 @@ const JTFMenu = () => {
     useEffect(() => {
         const fetchBranches = async () => {
             try {
-                const data = await getSessionStorageOrFetch('branches', async () => {
+                const data = await getSessionStorageOrFetch<Branch[]>('branches', async () => {
                     const res = await authedFetch("/api/branches/");
                     return res.json();
                 });
+
                 setBranches(data);
                 setActiveTab(data.length > 0 ? data[0].name : null);
             } catch (err) {
@@ -25,7 +26,7 @@ const JTFMenu = () => {
         };
 
         fetchBranches();
-    }, []);
+    }, [authedFetch]);
 
     const renderTabContent = () => {
         // These are just dummy values. Possible TODO.

@@ -1,9 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getSessionStorageOrFetch } from '@/lib/utils';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
-import { Team, Unit, RoleInstance, UnitInstance } from '@/lib/Types';
+import { Team, Unit, RoleInstance } from '@/lib/Types';
 
 interface GameMasterMenuProps {
     join_code: string,
@@ -35,7 +34,7 @@ const GamemasterMenu = ({ join_code, units, teams, handleAddUnitInstance }: Game
             }
         };
         fetchRoleInstances();
-    }, [join_code]);
+    }, [authedFetch, join_code]);
 
     const handleDeleteRoleInstance = async (roleId: number) => {
         if (!join_code) return;
@@ -51,9 +50,11 @@ const GamemasterMenu = ({ join_code, units, teams, handleAddUnitInstance }: Game
                 const data = await res.json();
                 throw new Error(data.error || data.detail || data.message || 'Failed to delete role instance.');
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
-            alert(err.message);
+            if (err instanceof Error) {
+                alert(err.message);
+            }
         }
     };
 
@@ -73,9 +74,11 @@ const GamemasterMenu = ({ join_code, units, teams, handleAddUnitInstance }: Game
                 const data = await res.json();
                 throw new Error(data.error || data.detail || data.message || "Failed to delete game.");
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
-            alert(err.message);
+            if (err instanceof Error) {
+                alert(err.message);
+            }
         }
     };
 

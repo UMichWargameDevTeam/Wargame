@@ -12,7 +12,7 @@ import InteractiveMap from '@/components/InteractiveMap';
 import JTFMenu from '@/components/JTFMenu';
 import GamemasterMenu from '@/components/GamemasterMenu';
 import SendResourcePoints from '@/components/SendResourcePoints';
-import { Team, Unit, Attack, Ability, RoleInstance, UnitInstance } from '@/lib/Types'
+import { Team, Unit, RoleInstance, UnitInstance } from '@/lib/Types'
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 import { WS_URL, getSessionStorageOrFetch } from '@/lib/utils';
 
@@ -28,8 +28,8 @@ export default function MainMapPage() {
 
     const [teams, setTeams] = useState<Team[]>([]);
     const [units, setUnits] = useState<Unit[]>([]);
-    const [attacks, setAttacks] = useState<Attack[]>([]);
-    const [abilities, setAbilities] = useState<Ability[]>([]);
+    // const [attacks, setAttacks] = useState<Attack[]>([]);
+    // const [abilities, setAbilities] = useState<Ability[]>([]);
 
     const [roleInstance, setRoleInstance] = useState<RoleInstance | null>(null);
     const [unitInstances, setUnitInstances] = useState<UnitInstance[]>([]);
@@ -76,7 +76,7 @@ export default function MainMapPage() {
                     throw new Error(`Expected array from Unit fetch but got: ${unitInstances}`);
                 }
 
-                const teams = await getSessionStorageOrFetch('teams', async () => {
+                const teams = await getSessionStorageOrFetch<Team[]>('teams', async () => {
                     const res = await authedFetch("/api/teams/");
                     if (!res.ok) {
                         throw new Error(`Team fetch failed with ${res.status}`)
@@ -85,7 +85,7 @@ export default function MainMapPage() {
                 });
                 setTeams(teams);
 
-                const units = await getSessionStorageOrFetch('units', async () => {
+                const units = await getSessionStorageOrFetch<Unit[]>('units', async () => {
                     const res = await authedFetch("/api/units/");
                     if (!res.ok) {
                         throw new Error(`Unit fetch failed with ${res.status}`)
@@ -94,7 +94,8 @@ export default function MainMapPage() {
                 });
                 setUnits(units);
 
-                const attacks = await getSessionStorageOrFetch('attacks', async () => {
+                /*
+                const attacks = await getSessionStorageOrFetch<Attack[]>('attacks', async () => {
                     const res = await authedFetch("/api/attacks/");
                     if (!res.ok) {
                         throw new Error(`Attack fetch failed with ${res.status}`)
@@ -103,7 +104,7 @@ export default function MainMapPage() {
                 });
                 setAttacks(attacks);
 
-                const abilities = await getSessionStorageOrFetch('abilities', async () => {
+                const abilities = await getSessionStorageOrFetch<Ability[]>('abilities', async () => {
                     const res = await authedFetch("/api/abilities/");
                     if (!res.ok) {
                         throw new Error(`Ability fetch failed with ${res.status}`)
@@ -111,6 +112,7 @@ export default function MainMapPage() {
                     return res.json();
                 });
                 setAbilities(abilities);
+                */
 
                 const stored = sessionStorage.getItem('unitInstanceDisplay');
                 if (stored) {
@@ -131,14 +133,16 @@ export default function MainMapPage() {
                 // Clean up WebSocket on unmount
                 return () => ws.close();
 
-            } catch (err: any) {
+            } catch (err: unknown) {
                 console.error(err);
-                setMapValidationError(err.message);
+                if (err instanceof Error) {
+                    setMapValidationError(err.message);
+                }
             }
         };
 
         fetchData();
-    }, []);
+    }, [authedFetch, join_code]);
 
     useEffect(() => {
         const storedRoleInstanceString = sessionStorage.getItem('role_instance') || '{}';
@@ -190,9 +194,11 @@ export default function MainMapPage() {
             } else {
                 throw new Error(data.error || data.detail || 'Failed to add unit.');
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
-            alert(err.message);
+            if (err instanceof Error) {
+                alert(err.message);
+            }
         }
     };
 
@@ -210,9 +216,11 @@ export default function MainMapPage() {
                 const data = await res.json();
                 throw new Error(data.error || data.detail || data.message || 'Failed to delete unit instance.');
             }
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
-            alert(err.message);
+            if (err instanceof Error) {
+                alert(err.message);
+            }
         }
     };
 

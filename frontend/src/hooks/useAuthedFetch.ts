@@ -1,12 +1,12 @@
 "use client";
-
+import { useCallback } from "react";
 import { BACKEND_URL } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
 export function useAuthedFetch() {
   const router = useRouter();
-
-  const authedFetch = async (url: string, options?: RequestInit): Promise<Response> => {
+  
+  const authedFetch = useCallback(async (url: string, options?: RequestInit): Promise<Response> => {
     try {
       const accessToken = localStorage.getItem("accessToken");
 
@@ -58,7 +58,7 @@ export function useAuthedFetch() {
       console.error("Authed fetch error:", err);
       throw err;
     }
-  };
-
+  }, [router]);
+  
   return authedFetch;
 }
