@@ -94,6 +94,10 @@ class TileSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
 # dynamic model serializers
+class UserSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = User
+        fields = ['username', 'is_staff']
 
 class GameInstanceSerializer(serializers.ModelSerializer):
     class Meta:
@@ -125,10 +129,15 @@ class TeamInstanceSerializer(serializers.ModelSerializer):
         read_only_fields = ['id']
 
 class RoleInstanceSerializer(serializers.ModelSerializer):
+    user = UserSerializer(read_only=True)
     team_instance = TeamInstanceSerializer(read_only=True)
     role = RoleSerializer(read_only=True)
-    user = serializers.StringRelatedField(read_only=True)
 
+    user_id = serializers.PrimaryKeyRelatedField(
+        source='user',
+        queryset=User.objects.all(),
+        write_only=True
+    )
     team_instance_id = serializers.PrimaryKeyRelatedField(
         source='team_instance',
         queryset=TeamInstance.objects.all(),
@@ -139,17 +148,12 @@ class RoleInstanceSerializer(serializers.ModelSerializer):
         queryset=Role.objects.all(),
         write_only=True
     )
-    user_id = serializers.PrimaryKeyRelatedField(
-        source='user',
-        queryset=User.objects.all(),
-        write_only=True
-    )
     
     class Meta:
         model = RoleInstance
         fields = [
-            'id', 'team_instance', 'role', 'user',
-            'team_instance_id', 'role_id', 'user_id'
+            'id', 'user', 'team_instance', 'role',
+            'user_id', 'team_instance_id', 'role_id'
         ]
         read_only_fields = ['id']
 

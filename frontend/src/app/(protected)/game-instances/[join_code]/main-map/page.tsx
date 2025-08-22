@@ -3,15 +3,15 @@
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
 import MapSelector from '@/components/MapSelector';
-import AssetDisplay from '@/components/AssetDisplay';
+import UnitInstanceDisplay from '@/components/UnitInstanceDisplay';
 import FooterControls from '@/components/FooterControls';
-import AvailableAssets from '@/components/AvailableAssets';
+import AvailableUnitInstances from '@/components/AvailableUnitInstances';
 import ResourcePoints from '@/components/ResourcePoints';
 import CommandersIntent from '@/components/CommandersIntent';
 import InteractiveMap from '@/components/InteractiveMap';
 import JTFMenu from '@/components/JTFMenu';
 import SendResourcePoints from '@/components/SendResourcePoints';
-import { Asset } from '@/lib/Types'
+import { RoleInstance, UnitInstance } from '@/lib/Types'
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 import { WS_URL } from '@/lib/utils';
 
@@ -23,9 +23,9 @@ export default function MainMapPage() {
     const params = useParams();
     const join_code = params.join_code as string;
 
-    const [role, setRole] = useState<string | null>(null);
+    const [roleInstance, setRoleInstance] = useState<RoleInstance | null>(null);
     const [mapSrc, setMapSrc] = useState('/maps/taiwan_middle_clean.png');
-    const [assets, setAssets] = useState<Asset[]>([]);
+    const [unitInstances, setUnitInstances] = useState<UnitInstance[]>([]);
     const [timer, setTimer] = useState<number>(600); // 10 minutes in seconds
     const [mapValidationError, setMapValidationError] = useState<string | null>(null);
     const authed_fetch = useAuthedFetch()
@@ -35,10 +35,16 @@ export default function MainMapPage() {
             try {
                 // First validate map access
                 const validationRes = await authed_fetch(`/api/game-instances/${join_code}/validate-map-access/`);
-                const validationResJSON = await validationRes.json();
+                const data = await validationRes.json();
                 if (!validationRes.ok) {
-                    throw new Error(validationResJSON.error || validationResJSON.detail || "Access denied");
+                    throw new Error(data.error || data.detail || "Access denied");
                 }
+                sessionStorage.setItem('username', data.user.username);
+                sessionStorage.setItem('join_code', data.team_instance.game_instance.join_code);
+                sessionStorage.setItem('team_name', data.team_instance.team.name);
+                sessionStorage.setItem('branch_name', data.role.branch?.name ?? 'None');
+                sessionStorage.setItem('role_name', data.role.name);
+                sessionStorage.setItem('role_instance', JSON.stringify(data))
 
                 // If validation passed, fetch unit instances
                 const unitsRes = await authed_fetch(`/api/game-instances/${join_code}/unit-instances/`);
@@ -48,9 +54,9 @@ export default function MainMapPage() {
 
                 const units = await unitsRes.json();
                 if (Array.isArray(units)) {
-                    setAssets(units);
+                    setUnitInstances(units);
                 } else {
-                    setAssets([]);
+                    setUnitInstances([]);
                     throw new Error(`Expected array from Unit fetch but got: ${units}`);
                 }
 
@@ -73,8 +79,9 @@ export default function MainMapPage() {
     }, []);
 
     useEffect(() => {
-        const storedRole = sessionStorage.getItem('role_name');
-        setRole(storedRole);
+        const storedRoleInstanceString = sessionStorage.getItem('role_instance') || '{}';
+        const storedRoleInstanceParsed = JSON.parse(storedRoleInstanceString)
+        setRoleInstance(storedRoleInstanceParsed);
         const storedMap = sessionStorage.getItem('mapSrc');
         if (storedMap) {
             setMapSrc(storedMap);
@@ -90,8 +97,8 @@ export default function MainMapPage() {
     //     }
     // };
 
-    const canViewRestrictedComponents = (role: string | null) => {
-        return role === 'Ops' || role === 'Logistics';
+    const canViewRestrictedComponents = (role_instance: RoleInstance | null) => {
+        return role_instance && (role_instance.role.is_operations || role_instance.role.is_logistics);
     };
 
     if (mapValidationError) {
@@ -106,11 +113,11 @@ export default function MainMapPage() {
         <div className="flex h-screen w-screen bg-neutral-900 text-white p-4 space-x-4">
             {/* Map + + Header + Footer */}
             <div className="flex flex-col w-[70%] h-full space-y-4">
-                {/* Header for USA/USAF/USN CC*/}
-                {['Ops', 'Logistics', 'USA-CC', 'USAF-CC', 'USN-CC', 'JTF-CC'].includes(role || '') && (
+                {/* Header Combatant Commander and Chief of Staff */}
+                {(roleInstance?.role.name == "Combatant Commander" || roleInstance?.role.is_chief_of_staff) && (
                     <div className="flex space-x-4 w-full items-stretch">
                         <div className="flex-grow">
-                            <CommandersIntent role={role} />
+                            <CommandersIntent roleInstance={roleInstance} />
                         </div>
                         <div className="flex-shrink-0">
                             <div className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg shadow-md mb-4 text-lg font-semibold">
@@ -121,11 +128,11 @@ export default function MainMapPage() {
                     </div>
                 )}
                 <div className="w-full h-full bg-neutral-800 rounded-lg overflow-hidden">
-                    <InteractiveMap mapSrc={mapSrc} join_code={join_code} assets={assets} setAssets={setAssets} />
+                    <InteractiveMap mapSrc={mapSrc} join_code={join_code} unitInstances={unitInstances} setUnitInstances={setUnitInstances} />
                 </div>
 
                 {/* Footer for Ops/Logs */}
-                {canViewRestrictedComponents(role) && (
+                {canViewRestrictedComponents(roleInstance) && (
                     <>
                         <FooterControls />
                     </>
@@ -134,9 +141,10 @@ export default function MainMapPage() {
 
             {/* Sidebar */}
             <div className="flex-1 h-full bg-neutral-800 rounded-lg p-4 overflow-y-auto">
-                <h2 className="text-lg mb-2">Current Role: {role || 'Unknown'}</h2>
+                <h2 className="text-lg mb-2">Team: {roleInstance?.team_instance.team.name || 'Unknown'}</h2>
+                <h2 className="text-lg mb-2">Role: {roleInstance?.role.name || 'Unknown'}</h2>
                 {/* Menu for Ops/Logs */}
-                {['Ops', 'Logistics'].includes(role || '') && (
+                {canViewRestrictedComponents(roleInstance) && (
                     <>
                         <MapSelector
                             initialMap={mapSrc}
@@ -145,18 +153,18 @@ export default function MainMapPage() {
                                 sessionStorage.setItem('mapSrc', path);
                             }}
                         />
-                        <AssetDisplay />
+                        <UnitInstanceDisplay />
                     </>
                 )}
-                {/* Menu for USA/USAF/USN CC*/}
-                {['USA-CC', 'USAF-CC', 'USN-CC'].includes(role || '') && (
+                {/* Menu for CoS */}
+                {roleInstance?.role.is_chief_of_staff && (
                     <>
-                        <AvailableAssets assets={assets} />
+                        <AvailableUnitInstances unitInstances={unitInstances} />
                         <ResourcePoints />
                     </>
                 )}
-                {/* Menu for USA/USAF/USN CC*/}
-                {['JTF-CC'].includes(role || '') && (
+                {/* Menu for Combatant Commander */}
+                {roleInstance?.role.name == "Combatant Commander" && (
                     <>
                         <JTFMenu />
                         <SendResourcePoints />

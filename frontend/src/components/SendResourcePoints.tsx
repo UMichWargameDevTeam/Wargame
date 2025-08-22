@@ -1,13 +1,27 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { getSessionStorageOrFetch } from '@/lib/utils';
+import { Branch } from '@/lib/Types';
 
 const SendResourcePoints = () => {
-    const [inputs, setInputs] = useState({
-        USA: '',
-        USN: '',
-        USAF: '',
-    });
+    const [branches, setBranches] = useState<Branch[]>([]);
+    const [inputs, setInputs] = useState<Record<string, string>>();
+
+    useEffect(() => {
+        const fetchBranches = async () => {
+            try {
+                const data = await getSessionStorageOrFetch('branches');
+                setBranches(data);
+                const initInputs = Object.fromEntries(branches.map(branch => [branch.name, ""]));
+                setInputs(initInputs);
+            } catch (err) {
+                console.error("Failed to get branches", err);
+            }
+        };
+
+        fetchBranches();
+    }, []);
 
     const handleChange = (branch: string, value: string) => {
         setInputs((prev) => ({
@@ -26,15 +40,15 @@ const SendResourcePoints = () => {
                 <p className="mb-2 font-bold">Log Points: <span className="font-bold text-green-400">20</span></p>
             </div>
 
-            {/* Inputs for USA, USN, USAF */}
+            {/* Inputs for each Branch */}
             <div className="space-y-3 mb-4">
-                {['USA', 'USN', 'USAF'].map((branch) => (
-                    <div key={branch} className="flex items-center justify-between bg-neutral-800 p-3 rounded-lg">
-                        <span className="w-16 font-bold">{branch}</span>
+                {branches?.map((branch) => (
+                    <div key={branch.name} className="flex items-center justify-between bg-neutral-800 p-3 rounded-lg">
+                        <span className="w-16 font-bold">{branch.name}</span>
                         <input
                             type="number"
-                            value={inputs[branch as keyof typeof inputs]}
-                            onChange={(e) => handleChange(branch, e.target.value)}
+                            value={inputs?.[branch.name]}
+                            onChange={(e) => handleChange(branch.name, e.target.value)}
                             className="w-24 px-2 py-1 bg-neutral-900 border border-gray-600 rounded text-white"
                             placeholder="0"
                         />

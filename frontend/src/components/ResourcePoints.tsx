@@ -1,22 +1,39 @@
 'use client';
 
-import { useState } from 'react';
-
-interface ResourceData {
-    role: string;
-    points: number;
-}
-
-const dummyResources: ResourceData[] = [
-    { role: 'Ops', points: 150 },
-    { role: 'Logistics', points: 120 },
-    { role: 'USA-CC', points: 300 },
-    { role: 'USAF-CC', points: 280 },
-    { role: 'USN-CC', points: 260 },
-];
+import { useState, useEffect } from 'react';
+import { RoleInstance } from '@/lib/Types';
+import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 
 export default function ResourcePoints() {
     const [open, setOpen] = useState(true);
+    const [resources, setResources] = useState<RoleInstance[]>([]);
+    const authed_fetch = useAuthedFetch();
+
+    useEffect(() => {
+        const fetchResources = async () => {
+            try {
+                const joinCode = sessionStorage.getItem('join_code');
+                const teamName = sessionStorage.getItem('team_name');
+                if (!joinCode || !teamName) {
+                    console.error("Missing join_code or team_name in sessionStorage");
+                    return;
+                }
+
+                const res = await authed_fetch(
+                    `/api/game-instances/${joinCode}/team-instances/${teamName}/role-instances/`
+                );
+                if (!res.ok) {
+                    throw new Error(`Failed to fetch role instances: ${res.status}`);
+                }
+                const data: RoleInstance[] = await res.json();
+                setResources(data);
+            } catch (err) {
+                console.error("Failed to fetch resources", err);
+            }
+        };
+
+        fetchResources();
+    }, []);
 
     return (
         <div className="bg-neutral-700 rounded-lg mb-4 p-4">
@@ -31,13 +48,13 @@ export default function ResourcePoints() {
             </div>
             {open && (
                 <ul className="space-y-2">
-                    {dummyResources.map((entry, index) => (
+                    {resources.map((entry, index) => (
                         <li
                             key={index}
                             className="flex justify-between bg-neutral-800 p-2 rounded text-sm"
                         >
-                            <span className="text-gray-300">{entry.role}</span>
-                            <span className="text-white font-semibold">{entry.points}</span>
+                            <span className="text-gray-300">{entry.role.name}</span>
+                            <span className="text-white font-semibold">{entry.supply_points}</span>
                         </li>
                     ))}
                 </ul>

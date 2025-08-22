@@ -47,7 +47,7 @@ export default function UsersList({ join_code } : Props) {
     const teamColor = (team: string) => {
         if (team.toLowerCase() === 'red') return 'text-red-400';
         if (team.toLowerCase() === 'blue') return 'text-blue-400';
-        if (team.toLowerCase() === 'gamemaster') return 'text-indigo-400';
+        if (team.toLowerCase() === 'gamemasters') return 'text-indigo-400';
         return 'text-gray-300';
     };
 

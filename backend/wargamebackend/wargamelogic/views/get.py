@@ -104,6 +104,16 @@ def get_game_team_instance_by_name(request, join_code, team_name):
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
+def get_game_role_instances_by_team(request, join_code, team_name):
+    game_instance = get_object_or_404(GameInstance, join_code=join_code)
+    team = get_object_or_404(Team, name=team_name)
+    team_instance = get_object_or_404(TeamInstance, game_instance=game_instance, team=team)
+    role_instances = get_list_or_404(RoleInstance, team_instance=team_instance)
+    serializer = RoleInstanceSerializer(role_instances, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
 def get_game_role_instances_by_team_and_role(request, join_code, team_name, role_name):
     game_instance = get_object_or_404(GameInstance, join_code=join_code)
     team = get_object_or_404(Team, name=team_name)
@@ -116,8 +126,7 @@ def get_game_role_instances_by_team_and_role(request, join_code, team_name, role
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @require_role_instance({
-    'team_instance.game_instance.join_code': lambda request, kwargs: kwargs['join_code'],
-    'role.name':'Gamemaster'
+    'team_instance.game_instance.join_code': lambda request, kwargs: kwargs['join_code']
 })
 def get_game_unit_instances(request, join_code):
     game_instance = get_object_or_404(GameInstance, join_code=join_code)
@@ -125,6 +134,7 @@ def get_game_unit_instances(request, join_code):
     serializer = UnitInstanceSerializer(unit_instances, many=True)
     return Response(serializer.data)
 
+# may remove this view if it's unnecessary or modify who can access it
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @require_any_role_instance([
@@ -146,6 +156,7 @@ def get_game_unit_instances_by_team_name(request, join_code, team_name):
     serializer = UnitInstanceSerializer(unit_instances, many=True)
     return Response(serializer.data)
 
+# may remove this view if it's unnecessary or modify who can access it
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 @require_any_role_instance([

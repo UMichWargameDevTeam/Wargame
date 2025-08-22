@@ -1,16 +1,16 @@
 'use client';
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import DraggableAsset from './DraggableAsset';
-import { Asset } from "@/lib/Types";
+import DraggableUnitInstance from './DraggableUnitInstance';
+import { UnitInstance } from "@/lib/Types";
 import { WS_URL } from '@/lib/utils';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 
 interface Props {
     mapSrc: string;
     join_code: string;
-    assets: Asset[];
-    setAssets: React.Dispatch<React.SetStateAction<Asset[]>>;
+    unitInstances: UnitInstance[];
+    setUnitInstances: React.Dispatch<React.SetStateAction<UnitInstance[]>>;
 }
 
 const BASE_CELL_SIZE = 80;
@@ -18,7 +18,7 @@ const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 5;
 
 
-export default function InteractiveMap({ mapSrc, join_code, assets, setAssets }: Props) {
+export default function InteractiveMap({ mapSrc, join_code, unitInstances, setUnitInstances }: Props) {
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const socketRef = useRef<WebSocket | null>(null);
@@ -68,16 +68,16 @@ export default function InteractiveMap({ mapSrc, join_code, assets, setAssets }:
         socket.onmessage = (event) => {
             const data = JSON.parse(event.data);
             if (data.type === "unit_moved") {
-                setAssets(prev =>
-                    prev.map(asset =>
-                        asset.id === data.payload.id ? data.payload : asset
+                setUnitInstances(prev =>
+                    prev.map(unitInstance =>
+                        unitInstance.id === data.payload.id ? data.payload : unitInstance
                     )
                 );
             }
         };
 
         return () => socket.close();
-    }, [setAssets]);
+    }, [setUnitInstances]);
 
     function getLabelPart(row: number, col: number, useLowercase = false) {
         const letter = String.fromCharCode((useLowercase ? 97 : 65) + row); // a-z or A-Z
@@ -236,11 +236,11 @@ export default function InteractiveMap({ mapSrc, join_code, assets, setAssets }:
                 const newCol = Math.floor(mouseX / BASE_CELL_SIZE);
                 const newRow = Math.floor(mouseY / BASE_CELL_SIZE);
 
-                setAssets(prev =>
-                    prev.map(asset =>
-                        asset.id === elementDragId
-                            ? { ...asset, tile: { ...asset.tile, column: newCol, row: newRow } }
-                            : asset
+                setUnitInstances(prev =>
+                    prev.map(unitInstance =>
+                        unitInstance.id === elementDragId
+                            ? { ...unitInstance, tile: { ...unitInstance.tile, column: newCol, row: newRow } }
+                            : unitInstance
                     )
                 );
             }
@@ -251,23 +251,23 @@ export default function InteractiveMap({ mapSrc, join_code, assets, setAssets }:
         setDragging(false);
         if (!elementDragId) return;
 
-        const asset = assets.find(a => a.id === elementDragId);
-        if (!asset) return;
+        const unitInstance = unitInstances.find(a => a.id === elementDragId);
+        if (!unitInstance) return;
 
         try {
-            await authed_fetch(`/api/unit-instances/${asset.id}/move/`, {
+            await authed_fetch(`/api/unit-instances/${unitInstance.id}/move/`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify({
-                    row: asset.tile.row,
-                    column: asset.tile.column
+                    row: unitInstance.tile.row,
+                    column: unitInstance.tile.column
                 }),
             });
 
             if (socketRef.current?.readyState === WebSocket.OPEN) {
                 socketRef.current.send(JSON.stringify({
                     type: "unit_moved",
-                    payload: asset
+                    payload: unitInstance
                 }));
             }
         } catch (error) {
@@ -295,13 +295,13 @@ export default function InteractiveMap({ mapSrc, join_code, assets, setAssets }:
                 onWheel={handleWheel}
             />
 
-            {/* Assets rendered above canvas */}
-            {assets.map(asset => (
-                <DraggableAsset
-                    key={asset.id}
-                    asset={asset}
+            {/* UnitInstances rendered above canvas */}
+            {unitInstances.map(unitInstance => (
+                <DraggableUnitInstance
+                    key={unitInstance.id}
+                    unitInstance={unitInstance}
                     cellSize={BASE_CELL_SIZE}
-                    onMouseDown={() => setElementDragId(asset.id)}
+                    onMouseDown={() => setElementDragId(unitInstance.id)}
                 />
             ))}
         </div>

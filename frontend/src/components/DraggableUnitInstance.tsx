@@ -1,15 +1,15 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Asset } from '@/lib/Types';
+import { UnitInstance } from '@/lib/Types';
 
 interface Props {
-    asset: Asset;
+    unitInstance: UnitInstance;
     cellSize: number;
     onMouseDown: (id: string | number) => void;
 }
 
-export default function DraggableAsset({ asset, cellSize, onMouseDown }: Props) {
+export default function DraggableUnitInstance({ unitInstance, cellSize, onMouseDown }: Props) {
     const [showInfo, setShowInfo] = useState(false);
 
     const toggleInfo = (e: React.MouseEvent) => {
@@ -21,20 +21,20 @@ export default function DraggableAsset({ asset, cellSize, onMouseDown }: Props) 
         <div
             style={{
                 position: 'absolute',
-                left: asset.tile.column * cellSize,
-                top: asset.tile.row * cellSize,
+                left: unitInstance.tile.column * cellSize,
+                top: unitInstance.tile.row * cellSize,
                 width: cellSize,
                 height: cellSize,
-                backgroundColor: asset.team.name === "RED" ? 'red' : 'blue',
+                backgroundColor: unitInstance.team_instance.team.name === "Red" ? 'red' : 'blue',
                 borderRadius: '50%',
                 cursor: 'grab',
             }}
             onMouseDown={(e) => {
                 e.stopPropagation();
-                onMouseDown(asset.id);
+                onMouseDown(unitInstance.id);
             }}
             onClick={toggleInfo}
-            title={asset.unit.name}
+            title={unitInstance.unit.name}
         >
             {showInfo && (
                 <div
@@ -53,10 +53,10 @@ export default function DraggableAsset({ asset, cellSize, onMouseDown }: Props) 
                     }}
                     onClick={e => e.stopPropagation()}
                 >
-                    <div><b>Team:</b> {asset.team.name}</div>
-                    <div><b>Row:</b> {asset.tile.row}, <b>Col:</b> {asset.tile.column}</div>
-                    <div><b>HP:</b> {asset.health}</div>
-                    <div><b>Supplies:</b> {asset.supply_count}</div>
+                    <div><b>Team:</b> {unitInstance.team_instance.team.name}</div>
+                    <div><b>Row:</b> {unitInstance.tile.row}, <b>Col:</b> {unitInstance.tile.column}</div>
+                    <div><b>HP:</b> {unitInstance.health}</div>
+                    <div><b>Supplies:</b> {unitInstance.supply_count}</div>
                 </div>
             )}
         </div>
