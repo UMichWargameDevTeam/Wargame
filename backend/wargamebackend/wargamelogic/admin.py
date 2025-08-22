@@ -1,22 +1,30 @@
 from django.contrib import admin
 from .models.static import (
-    Team,
-    Branch,
-    Role,
-    Unit,
-    UnitBranch,
-    Attack,
-    Ability,
-    Tile,
-    Landmark,
+    Team, Branch, Role, Unit, UnitBranch, Attack, Ability, Tile, Landmark,
 )
 from .models.dynamic import (
-    RoleInstance,
-    UnitInstance,
-    LandmarkInstance,
-    LandmarkInstanceTile,
-    GameInstance
+    GameInstance, TeamInstance, RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile
 )
+
+class TeamInstanceInline(admin.TabularInline):
+    model = TeamInstance
+    extra = 0
+    fields = ('team', 'victory_points')
+    readonly_fields = ('victory_points',)
+
+
+class RoleInstanceInline(admin.TabularInline):
+    model = RoleInstance
+    extra = 0
+    fields = ('user', 'role', 'supply_points')
+    autocomplete_fields = ('user', 'role')
+
+
+class UnitInstanceInline(admin.TabularInline):
+    model = UnitInstance
+    extra = 0
+    fields = ('unit', 'tile', 'health', 'supply_count')
+    autocomplete_fields = ('unit', 'tile')
 
 
 class UnitBranchInline(admin.TabularInline):
@@ -37,38 +45,16 @@ class AbilityInline(admin.TabularInline):
 @admin.register(Unit)
 class UnitAdmin(admin.ModelAdmin):
     inlines = [UnitBranchInline, AttackInline, AbilityInline]
-    list_display = (
-        "name",
-        "cost",
-        "domain",
-        "is_logistic",
-        "type",
-        "speed",
-        "max_health",
-        "max_supply_space",
-        "defense_modifier",
-        "description",
-    )
+    list_display = ("name", "cost", "domain", "is_logistic", "type", "speed", "max_health", "max_supply_space",
+                     "defense_modifier", "description")
     search_fields = ("name",)
     list_filter = ("domain", "type", "is_logistic")
 
 
 @admin.register(Attack)
 class AttackAdmin(admin.ModelAdmin):
-    list_display = (
-        "unit",
-        "name",
-        "cost",
-        "to_hit",
-        "shots",
-        "min_damage",
-        "max_damage",
-        "range",
-        "type",
-        "attack_modifier",
-        "attack_modifier_applies_to",
-        "description",
-    )
+    list_display = ("unit", "name", "cost", "to_hit", "shots", "min_damage", "max_damage", "range", "type", 
+                    "attack_modifier", "attack_modifier_applies_to", "description")
     search_fields = ("name", "unit__name")
     list_filter = ("type",)
 
@@ -85,47 +71,55 @@ class AbilityAdmin(admin.ModelAdmin):
 
 @admin.register(Landmark)
 class LandmarkAdmin(admin.ModelAdmin):
-    list_display = (
-        "name",
-        "max_victory_points",
-        "can_repair",
-        "description",
-    )
+    list_display = ("name", "max_victory_points", "can_repair", "description")
     search_fields = ("name",)
     list_filter = ("can_repair",)
 
 
 @admin.register(Role)
 class RoleAdmin(admin.ModelAdmin):
-    list_display = (
-        "name",
-        "branch",
-        "is_chief_of_staff",
-        "is_commander",
-        "is_vice_commander",
-        "is_operations",
-        "is_logistics",
-        "description",
-    )
+    list_display = ("name", "branch", "is_chief_of_staff", "is_commander", "is_vice_commander", "is_operations",
+                    "is_logistics", "description")
     search_fields = ("name", "branch__name")
-    list_filter = (
-        "branch",
-        "is_chief_of_staff",
-        "is_commander",
-        "is_vice_commander",
-        "is_operations",
-        "is_logistics",
-    )
+    list_filter = ("branch", "is_chief_of_staff", "is_commander", "is_vice_commander", "is_operations", "is_logistics")
 
 
-# keep the others simple
+@admin.register(GameInstance)
+class GameInstanceAdmin(admin.ModelAdmin):
+    list_display = ('join_code', 'created_at', 'is_started')
+    list_filter = ('is_started', 'created_at')
+    search_fields = ('join_code',)
+    inlines = [TeamInstanceInline]
+
+
+@admin.register(TeamInstance)
+class TeamInstanceAdmin(admin.ModelAdmin):
+    list_display = ('game_instance', 'team', 'victory_points')
+    list_filter = ('game_instance', 'team')
+    search_fields = ('team__name', 'game_instance__join_code')
+    inlines = [RoleInstanceInline, UnitInstanceInline]
+
+
+@admin.register(RoleInstance)
+class RoleInstanceAdmin(admin.ModelAdmin):
+    list_display = ('user', 'team_instance', 'role', 'supply_points')
+    list_filter = ('team_instance__game_instance', 'role__branch', 'role')
+    search_fields = ('user__username', 'team_instance__team__name', 'role__name')
+    autocomplete_fields = ('user', 'team_instance', 'role')
+
+
+@admin.register(UnitInstance)
+class UnitInstanceAdmin(admin.ModelAdmin):
+    list_display = ('unit', 'team_instance', 'tile', 'health', 'supply_count')
+    list_filter = ('team_instance__game_instance', 'unit', 'tile')
+    search_fields = ('unit__name', 'team_instance__team__name', 'tile__row', 'tile__column')
+    autocomplete_fields = ('team_instance', 'unit', 'tile')
+
+
 admin.site.register(Team)
 admin.site.register(Branch)
 admin.site.register(UnitBranch)
 admin.site.register(Tile)
 
-admin.site.register(RoleInstance)
-admin.site.register(UnitInstance)
 admin.site.register(LandmarkInstance)
 admin.site.register(LandmarkInstanceTile)
-admin.site.register(GameInstance)

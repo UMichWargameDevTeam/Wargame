@@ -1,16 +1,17 @@
 'use client';
 
 import React, { useEffect, useRef, useState, useCallback } from 'react';
-import DraggableAsset from './DraggableAsset';
-import { Asset } from "@/lib/Types";
+import DraggableUnitInstance from './DraggableUnitInstance';
+import { UnitInstance } from "@/lib/Types";
 import { WS_URL } from '@/lib/utils';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 
-
 interface Props {
     mapSrc: string;
-    assets: Asset[];
-    setAssets: React.Dispatch<React.SetStateAction<Asset[]>>;
+    join_code: string;
+    unitInstances: UnitInstance[];
+    setUnitInstances: React.Dispatch<React.SetStateAction<UnitInstance[]>>;
+    selectedUnitInstances: Record<string, boolean>
 }
 
 const BASE_CELL_SIZE = 80;
@@ -18,7 +19,7 @@ const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 5;
 
 
-export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
+export default function InteractiveMap({ mapSrc, join_code, unitInstances, setUnitInstances, selectedUnitInstances }: Props) {
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const socketRef = useRef<WebSocket | null>(null);
@@ -30,7 +31,7 @@ export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
     const [elementDragId, setElementDragId] = useState<number>(0);
     const [showGrid, setShowGrid] = useState(true);
-    const authed_fetch = useAuthedFetch()
+    const authedFetch = useAuthedFetch()
 
     useEffect(() => {
         const savedZoom = sessionStorage.getItem('map_zoom');
@@ -50,34 +51,24 @@ export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
         sessionStorage.setItem('map_offset', JSON.stringify(offset));
     }, [zoom, offset]);
 
-    // Load map image once
-    useEffect(() => {
-        const img = new Image();
-        img.src = mapSrc;
-        img.onload = () => {
-            imageRef.current = img;
-            draw();
-        };
-    }, [mapSrc]);
-
     // WebSocket setup
     useEffect(() => {
-        const socket = new WebSocket(`${WS_URL}/unit-instances/`);
+        const socket = new WebSocket(`${WS_URL}/game-instances/${join_code}/unit-instances/`);
         socketRef.current = socket;
 
         socket.onmessage = (event) => {
             const data = JSON.parse(event.data);
             if (data.type === "unit_moved") {
-                setAssets(prev =>
-                    prev.map(asset =>
-                        asset.id === data.payload.id ? data.payload : asset
+                setUnitInstances(prev =>
+                    prev.map(unitInstance =>
+                        unitInstance.id === data.payload.id ? data.payload : unitInstance
                     )
                 );
             }
         };
 
         return () => socket.close();
-    }, [setAssets]);
+    }, [setUnitInstances, join_code]);
 
     function getLabelPart(row: number, col: number, useLowercase = false) {
         const letter = String.fromCharCode((useLowercase ? 97 : 65) + row); // a-z or A-Z
@@ -195,6 +186,16 @@ export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
         draw();
     }, [draw]);
 
+    // Load map image once
+    useEffect(() => {
+        const img = new Image();
+        img.src = mapSrc;
+        img.onload = () => {
+            imageRef.current = img;
+            draw();
+        };
+    }, [mapSrc, draw]);
+
     // Zoom
     const handleWheel = (e: React.WheelEvent) => {
         const delta = -e.deltaY * 0.001;
@@ -236,11 +237,11 @@ export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
                 const newCol = Math.floor(mouseX / BASE_CELL_SIZE);
                 const newRow = Math.floor(mouseY / BASE_CELL_SIZE);
 
-                setAssets(prev =>
-                    prev.map(asset =>
-                        asset.id === elementDragId
-                            ? { ...asset, tile: { ...asset.tile, column: newCol, row: newRow } }
-                            : asset
+                setUnitInstances(prev =>
+                    prev.map(unitInstance =>
+                        unitInstance.id === elementDragId
+                            ? { ...unitInstance, tile: { ...unitInstance.tile, column: newCol, row: newRow } }
+                            : unitInstance
                     )
                 );
             }
@@ -251,23 +252,19 @@ export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
         setDragging(false);
         if (!elementDragId) return;
 
-        const asset = assets.find(a => a.id === elementDragId);
-        if (!asset) return;
+        const unitInstance = unitInstances.find(a => a.id === elementDragId);
+        if (!unitInstance) return;
 
         try {
-            await authed_fetch(`/api/unit-instances/${asset.id}/`, {
+            await authedFetch(`/api/unit-instances/${unitInstance.id}/move/tiles/${unitInstance.tile.row}/${unitInstance.tile.column}/`, {
                 method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    row: asset.tile.row,
-                    column: asset.tile.column
-                }),
+                headers: { "Content-Type": "application/json" }
             });
 
             if (socketRef.current?.readyState === WebSocket.OPEN) {
                 socketRef.current.send(JSON.stringify({
                     type: "unit_moved",
-                    payload: asset
+                    payload: unitInstance
                 }));
             }
         } catch (error) {
@@ -295,13 +292,15 @@ export default function InteractiveMap({ mapSrc, assets, setAssets }: Props) {
                 onWheel={handleWheel}
             />
 
-            {/* Assets rendered above canvas */}
-            {assets.map(asset => (
-                <DraggableAsset
-                    key={asset.id}
-                    asset={asset}
+            {/* UnitInstances rendered above canvas */}
+            {unitInstances
+                .filter(unitInstance => selectedUnitInstances[unitInstance.unit.domain] == true) // only show if domain is selected
+                .map(unitInstance => (
+                <DraggableUnitInstance
+                    key={unitInstance.id}
+                    unitInstance={unitInstance}
                     cellSize={BASE_CELL_SIZE}
-                    onMouseDown={() => setElementDragId(asset.id)}
+                    onMouseDown={() => setElementDragId(unitInstance.id)}
                 />
             ))}
         </div>
