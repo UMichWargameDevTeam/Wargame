@@ -51,16 +51,6 @@ export default function InteractiveMap({ mapSrc, join_code, unitInstances, setUn
         sessionStorage.setItem('map_offset', JSON.stringify(offset));
     }, [zoom, offset]);
 
-    // Load map image once
-    useEffect(() => {
-        const img = new Image();
-        img.src = mapSrc;
-        img.onload = () => {
-            imageRef.current = img;
-            draw();
-        };
-    }, [mapSrc]);
-
     // WebSocket setup
     useEffect(() => {
         const socket = new WebSocket(`${WS_URL}/game-instances/${join_code}/unit-instances/`);
@@ -78,7 +68,7 @@ export default function InteractiveMap({ mapSrc, join_code, unitInstances, setUn
         };
 
         return () => socket.close();
-    }, [setUnitInstances]);
+    }, [setUnitInstances, join_code]);
 
     function getLabelPart(row: number, col: number, useLowercase = false) {
         const letter = String.fromCharCode((useLowercase ? 97 : 65) + row); // a-z or A-Z
@@ -195,6 +185,16 @@ export default function InteractiveMap({ mapSrc, join_code, unitInstances, setUn
     useEffect(() => {
         draw();
     }, [draw]);
+
+    // Load map image once
+    useEffect(() => {
+        const img = new Image();
+        img.src = mapSrc;
+        img.onload = () => {
+            imageRef.current = img;
+            draw();
+        };
+    }, [mapSrc, draw]);
 
     // Zoom
     const handleWheel = (e: React.WheelEvent) => {

@@ -1,7 +1,8 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
+import { Team, Branch, Role } from '@/lib/Types'
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 import { WS_URL } from '@/lib/utils';
 
@@ -9,9 +10,9 @@ export default function RoleSelectPage() {
     const router = useRouter();
     const authedFetch = useAuthedFetch();
 
-    const [teams, setTeams] = useState<any[]>([]);
-    const [branches, setBranches] = useState<any[]>([]);
-    const [roles, setRoles] = useState<any[]>([]);
+    const [teams, setTeams] = useState<Team[]>([]);
+    const [branches, setBranches] = useState<Branch[]>([]);
+    const [roles, setRoles] = useState<Role[]>([]);
 
     const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
     const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
@@ -24,11 +25,6 @@ export default function RoleSelectPage() {
     const [joinError, setJoinError] = useState<string | null>(null);
 
     useEffect(() => {
-        const stored_join_code = sessionStorage.getItem('join_code');
-        const storedTeam = sessionStorage.getItem('team_name');
-        const storedBranch = sessionStorage.getItem('branch_name');
-        const storedRole = sessionStorage.getItem('role_name');
-
         authedFetch('/api/teams/')
             .then(res => res.json())
             .then(data => setTeams(Array.isArray(data) ? data : data.results || []))
@@ -43,7 +39,7 @@ export default function RoleSelectPage() {
             .then(res => res.json())
             .then(data => setRoles(Array.isArray(data) ? data : data.results || []))
             .catch(err => console.error("Failed to fetch roles", err));
-    }, []);
+    }, [authedFetch]);
 
     const handleRoleSelect = (role: string | null = null, branch: string | null = null) => {
         setSelectedRole(role);
@@ -95,9 +91,11 @@ export default function RoleSelectPage() {
                 router.push(`/game-instances/${data.team_instance.game_instance.join_code}/main-map/`);
             };
 
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
-            setCreateError(err.message);
+            if (err instanceof Error) {
+                setCreateError(err.message);
+            }
         }
     };
 
@@ -150,9 +148,11 @@ export default function RoleSelectPage() {
                 router.push(`/game-instances/${data.team_instance.game_instance.join_code}/main-map/`);
             };
 
-        } catch (err: any) {
+        } catch (err: unknown) {
             console.error(err);
-            setJoinError(err.message);
+            if (err instanceof Error) {
+                setJoinError(err.message);
+            }
         }
     };
 
@@ -235,8 +235,8 @@ export default function RoleSelectPage() {
                             <h3 className="text-lg font-semibold mb-1">Select Your Team</h3>
                             <div className="flex flex-wrap gap-2 mb-3">
                                 {teams
-                                    .filter((t: any) => t.name !== 'Gamemasters')
-                                    .map((t: any) => (
+                                    .filter((t: Team) => t.name !== 'Gamemasters')
+                                    .map((t: Team) => (
                                         <button
                                             key={t.id}
                                             onClick={() => setSelectedTeam(t.name !== selectedTeam ? t.name : null)}
@@ -251,8 +251,8 @@ export default function RoleSelectPage() {
                             <h3 className="text-lg font-semibold mb-1">Branch-neutral Roles</h3>
                             <div className="flex flex-wrap gap-2 mb-3">
                                 {roles
-                                    .filter((r: any) => r.branch === null && r.name !== 'Gamemaster')
-                                    .map((r: any) => (
+                                    .filter((r: Role) => r.branch === null && r.name !== 'Gamemaster')
+                                    .map((r: Role) => (
                                         <button
                                             key={r.id}
                                             onClick={() => handleRoleSelect(r.name !== selectedRole ? r.name : null, null)}
@@ -270,7 +270,7 @@ export default function RoleSelectPage() {
                                     <h4 className="text-md font-medium mb-1">Branch</h4>
                                     <div className="flex gap-2 flex-wrap">
                                         {branches
-                                            .map((b: any) => (
+                                            .map((b: Branch) => (
                                                 <button
                                                     key={b.id}
                                                     onClick={() => handleRoleSelect(null, b.name !== selectedBranch ? b.name : null)}
@@ -289,8 +289,8 @@ export default function RoleSelectPage() {
                                     <div className="flex flex-wrap gap-2">
                                         {selectedBranch ? (
                                             roles
-                                                .filter((r: any) => r.branch?.name === selectedBranch)
-                                                .map((r: any) => (
+                                                .filter((r: Role) => r.branch?.name === selectedBranch)
+                                                .map((r: Role) => (
                                                     <button
                                                         key={r.id}
                                                         onClick={() => handleRoleSelect(r.name !== selectedRole ? r.name : null, r.branch.name)}

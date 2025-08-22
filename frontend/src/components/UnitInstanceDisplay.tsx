@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 
 interface UserInstanceDisplayProps {
     selectedUnitInstances: Record<string, boolean>;
@@ -8,14 +8,8 @@ interface UserInstanceDisplayProps {
 }
 
 export default function UnitInstanceDisplay({ selectedUnitInstances, setSelectedUnitInstances }: UserInstanceDisplayProps) {
-    const defaultState = {
-        Air: true,
-        Ground: true,
-        Sea: true,
-    };
-
+    
     const [open, setOpen] = useState(true);
-
 
     const toggleUnitInstance = (domain: string) => {
         setSelectedUnitInstances((prev) => {

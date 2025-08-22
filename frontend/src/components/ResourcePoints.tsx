@@ -33,7 +33,7 @@ export default function ResourcePoints() {
         };
 
         fetchResources();
-    }, []);
+    }, [authedFetch]);
 
     return (
         <div className="bg-neutral-700 rounded-lg mb-4 p-4">
