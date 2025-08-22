@@ -34,8 +34,10 @@ class UnitSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Unit
-        fields = ['name', 'cost', 'domain', 'is_logistic', 'type', 'speed', 'max_health', 'max_supply_space', 'defense_modifier', 'description', 
-                  'branches']
+        fields = [
+            'id', 'name', 'cost', 'domain', 'is_logistic', 'type', 'speed', 'max_health', 'max_supply_space', 'defense_modifier', 'description', 
+            'branches'
+        ]
         read_only_fields = ['id']
 
 class UnitBranchSerializer(serializers.ModelSerializer):
@@ -59,7 +61,7 @@ class AttackSerializer(serializers.ModelSerializer):
     class Meta:
         model = Attack
         fields = [
-            'id', 'unit', 'name', 'cost', 'to_hit', 'shots', 'min_damage', 'max_damage', 'range', 'type', 'attack_modifier', 'attack_modifier_applies_to', 'description'
+            'id', 'unit', 'name', 'cost', 'to_hit', 'shots', 'min_damage', 'max_damage', 'range', 'type', 'attack_modifier', 'attack_modifier_applies_to', 'description',
             'unit_id'
         ]
         read_only_fields = ['id']
@@ -97,7 +99,7 @@ class TileSerializer(serializers.ModelSerializer):
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
-        fields = ['username', 'is_staff']
+        fields = ['id', 'username', 'is_staff']
 
 class GameInstanceSerializer(serializers.ModelSerializer):
     class Meta:

@@ -40,6 +40,7 @@ urlpatterns = [
     path('api/tiles/<int:row>/<int:column>/', get.get_tile_by_coords, name='get_tile_by_coords'),
 
     path('api/game-instances/<str:join_code>/team-instances/<str:team_name>/', get.get_game_team_instance_by_name, name='get_game_team_instance_by_name'),
+    path('api/game-instances/<str:join_code>/role-instances/', get.get_game_role_instances, name='get_game_role_instances'),
     path('api/game-instances/<str:join_code>/team-instances/<str:team_name>/role-instances/', get.get_game_role_instances_by_team, name='get_role_instance_by_team'),
     path('api/game-instances/<str:join_code>/team-instances/<str:team_name>/role-instances/<str:role_name>/', get.get_game_role_instances_by_team_and_role, name='get_role_instance_by_team_and_role'),
     path('api/game-instances/<str:join_code>/unit-instances/', get.get_game_unit_instances, name='get_game_unit_instances'),

@@ -10,10 +10,11 @@ import ResourcePoints from '@/components/ResourcePoints';
 import CommandersIntent from '@/components/CommandersIntent';
 import InteractiveMap from '@/components/InteractiveMap';
 import JTFMenu from '@/components/JTFMenu';
+import GamemasterMenu from '@/components/GamemasterMenu';
 import SendResourcePoints from '@/components/SendResourcePoints';
-import { RoleInstance, UnitInstance } from '@/lib/Types'
+import { Team, Unit, Attack, Ability, RoleInstance, UnitInstance } from '@/lib/Types'
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
-import { WS_URL } from '@/lib/utils';
+import { WS_URL, getSessionStorageOrFetch } from '@/lib/utils';
 
 export default function MainMapPage() {
     // const [socket, setSocket] = useState<WebSocket | null>(null);
@@ -23,18 +24,33 @@ export default function MainMapPage() {
     const params = useParams();
     const join_code = params.join_code as string;
 
-    const [roleInstance, setRoleInstance] = useState<RoleInstance | null>(null);
     const [mapSrc, setMapSrc] = useState('/maps/taiwan_middle_clean.png');
+
+    const [teams, setTeams] = useState<Team[]>([]);
+    const [units, setUnits] = useState<Unit[]>([]);
+    const [attacks, setAttacks] = useState<Attack[]>([]);
+    const [abilities, setAbilities] = useState<Ability[]>([]);
+
+    const [roleInstance, setRoleInstance] = useState<RoleInstance | null>(null);
     const [unitInstances, setUnitInstances] = useState<UnitInstance[]>([]);
+
     const [timer, setTimer] = useState<number>(600); // 10 minutes in seconds
     const [mapValidationError, setMapValidationError] = useState<string | null>(null);
-    const authed_fetch = useAuthedFetch()
+
+    const defaultState: Record<string, boolean> = {
+        Air: true,
+        Ground: true,
+        Sea: true,
+    };
+    const [selectedUnitInstances, setSelectedUnitInstances] = useState<Record<string, boolean>>(defaultState);
+
+    const authedFetch = useAuthedFetch()
 
     useEffect(() => {
         const fetchData = async () => {
             try {
                 // First validate map access
-                const validationRes = await authed_fetch(`/api/game-instances/${join_code}/validate-map-access/`);
+                const validationRes = await authedFetch(`/api/game-instances/${join_code}/validate-map-access/`);
                 const data = await validationRes.json();
                 if (!validationRes.ok) {
                     throw new Error(data.error || data.detail || "Access denied");
@@ -47,17 +63,63 @@ export default function MainMapPage() {
                 sessionStorage.setItem('role_instance', JSON.stringify(data))
 
                 // If validation passed, fetch unit instances
-                const unitsRes = await authed_fetch(`/api/game-instances/${join_code}/unit-instances/`);
-                if (!unitsRes.ok) {
-                    throw new Error(`Unit fetch failed with ${unitsRes.status}`);
+                const unitInstancesRes = await authedFetch(`/api/game-instances/${join_code}/unit-instances/`);
+                if (!unitInstancesRes.ok) {
+                    throw new Error(`UnitInstance fetch failed with ${unitInstancesRes.status}`);
                 }
 
-                const units = await unitsRes.json();
-                if (Array.isArray(units)) {
-                    setUnitInstances(units);
+                const unitInstances = await unitInstancesRes.json();
+                if (Array.isArray(unitInstances)) {
+                    setUnitInstances(unitInstances);
                 } else {
                     setUnitInstances([]);
-                    throw new Error(`Expected array from Unit fetch but got: ${units}`);
+                    throw new Error(`Expected array from Unit fetch but got: ${unitInstances}`);
+                }
+
+                const teams = await getSessionStorageOrFetch('teams', async () => {
+                    const res = await authedFetch("/api/teams/");
+                    if (!res.ok) {
+                        throw new Error(`Team fetch failed with ${res.status}`)
+                    }
+                    return res.json();
+                });
+                setTeams(teams);
+
+                const units = await getSessionStorageOrFetch('units', async () => {
+                    const res = await authedFetch("/api/units/");
+                    if (!res.ok) {
+                        throw new Error(`Unit fetch failed with ${res.status}`)
+                    }
+                    return res.json();
+                });
+                setUnits(units);
+
+                const attacks = await getSessionStorageOrFetch('attacks', async () => {
+                    const res = await authedFetch("/api/attacks/");
+                    if (!res.ok) {
+                        throw new Error(`Attack fetch failed with ${res.status}`)
+                    }
+                    return res.json();
+                });
+                setAttacks(attacks);
+
+                const abilities = await getSessionStorageOrFetch('abilities', async () => {
+                    const res = await authedFetch("/api/abilities/");
+                    if (!res.ok) {
+                        throw new Error(`Ability fetch failed with ${res.status}`)
+                    }
+                    return res.json();
+                });
+                setAbilities(abilities);
+
+                const stored = sessionStorage.getItem('unitInstanceDisplay');
+                if (stored) {
+                    try {
+                        const parsed = JSON.parse(stored);
+                        setSelectedUnitInstances((prev) => ({ ...prev, ...parsed }));
+                    } catch (err) {
+                        console.error('Invalid session data for unitInstanceDisplay', err);
+                    }
                 }
 
                 // Start the timer WebSocket only if validation succeeded
@@ -97,10 +159,6 @@ export default function MainMapPage() {
     //     }
     // };
 
-    const canViewRestrictedComponents = (role_instance: RoleInstance | null) => {
-        return role_instance && (role_instance.role.is_operations || role_instance.role.is_logistics);
-    };
-
     if (mapValidationError) {
         return ( 
             <div className="flex items-center justify-center h-screen text-white bg-neutral-900">
@@ -108,6 +166,55 @@ export default function MainMapPage() {
             </div>
         );
     }
+
+    const isOperationsOrLogistics = (role_instance: RoleInstance | null) => {
+        return role_instance && (role_instance.role.is_operations || role_instance.role.is_logistics);
+    };
+
+    const handleAddUnitInstance = async (join_code: string, teamName: string, unitName: string, row: string, column: string) => {
+        try {
+            const res = await authedFetch(`/api/unit-instances/create/`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    join_code,
+                    team_name: teamName,
+                    unit_name: unitName,
+                    row,
+                    column
+                })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                setUnitInstances([...unitInstances, data]);
+            } else {
+                throw new Error(data.error || data.detail || 'Failed to add unit.');
+            }
+        } catch (err: any) {
+            console.error(err);
+            alert(err.message);
+        }
+    };
+
+    const handleDeleteUnitInstance = async (unitId: number) => {
+        if (!join_code) return;
+        if (!confirm("Are you sure you want to delete this Unit Instance?")) return;
+
+        try {
+            const res = await authedFetch(`/api/unit-instances/${unitId}/`, {
+                method: 'DELETE'
+            });
+            if (res.ok) {
+                setUnitInstances(unitInstances.filter(u => u.id !== unitId));
+            } else {
+                const data = await res.json();
+                throw new Error(data.error || data.detail || data.message || 'Failed to delete unit instance.');
+            }
+        } catch (err: any) {
+            console.error(err);
+            alert(err.message);
+        }
+    };
 
     return (
         <div className="flex h-screen w-screen bg-neutral-900 text-white p-4 space-x-4">
@@ -128,11 +235,17 @@ export default function MainMapPage() {
                     </div>
                 )}
                 <div className="w-full h-full bg-neutral-800 rounded-lg overflow-hidden">
-                    <InteractiveMap mapSrc={mapSrc} join_code={join_code} unitInstances={unitInstances} setUnitInstances={setUnitInstances} />
+                    <InteractiveMap
+                        mapSrc={mapSrc}
+                        join_code={join_code}
+                        unitInstances={unitInstances}
+                        setUnitInstances={setUnitInstances} 
+                        selectedUnitInstances={selectedUnitInstances}
+                    />
                 </div>
 
                 {/* Footer for Ops/Logs */}
-                {canViewRestrictedComponents(roleInstance) && (
+                {isOperationsOrLogistics(roleInstance) && (
                     <>
                         <FooterControls />
                     </>
@@ -144,7 +257,7 @@ export default function MainMapPage() {
                 <h2 className="text-lg mb-2">Team: {roleInstance?.team_instance.team.name || 'Unknown'}</h2>
                 <h2 className="text-lg mb-2">Role: {roleInstance?.role.name || 'Unknown'}</h2>
                 {/* Menu for Ops/Logs */}
-                {canViewRestrictedComponents(roleInstance) && (
+                {isOperationsOrLogistics(roleInstance) && (
                     <>
                         <MapSelector
                             initialMap={mapSrc}
@@ -153,13 +266,19 @@ export default function MainMapPage() {
                                 sessionStorage.setItem('mapSrc', path);
                             }}
                         />
-                        <UnitInstanceDisplay />
+                        <UnitInstanceDisplay
+                            selectedUnitInstances={selectedUnitInstances}
+                            setSelectedUnitInstances={setSelectedUnitInstances}
+                        />
                     </>
                 )}
                 {/* Menu for CoS */}
                 {roleInstance?.role.is_chief_of_staff && (
                     <>
-                        <AvailableUnitInstances unitInstances={unitInstances} />
+                        <AvailableUnitInstances 
+                            roleInstance={roleInstance}
+                            unitInstances={unitInstances} 
+                        />
                         <ResourcePoints />
                     </>
                 )}
@@ -168,6 +287,33 @@ export default function MainMapPage() {
                     <>
                         <JTFMenu />
                         <SendResourcePoints />
+                    </>
+                )}
+                {/* Menu for Gamemaster */}
+                {roleInstance?.role.name == "Gamemaster" && (
+                    <>
+                        <MapSelector
+                            initialMap={mapSrc}
+                            onMapChange={(path) => {
+                                setMapSrc(path);
+                                sessionStorage.setItem('mapSrc', path);
+                            }}
+                        />
+                        <UnitInstanceDisplay
+                            selectedUnitInstances={selectedUnitInstances}
+                            setSelectedUnitInstances={setSelectedUnitInstances}
+                        />
+                        <AvailableUnitInstances 
+                            roleInstance={roleInstance}
+                            unitInstances={unitInstances}
+                            handleDeleteUnitInstance={handleDeleteUnitInstance}
+                        />
+                        <GamemasterMenu
+                            join_code={join_code}
+                            units={units}
+                            teams={teams}
+                            handleAddUnitInstance={handleAddUnitInstance}
+                        />
                     </>
                 )}
 

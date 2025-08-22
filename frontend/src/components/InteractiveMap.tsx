@@ -11,6 +11,7 @@ interface Props {
     join_code: string;
     unitInstances: UnitInstance[];
     setUnitInstances: React.Dispatch<React.SetStateAction<UnitInstance[]>>;
+    selectedUnitInstances: Record<string, boolean>
 }
 
 const BASE_CELL_SIZE = 80;
@@ -18,7 +19,7 @@ const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 5;
 
 
-export default function InteractiveMap({ mapSrc, join_code, unitInstances, setUnitInstances }: Props) {
+export default function InteractiveMap({ mapSrc, join_code, unitInstances, setUnitInstances, selectedUnitInstances }: Props) {
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const socketRef = useRef<WebSocket | null>(null);
@@ -30,7 +31,7 @@ export default function InteractiveMap({ mapSrc, join_code, unitInstances, setUn
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
     const [elementDragId, setElementDragId] = useState<number>(0);
     const [showGrid, setShowGrid] = useState(true);
-    const authed_fetch = useAuthedFetch()
+    const authedFetch = useAuthedFetch()
 
     useEffect(() => {
         const savedZoom = sessionStorage.getItem('map_zoom');
@@ -255,13 +256,9 @@ export default function InteractiveMap({ mapSrc, join_code, unitInstances, setUn
         if (!unitInstance) return;
 
         try {
-            await authed_fetch(`/api/unit-instances/${unitInstance.id}/move/`, {
+            await authedFetch(`/api/unit-instances/${unitInstance.id}/move/tiles/${unitInstance.tile.row}/${unitInstance.tile.column}/`, {
                 method: "PATCH",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({
-                    row: unitInstance.tile.row,
-                    column: unitInstance.tile.column
-                }),
+                headers: { "Content-Type": "application/json" }
             });
 
             if (socketRef.current?.readyState === WebSocket.OPEN) {
@@ -296,7 +293,9 @@ export default function InteractiveMap({ mapSrc, join_code, unitInstances, setUn
             />
 
             {/* UnitInstances rendered above canvas */}
-            {unitInstances.map(unitInstance => (
+            {unitInstances
+                .filter(unitInstance => selectedUnitInstances[unitInstance.unit.domain] == true) // only show if domain is selected
+                .map(unitInstance => (
                 <DraggableUnitInstance
                     key={unitInstance.id}
                     unitInstance={unitInstance}

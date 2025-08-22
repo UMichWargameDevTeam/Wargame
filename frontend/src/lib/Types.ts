@@ -1,8 +1,33 @@
-export interface Branch {
+export interface User {
+    id: number,
+    username: string,
+    is_staff: boolean
+}
+
+export interface Team {
+    id: number,
     name: string
 }
 
+export interface Branch {
+    id: number,
+    name: string
+}
+
+export interface Role {
+    id: number,
+    name: string,
+    branch: Branch,
+    is_chief_of_staff: boolean,
+    is_commander: boolean,
+    is_vice_commander: boolean,
+    is_operations: boolean,
+    is_logistics: boolean,
+    description: string
+}
+
 export interface Unit {
+    id: number,
     name: string,
     cost: number,
     domain: string,
@@ -15,44 +40,59 @@ export interface Unit {
     description: string
 }
 
+export interface Attack {
+    id: number,
+    unit: Unit,
+    name: string,
+    cost: number,
+    to_hit: number,
+    shots: number,
+    min_damage: number,
+    max_damage: number,
+    range: number,
+    type: string,
+    attack_modifier: number,
+    attack_modifier_applies_to: string,
+    description: string
+}
+
+export interface Ability {
+    id: number,
+    unit: Unit,
+    name: string,
+    description: string
+}
+
 export interface Tile {
+    id: number,
     row: number,
     column: number
 }
 
+export interface GameInstance {
+    id: number,
+    join_code: string,
+    created_at: string,
+    is_started: boolean
+}
+
 export interface TeamInstance {
-    game_instance: {
-        join_code: string,
-        created_at: string,
-        is_started: boolean
-    },
-    team: {
-        name: string
-    },
+    id: number,
+    game_instance: GameInstance,
+    team: Team,
     victory_points: number
 }
 
 export interface RoleInstance {
-    user: {
-        username: string,
-        is_staff: boolean
-    },
+    id: number,
+    user: User,
     team_instance: TeamInstance,
-    role: {
-        name: string,
-        branch: Branch,
-        is_chief_of_staff: boolean,
-        is_commander: boolean,
-        is_vice_commander: boolean,
-        is_operations: boolean,
-        is_logistics: boolean,
-        description: string
-    }
+    role: Role,
     supply_points: number
 }
 
 export interface UnitInstance {
-    id: number;  // unit instance id
+    id: number;
     team_instance: TeamInstance,
     unit: Unit,
     tile: Tile,

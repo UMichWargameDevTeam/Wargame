@@ -7,7 +7,7 @@ import { WS_URL } from '@/lib/utils';
 
 export default function RoleSelectPage() {
     const router = useRouter();
-    const authed_fetch = useAuthedFetch();
+    const authedFetch = useAuthedFetch();
 
     const [teams, setTeams] = useState<any[]>([]);
     const [branches, setBranches] = useState<any[]>([]);
@@ -17,10 +17,10 @@ export default function RoleSelectPage() {
     const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
     const [selectedRole, setSelectedRole] = useState<string | null>(null);
 
-    const [createCode, setCreateCode] = useState('');
+    const [createCode, setCreateCode] = useState<string>('');
     const [createError, setCreateError] = useState<string | null>(null);
 
-    const [join_code, set_join_code] = useState('');
+    const [join_code, set_join_code] = useState<string>('');
     const [joinError, setJoinError] = useState<string | null>(null);
 
     useEffect(() => {
@@ -29,17 +29,17 @@ export default function RoleSelectPage() {
         const storedBranch = sessionStorage.getItem('branch_name');
         const storedRole = sessionStorage.getItem('role_name');
 
-        authed_fetch('/api/teams/')
+        authedFetch('/api/teams/')
             .then(res => res.json())
             .then(data => setTeams(Array.isArray(data) ? data : data.results || []))
             .catch(err => console.error("Failed to fetch teams", err));
           
-        authed_fetch('/api/branches/')
+        authedFetch('/api/branches/')
             .then(res => res.json())
             .then(data => setBranches(Array.isArray(data) ? data : data.results || []))
             .catch(err => console.error("Failed to fetch branches", err));
 
-        authed_fetch('/api/roles/')
+        authedFetch('/api/roles/')
             .then(res => res.json())
             .then(data => setRoles(Array.isArray(data) ? data : data.results || []))
             .catch(err => console.error("Failed to fetch roles", err));
@@ -57,7 +57,7 @@ export default function RoleSelectPage() {
         }
 
         try {
-            const res = await authed_fetch('/api/game-instances/create/', {
+            const res = await authedFetch('/api/game-instances/create/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ join_code: createCode }),
@@ -65,8 +65,7 @@ export default function RoleSelectPage() {
 
             if (!res.ok) {
                 const errorData = await res.json();
-                setCreateError(errorData.error || errorData.detail || "Failed to create game");
-                return;
+                throw Error(errorData.error || errorData.detail || "Failed to create game");
             }
 
             const data = await res.json();
@@ -77,6 +76,7 @@ export default function RoleSelectPage() {
             sessionStorage.setItem('branch_name', data.role.branch?.name ?? 'None');
             sessionStorage.setItem('role_name', data.role.name);
 
+            sessionStorage.setItem('teams', JSON.stringify(teams))
             sessionStorage.setItem('branches', JSON.stringify(branches))
             sessionStorage.setItem('role_instance', JSON.stringify(data))
 
@@ -96,7 +96,8 @@ export default function RoleSelectPage() {
             };
 
         } catch (err: any) {
-            setCreateError(err.error || err.detail || err.message || "Something went wrong");
+            console.error(err);
+            setCreateError(err.message);
         }
     };
 
@@ -107,7 +108,7 @@ export default function RoleSelectPage() {
         }
 
         try {
-            const res = await authed_fetch('/api/role-instances/create/', {
+            const res = await authedFetch('/api/role-instances/create/', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -119,8 +120,7 @@ export default function RoleSelectPage() {
 
             if (!res.ok) {
                 const errorData = await res.json();
-                setJoinError(errorData.error || errorData.detail || "Failed to join game");
-                return;
+                throw new Error(errorData.error || errorData.detail || "Failed to join game");
             }
 
             const data = await res.json();
@@ -131,6 +131,7 @@ export default function RoleSelectPage() {
             sessionStorage.setItem('branch_name', data.role.branch?.name ?? 'None');
             sessionStorage.setItem('role_name', data.role.name);
 
+            sessionStorage.setItem('teams', JSON.stringify(teams))
             sessionStorage.setItem('branches', JSON.stringify(branches))
             sessionStorage.setItem('role_instance', JSON.stringify(data)) 
 
@@ -150,7 +151,8 @@ export default function RoleSelectPage() {
             };
 
         } catch (err: any) {
-            setJoinError(err.error || err.detail || err.message || "Something went wrong");
+            console.error(err);
+            setJoinError(err.message);
         }
     };
 

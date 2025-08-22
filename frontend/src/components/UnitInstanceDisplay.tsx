@@ -2,9 +2,12 @@
 
 import { useEffect, useState } from 'react';
 
-type Domain = 'Air' | 'Ground' | 'Sea';
+interface UserInstanceDisplayProps {
+    selectedUnitInstances: Record<string, boolean>;
+    setSelectedUnitInstances: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
+}
 
-export default function UnitInstanceDisplay() {
+export default function UnitInstanceDisplay({ selectedUnitInstances, setSelectedUnitInstances }: UserInstanceDisplayProps) {
     const defaultState = {
         Air: true,
         Ground: true,
@@ -12,23 +15,11 @@ export default function UnitInstanceDisplay() {
     };
 
     const [open, setOpen] = useState(true);
-    const [selectedUnitInstances, setSelectedUnitInstances] = useState<Record<Domain, boolean>>(defaultState);
 
-    useEffect(() => {
-        const stored = sessionStorage.getItem('unitInstanceDisplay');
-        if (stored) {
-            try {
-                const parsed = JSON.parse(stored);
-                setSelectedUnitInstances((prev) => ({ ...prev, ...parsed }));
-            } catch (e) {
-                console.error('Invalid session data for unitInstanceDisplay', e);
-            }
-        }
-    }, []);
 
-    const toggleUnitInstance = (type: Domain) => {
+    const toggleUnitInstance = (domain: string) => {
         setSelectedUnitInstances((prev) => {
-            const updated = { ...prev, [type]: !prev[type] };
+            const updated = { ...prev, [domain]: !prev[domain] };
             sessionStorage.setItem('unitInstanceDisplay', JSON.stringify(updated));
             return updated;
         });
@@ -48,17 +39,17 @@ export default function UnitInstanceDisplay() {
 
             {open && (
                 <div className="space-y-2">
-                    {(['Air', 'Ground', 'Sea'] as Domain[]).map((type) => (
-                        <div key={type} className="flex items-center space-x-2">
+                    {(['Air', 'Ground', 'Sea'] as string[]).map((domain) => (
+                        <div key={domain} className="flex items-center space-x-2">
                             <input
-                                id={type}
+                                id={domain}
                                 type="checkbox"
-                                checked={selectedUnitInstances[type]}
-                                onChange={() => toggleUnitInstance(type)}
+                                checked={selectedUnitInstances[domain]}
+                                onChange={() => toggleUnitInstance(domain)}
                                 className="form-checkbox text-blue-500 bg-neutral-800 border-neutral-500"
                             />
-                            <label htmlFor={type} className="capitalize text-sm text-white">
-                                {type}
+                            <label htmlFor={domain} className="capitalize text-sm text-white">
+                                {domain}
                             </label>
                         </div>
                     ))}

@@ -7,7 +7,7 @@ import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 export default function ResourcePoints() {
     const [open, setOpen] = useState(true);
     const [resources, setResources] = useState<RoleInstance[]>([]);
-    const authed_fetch = useAuthedFetch();
+    const authedFetch = useAuthedFetch();
 
     useEffect(() => {
         const fetchResources = async () => {
@@ -19,7 +19,7 @@ export default function ResourcePoints() {
                     return;
                 }
 
-                const res = await authed_fetch(
+                const res = await authedFetch(
                     `/api/game-instances/${joinCode}/team-instances/${teamName}/role-instances/`
                 );
                 if (!res.ok) {

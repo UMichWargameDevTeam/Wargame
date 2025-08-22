@@ -28,12 +28,12 @@ def validate_map_access(request, join_code):
     try:
         game_instance = GameInstance.objects.get(join_code=join_code)
     except GameInstance.DoesNotExist:
-        return Response({"error": f"There is no game with join code: {join_code}"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"error": f"There is no game with join code '{join_code}'"}, status=status.HTTP_404_NOT_FOUND)
 
     try:
         role_instance = RoleInstance.objects.get(team_instance__game_instance=game_instance, user=request.user)
     except RoleInstance.DoesNotExist:
-        return Response({"error": f"You do not have a role in the game with join code: {join_code}"}, status=status.HTTP_403_FORBIDDEN)
+        return Response({"error": f"You do not have a role in the game with join code'{join_code}'"}, status=status.HTTP_403_FORBIDDEN)
     
     serializer = RoleInstanceSerializer(role_instance)
     return Response(serializer.data, status=status.HTTP_200_OK)
@@ -100,6 +100,14 @@ def get_game_team_instance_by_name(request, join_code, team_name):
     team = get_object_or_404(Team, name=team_name)
     team_instance = get_object_or_404(TeamInstance, game_instance=game_instance, team=team)
     serializer = TeamInstanceSerializer(team_instance)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_game_role_instances(request, join_code):
+    game_instance = get_object_or_404(GameInstance, join_code=join_code)
+    role_instances = get_list_or_404(RoleInstance, team_instance__game_instance=game_instance)
+    serializer = RoleInstanceSerializer(role_instances, many=True)
     return Response(serializer.data)
 
 @api_view(['GET'])

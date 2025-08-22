@@ -5,28 +5,12 @@ export const BACKEND_URL =
 export const WS_URL =
     process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000/ws";
 
-export async function getSessionStorageOrFetch(key: string) {
-    const authed_fetch = useAuthedFetch();
+// This should only be used when fetching all records of a Static table
+export async function getSessionStorageOrFetch(key: string, fetcher: () => Promise<any>) {
+    const cached = sessionStorage.getItem(key);
+    if (cached) return JSON.parse(cached);
 
-    let storedVal = sessionStorage.getItem(key);
-    if (storedVal) {
-        return JSON.parse(storedVal); // return as object/array
-    }
-
-    switch (key) {
-        case 'branches': {
-            try {
-                const res = await authed_fetch('/api/branches/');
-                const data = await res.json();
-                const branches = Array.isArray(data) ? data : data.results || [];
-                sessionStorage.setItem('branches', JSON.stringify(branches));
-                return branches;
-            } catch (err) {
-                console.error("Failed to fetch branches", err);
-                return [];
-            }
-        }
-        default:
-            throw Error(`No case to handle fetching data for key ${key}`);
-    }
+    const data = await fetcher();
+    sessionStorage.setItem(key, JSON.stringify(data));
+    return data;
 }

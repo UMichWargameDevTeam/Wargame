@@ -19,8 +19,7 @@ export default function RegisterForm() {
         setError("");
 
         try {
-            const res = await fetch(
-                `${BACKEND_URL}/api/auth/register/`,
+            const res = await fetch(`${BACKEND_URL}/api/auth/register/`,
                 {
                     method: "POST",
                     headers: {
@@ -31,12 +30,13 @@ export default function RegisterForm() {
             );
 
             if (!res.ok) {
-                throw new Error("Registration failed");
+                const data = await res.json();
+                throw new Error(data.error || data.detail || data.message || "Registration failed. Username may already be taken.");
             }
 
             router.push("/"); // back to login after register
-        } catch (err: any) {
-            console.error(err.error || err.detail || err.message || "Registration failed. Username may already be taken.");
+        } catch (err) {
+            console.error(err);
         } finally {
             setLoading(false);
         }

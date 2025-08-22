@@ -54,9 +54,10 @@ export default function DraggableUnitInstance({ unitInstance, cellSize, onMouseD
                     onClick={e => e.stopPropagation()}
                 >
                     <div><b>Team:</b> {unitInstance.team_instance.team.name}</div>
-                    <div><b>Row:</b> {unitInstance.tile.row}, <b>Col:</b> {unitInstance.tile.column}</div>
-                    <div><b>HP:</b> {unitInstance.health}</div>
-                    <div><b>Supplies:</b> {unitInstance.supply_count}</div>
+                    <div><b>Unit:</b> {unitInstance.unit.name}</div>
+                    <div><b>Row:</b> {unitInstance.tile.row}, <b>Column:</b> {unitInstance.tile.column}</div>
+                    <div><b>Health:</b> {unitInstance.health}</div>
+                    <div><b>Supply count:</b> {unitInstance.supply_count}</div>
                 </div>
             )}
         </div>

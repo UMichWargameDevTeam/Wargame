@@ -38,19 +38,20 @@ export default function LoginForm() {
                 }
             );
 
+            const data = await res.json();
+
             if (!res.ok) {
-                throw new Error("Login failed");
+                throw new Error(data.error || data.detail || data.message || "Login failed");
             }
 
-            const data = await res.json();
             localStorage.setItem("accessToken", data.access);
             localStorage.setItem("refreshToken", data.refresh);
             sessionStorage.setItem("username", username);
 
             router.push('/roleselect') // after login
-        } catch (err) {
-            setError("Invalid username or password.");
+        } catch (err: any) {
             console.error(err);
+            setError(err.message);
         } finally {
             setLoading(false);
         }
