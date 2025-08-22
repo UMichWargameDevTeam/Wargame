@@ -9,6 +9,9 @@ from ..models.static import (
 from ..models.dynamic import (
     GameInstance, TeamInstance, RoleInstance, UnitInstance
 )
+from ..serializers import (
+    RoleInstanceSerializer
+)
 from ..check_roles import (
     require_any_role_instance
 )
@@ -47,43 +50,15 @@ def create_game_instance(request):
         team=gamemaster_team,
     )
 
-    RoleInstance.objects.create(
+    role_instance = RoleInstance.objects.create(
         team_instance=gamemaster_team_instance,
         role=gamemaster_role,
         user=request.user,
         supply_points=100000
     )
 
-    return Response(
-        {
-            "username": request.user.username,
-            "join_code": join_code,
-            "team_name": gamemaster_team.name,
-            "branch_name": gamemaster_role.branch.name if gamemaster_role.branch else None,
-            "role_name": gamemaster_role.name,
-        },
-        status=status.HTTP_201_CREATED
-    )
-
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def join_game_instance(request):
-
-    join_code = request.data.get("join_code")
-    if not join_code:
-        return Response({"error": "Missing join_code"}, status=status.HTTP_400_BAD_REQUEST)
-    
-    try:
-        game_instance = GameInstance.objects.get(join_code=join_code)
-    except GameInstance.DoesNotExist:
-        return Response({"error": f"GameInstance not found with join code: {join_code}"}, status=status.HTTP_404_NOT_FOUND)
-
-    request.user.game_instance = game_instance
-    request.user.save(update_fields=["game_instance"])
-
-    return Response(status=status.HTTP_204_NO_CONTENT)
-    
+    serializer = RoleInstanceSerializer(role_instance)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
 
 # any user can create a role for themselves for any game,
 # but they cannot create a gamemaster role for a game that already has a gamemaster,
@@ -111,16 +86,8 @@ def create_role_instance(request):
     ).select_related("team_instance__team", "role__branch").first()
 
     if existing_role_instance:
-        return Response(
-            {
-                "username": request.user.username,
-                "join_code": join_code,
-                "team_name": existing_role_instance.team_instance.team.name,
-                "branch_name": existing_role_instance.role.branch.name if existing_role_instance.role.branch else None,
-                "role_name": existing_role_instance.role.name,
-            },
-            status=status.HTTP_200_OK
-        )
+        serializer = RoleInstanceSerializer(existing_role_instance)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
     # Resolve Team and Role in parallel
     try:
@@ -145,22 +112,14 @@ def create_role_instance(request):
     ).exists():
         return Response({"detail": "This game already has a Gamemaster"}, status=status.HTTP_400_BAD_REQUEST)
 
-    RoleInstance.objects.create(
+    role_instance = RoleInstance.objects.create(
         team_instance=team_instance,
         role=role,
         user=request.user,
     )
 
-    return Response(
-        {
-            "username": request.user.username,
-            "join_code": join_code,
-            "team_name": team.name,
-            "branch_name": role.branch.name if role.branch else None,
-            "role_name": role.name,
-        },
-        status=status.HTTP_201_CREATED
-    )
+    serializer = RoleInstanceSerializer(role_instance)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)    
 
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])

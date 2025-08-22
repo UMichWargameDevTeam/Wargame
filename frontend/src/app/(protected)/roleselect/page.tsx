@@ -71,25 +71,25 @@ export default function RoleSelectPage() {
 
             const data = await res.json();
 
-            sessionStorage.setItem('username', data.username);
-            sessionStorage.setItem('join_code', data.join_code);
-            sessionStorage.setItem('team_name', data.team_name);
-            sessionStorage.setItem('branch_name', data.branch_name);
-            sessionStorage.setItem('role_name', data.role_name);
+            sessionStorage.setItem('username', data.user);
+            sessionStorage.setItem('join_code', data.team_instance.game_instance.join_code);
+            sessionStorage.setItem('team_name', data.team_instance.team.name);
+            sessionStorage.setItem('branch_name', data.role.branch?.name ?? 'None');
+            sessionStorage.setItem('role_name', data.role.name);
 
             // Optionally send "joined" event before redirect
-            const socket = new WebSocket(`${WS_URL}/game-instances/${data.join_code}/users/`);
+            const socket = new WebSocket(`${WS_URL}/game-instances/${data.team_instance.game_instance.join_code}/users/`);
             socket.onopen = () => {
                 socket.send(JSON.stringify({
                     type: 'join',
-                    username: data.username,
-                    join_code: data.join_code,
+                    username: data.user,
+                    join_code: data.team_instance.game_instance.join_code,
                     team_name: data.team_name,
                     branch_name: data.branch_name,
                     role_name: data.role_name,
                     ready: false,
                 }));
-                router.push(`/game-instances/${data.join_code}/main-map/`);
+                router.push(`/game-instances/${data.team_instance.game_instance.join_code}/main-map/`);
             };
 
         } catch (err: any) {
@@ -122,25 +122,25 @@ export default function RoleSelectPage() {
 
             const data = await res.json();
 
-            sessionStorage.setItem('username', data.username);
-            sessionStorage.setItem('join_code', data.join_code);
-            sessionStorage.setItem('team_name', data.team_name);
-            sessionStorage.setItem('branch_name', data.branch_name);
-            sessionStorage.setItem('role_name', data.role_name);
+            sessionStorage.setItem('username', data.user);
+            sessionStorage.setItem('join_code', data.team_instance.game_instance.join_code);
+            sessionStorage.setItem('team_name', data.team_instance.team.name);
+            sessionStorage.setItem('branch_name', data.role.branch?.name ?? 'None');
+            sessionStorage.setItem('role_name', data.role.name);
 
             // Optionally send "joined" event before redirect
-            const socket = new WebSocket(`${WS_URL}/game-instances/${data.join_code}/users/`);
+            const socket = new WebSocket(`${WS_URL}/game-instances/${data.team_instance.game_instance.join_code}/users/`);
             socket.onopen = () => {
                 socket.send(JSON.stringify({
                     type: 'join',
-                    username: data.username,
-                    join_code: data.join_code,
+                    username: data.user,
+                    join_code: data.team_instance.game_instance.join_code,
                     team_name: data.team_name,
                     branch_name: data.branch_name,
                     role_name: data.role_name,
                     ready: false,
                 }));
-                router.push(`/game-instances/${data.join_code}/main-map/`);
+                router.push(`/game-instances/${data.team_instance.game_instance.join_code}/main-map/`);
             };
 
         } catch (err: any) {

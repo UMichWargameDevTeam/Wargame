@@ -35,9 +35,9 @@ export default function MainMapPage() {
             try {
                 // First validate map access
                 const validationRes = await authed_fetch(`/api/game-instances/${join_code}/validate-map-access/`);
-                if (validationRes.status !== 204) {
-                    const data = await validationRes.json();
-                    throw new Error(data.error || data.detail || "Access denied");
+                const validationResJSON = await validationRes.json();
+                if (!validationRes.ok) {
+                    throw new Error(validationResJSON.error || validationResJSON.detail || "Access denied");
                 }
 
                 // If validation passed, fetch unit instances
@@ -53,6 +53,16 @@ export default function MainMapPage() {
                     setAssets([]);
                     throw new Error(`Expected array from Unit fetch but got: ${units}`);
                 }
+
+                // Start the timer WebSocket only if validation succeeded
+                const ws = new WebSocket(`${WS_URL}/game-instances/${join_code}/global-timer/`);
+                ws.onmessage = (event) => {
+                    const data = JSON.parse(event.data);
+                    setTimer(data.remaining_seconds);
+                };
+                // Clean up WebSocket on unmount
+                return () => ws.close();
+
             } catch (err: any) {
                 console.error(err);
                 setMapValidationError(err.message);
@@ -60,7 +70,7 @@ export default function MainMapPage() {
         };
 
         fetchData();
-    }, [join_code, authed_fetch]);
+    }, []);
 
     useEffect(() => {
         const storedRole = sessionStorage.getItem('role_name');
@@ -69,16 +79,6 @@ export default function MainMapPage() {
         if (storedMap) {
             setMapSrc(storedMap);
         }
-    }, []);
-
-    // effect for timer
-    useEffect(() => {
-        const ws = new WebSocket(`${WS_URL}/game-instances/${join_code}/global-timer/`);
-        ws.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            setTimer(data.remaining_seconds);
-        };
-        return () => ws.close();
     }, []);
 
     // used for sending messages over websockets - currently not in use
