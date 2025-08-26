@@ -1,10 +1,10 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { WS_URL } from '@/lib/utils';
 
 interface Props {
     join_code: string;
+    socket: WebSocket | null;
 }
 
 interface User {
@@ -15,24 +15,30 @@ interface User {
     ready: boolean;
 }
 
-export default function UsersList({ join_code } : Props) {
+export default function UsersList({ join_code, socket } : Props) {
     const [users, setUsers] = useState<User[]>([]);
 
+    // WebSocket setup
     useEffect(() => {
-        if (!join_code) return;
-        const socket = new WebSocket(`${WS_URL}/game-instances/${join_code}/users/`);
+        if (!join_code || !socket) return;
 
-        socket.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            if (data.type === 'user_list') {
-                setUsers(data.users);
+        const handleUsersMessage = (event: any) => {
+            const msg = JSON.parse(event.data);
+            if (msg.channel === 'users') {
+                switch (msg.action) {
+                    case 'user_list':
+                        setUsers(msg.data);
+                        break;
+                }
             }
-        };
+        }
+
+        socket.addEventListener("message", handleUsersMessage);
 
         return () => {
-            socket.close();
+            socket.removeEventListener("message", handleUsersMessage);
         };
-    }, [join_code]);
+    }, [join_code, socket]);
 
     // Group users by team > branch > role
     const groupedUsers = users.reduce((acc, user) => {

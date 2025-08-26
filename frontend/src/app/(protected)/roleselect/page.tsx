@@ -4,7 +4,6 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Team, Branch, Role } from '@/lib/Types'
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
-import { WS_URL } from '@/lib/utils';
 
 export default function RoleSelectPage() {
     const router = useRouter();
@@ -41,14 +40,19 @@ export default function RoleSelectPage() {
             .catch(err => console.error("Failed to fetch roles", err));
     }, [authedFetch]);
 
+    function isValidJoinCode(code: string) {
+        const regex = /^[A-Za-z0-9\-.]+$/;
+        return code.length <= 100 && regex.test(code);
+    }
+
     const handleRoleSelect = (role: string | null = null, branch: string | null = null) => {
         setSelectedRole(role);
         setSelectedBranch(branch)
     };
 
     const handleCreateGame = async () => {
-        if (!createCode.trim()) {
-            alert("Please enter a Join Code game before trying to create a game!");
+        if (!isValidJoinCode(createCode)) {
+            alert("Please enter a valid Join Code before trying to create a game!");
             return;
         }
 
@@ -76,20 +80,7 @@ export default function RoleSelectPage() {
             sessionStorage.setItem('branches', JSON.stringify(branches))
             sessionStorage.setItem('role_instance', JSON.stringify(data))
 
-            // Optionally send "joined" event before redirect
-            const socket = new WebSocket(`${WS_URL}/game-instances/${data.team_instance.game_instance.join_code}/users/`);
-            socket.onopen = () => {
-                socket.send(JSON.stringify({
-                    type: 'join',
-                    username: data.user.username,
-                    join_code: data.team_instance.game_instance.join_code,
-                    team_name: data.team_name,
-                    branch_name: data.branch_name,
-                    role_name: data.role_name,
-                    ready: false,
-                }));
-                router.push(`/game-instances/${data.team_instance.game_instance.join_code}/main-map/`);
-            };
+            router.push(`/game-instances/${data.team_instance.game_instance.join_code}/main-map/`);
 
         } catch (err: unknown) {
             console.error(err);
@@ -100,8 +91,8 @@ export default function RoleSelectPage() {
     };
 
     const handleJoinGame = async () => {
-        if (!join_code.trim()) {
-            alert("Please enter a Join Code before trying to join a game!");
+        if (!isValidJoinCode(join_code)) {
+            alert("Please enter a valid Join Code before trying to join a game!");
             return;
         }
 
@@ -133,20 +124,7 @@ export default function RoleSelectPage() {
             sessionStorage.setItem('branches', JSON.stringify(branches))
             sessionStorage.setItem('role_instance', JSON.stringify(data)) 
 
-            // Optionally send "joined" event before redirect
-            const socket = new WebSocket(`${WS_URL}/game-instances/${data.team_instance.game_instance.join_code}/users/`);
-            socket.onopen = () => {
-                socket.send(JSON.stringify({
-                    type: 'join',
-                    username: data.user.username,
-                    join_code: data.team_instance.game_instance.join_code,
-                    team_name: data.team_name,
-                    branch_name: data.branch_name,
-                    role_name: data.role_name,
-                    ready: false,
-                }));
-                router.push(`/game-instances/${data.team_instance.game_instance.join_code}/main-map/`);
-            };
+            router.push(`/game-instances/${data.team_instance.game_instance.join_code}/main-map/`);
 
         } catch (err: unknown) {
             console.error(err);
@@ -203,9 +181,9 @@ export default function RoleSelectPage() {
                             />
                             <button
                                 onClick={handleCreateGame}
-                                disabled={!createCode.trim()}
+                                disabled={!isValidJoinCode(createCode)}
                                 className={`px-4 py-2 rounded transition
-                                    ${!createCode.trim()
+                                    ${!isValidJoinCode(createCode)
                                         ? "bg-gray-500 cursor-not-allowed"
                                         : "bg-purple-700 hover:bg-purple-600 cursor-pointer"
                                     }`}
@@ -312,9 +290,9 @@ export default function RoleSelectPage() {
                     {/* Join game button */}
                     <button
                         onClick={handleJoinGame}
-                        disabled={!join_code.trim()}
+                        disabled={!isValidJoinCode(join_code)}
                         className={`px-4 py-2 rounded transition
-                            ${!join_code.trim()
+                            ${!isValidJoinCode(join_code)
                                 ? "bg-gray-500 cursor-not-allowed"
                                 : "bg-blue-600 hover:bg-blue-700 cursor-pointer"
                             }`}

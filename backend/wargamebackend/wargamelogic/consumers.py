@@ -1,138 +1,174 @@
 import json
-import datetime
+import asyncio
+from django.core.cache import cache
+from channels.layers import get_channel_layer
 from channels.generic.websocket import AsyncWebsocketConsumer
 
-connected_users = {}  # {game_id: [{username, team, branch, role, ready}]}
-
-class GameUsersConsumer(AsyncWebsocketConsumer):
+class GameConsumer(AsyncWebsocketConsumer):
     async def connect(self):
+        user = self.scope["user"]
+        if not user or user.is_anonymous:
+            await self.close()
+            return
+
         self.join_code = self.scope["url_route"]["kwargs"]["join_code"]
-        self.username = self.scope["session"].get("username", "Guest")
+        self.game_group = f"game_{self.join_code}"
+        # use user's id instead of username since usernames can contain characters that aren't allowed in a group name
+        self.user_group = f"game_{self.join_code}_user_{user.id}"
 
-        # Add to connected users per join_code
-        connected_users.setdefault(self.join_code, []).append({
-            "username": self.username,
-            "team_name": self.scope["session"].get("team_name", "Unknown"),
-            "branch_name": self.scope["session"].get("branch_name", "Unknown"),
-            "role_name": self.scope["session"].get("role_name", "Unknown"),
-            "ready": False
-        })
+        key = f"game_{self.join_code}_users"
+        users = cache.get(key, {})
 
-        await self.channel_layer.group_add(f"game_{self.join_code}_users", self.channel_name)
+        user_info = {
+            "id": user.id,
+            "username": user.username,
+            "is_staff": user.is_staff,
+        }
+        
+        await self.channel_layer.group_add(self.game_group, self.channel_name)
+        await self.channel_layer.group_add(self.user_group, self.channel_name)
+
         await self.accept()
-        await self.send_user_list()
 
-    async def disconnect(self, close_code):
-        if self.join_code in connected_users:
-            connected_users[self.join_code] = [
-                u for u in connected_users[self.join_code] if u["username"] != self.username
-            ]
-        await self.channel_layer.group_discard(f"game_{self.join_code}_users", self.channel_name)
-        await self.send_user_list()
+        await self.send(text_data=json.dumps({
+            "channel": "users",
+            "action": "user_list",
+            "data": {
+                "users": list(users.values())
+            }
+        }))
 
-    async def receive(self, text_data):
-        data = json.loads(text_data)
+        users[user.id] = user_info
+        cache.set(key, users, timeout=None)
 
-        if data.get("type") == "join":
-            self.username = data["username"]
-            connected_users.setdefault(self.join_code, []).append({
-                "username": self.username,
-                "team_name": data.get("team_name", "Unknown"),
-                "branch_name": data.get("branch_name", "Unknown"),
-                "role_name": data.get("role_name", "Unknown"),
-                "ready": data.get("ready", False)
-            })
-            await self.send_user_list()
-
-        elif data.get("type") == "ready_status":
-            for u in connected_users.get(self.join_code, []):
-                if u["username"] == self.username:
-                    u["ready"] = data.get("ready", False)
-            await self.send_user_list()
-
-    async def send_user_list(self):
-        sorted_users = sorted(
-            connected_users.get(self.join_code, []),
-            key=lambda x: (x["team_name"], x["branch_name"], x["role_name"])
-        )
         await self.channel_layer.group_send(
-            f"game_{self.join_code}_users",
+            self.game_group,
             {
-                "type": "user_list",
-                "users": sorted_users
+                "type": "handle.message",
+                "channel": "users",
+                "action": "user_join",
+                "data": user_info,
             }
         )
 
-    async def user_list(self, event):
-        await self.send(text_data=json.dumps({"type": "user_list", "users": event["users"]}))
+        if len(users) == 1:
+            asyncio.create_task(start_timer(self.join_code))
 
-
-class MainMapConsumer(AsyncWebsocketConsumer):
-    async def connect(self):
-        self.join_code = self.scope["url_route"]["kwargs"]["join_code"]
-        self.room_group_name = f"main-map_{self.join_code}"
-        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
-        await self.accept()
-
+        
     async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+        user = self.scope["user"]
 
-    async def receive(self, text_data):
-        data = json.loads(text_data)
-        message = data.get("message", "")
-        await self.channel_layer.group_send(
-            self.room_group_name,
-            {
-                "type": "chat_message",
-                "message": message,
-            },
-        )
+        key = f"game_{self.join_code}_users"
+        users = cache.get(key, {})
+        if user.id in users:
+            user_info = users.pop(user.id)
+            cache.set(key, users, timeout=None)
 
-    async def chat_message(self, event):
-        await self.send(text_data=json.dumps({
-            "message": event["message"]
-        }))
-
-
-class UnitInstanceConsumer(AsyncWebsocketConsumer):
-    async def connect(self):
-        self.join_code = self.scope["url_route"]["kwargs"]["join_code"]
-        self.room_group_name = f"unit_instances_{self.join_code}"
-        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
-        await self.accept()
-
-    async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
-
-    async def receive(self, text_data):
-        data = json.loads(text_data)
-        if data["type"] == "unit_moved":
             await self.channel_layer.group_send(
-                self.room_group_name,
+                self.game_group,
                 {
-                    "type": "unit_instance.update",
-                    "message": json.dumps(data),
+                    "type": "handle.message",
+                    "channel": "users",
+                    "action": "user_leave",
+                    "data": user_info,
                 }
             )
+        
+        await self.channel_layer.group_discard(self.game_group, self.channel_name)
+        await self.channel_layer.group_discard(self.user_group, self.channel_name)
+    
+    # when sending a message over a websocket in the browser,
+    # it gets sent to this function to handle it, which then sends the message
+    # to the correct group.
+    async def receive(self, text_data):
+        """
+        text_data JSON format:
+        {
+            "channel": "messages" | "points" | "timer" | "units" | "users" | ...,
+            "action": "message_send" | "points_send" | "unit_move" | ...,
+            "data": {...}
+        }
+        """
+        event = json.loads(text_data)
+        channel = event.get("channel", "default")
+        action = event.get("action", "unknown")
+        data = event.get("data", {})
 
-    async def unit_instance_update(self, event):
-        await self.send(text_data=event["message"])
+        data["sender_id"] = self.scope["user"].id
 
+        handler_name = f"handle_{channel}_{action}"
+        handler = getattr(self, handler_name, None)
 
-class TimerConsumer(AsyncWebsocketConsumer):
-    timer_duration = 600  # 10 minutes in seconds
-    start_time = datetime.datetime.utcnow()
+        if handler:
+            target_group = await handler(data)
+        else:
+            target_group = self.game_group
 
-    async def connect(self):
-        self.join_code = self.scope["url_route"]["kwargs"]["join_code"]
-        self.room_group_name = f"global_timer_{self.join_code}"
-        await self.channel_layer.group_add(self.room_group_name, self.channel_name)
-        await self.accept()
+        await self.channel_layer.group_send(
+            target_group,
+            {
+                "type": "handle.message",
+                "channel": channel,
+                "action": action,
+                "data": data,
+            }
+        )
 
-    async def disconnect(self, close_code):
-        await self.channel_layer.group_discard(self.room_group_name, self.channel_name)
+    # when receiving a message over a websocket from a group,
+    # it gets handled by this function,
+    # which then sends the message to the browser.
+    async def handle_message(self, event):
+        """
+        Receive from group and forward to browser.
+        Example of how to handle in the browser:
+        socket.addEventListener("message", event => {
+            const msg = JSON.parse(event.data);
+            if (msg.channel == "chat") {
+                ...
+            }
+        });
+        """
+        await self.send(
+            text_data=json.dumps({
+                "channel": event["channel"],
+                "action": event["action"],
+                "data": event["data"],
+            })
+        )
+    
+    # --------------- #
+    # handlers        #
+    # --------------- #
+    async def handle_messages_message_send(self, data):
+        recipient_id = data.get("id")
+        target_group = f"game_{self.join_code}_user_{recipient_id}"
+        return target_group
 
-    async def send_time_update(self, event):
-        await self.send(text_data=json.dumps({
-            "remaining_seconds": event["remaining_seconds"]
-        }))
+# -------------- #
+# game timer     #
+# -------------- #
+async def start_timer(join_code):
+    channel_layer = get_channel_layer()  # get the global/shared layer
+    timer_key = f"game_{join_code}_timer"
+    users_key = f"game_{join_code}_users"
+    game_group = f"game_{join_code}"
+
+    if cache.get(timer_key, False):
+        return
+    cache.set(timer_key, True, timeout=None)
+
+    remaining = 600
+    while remaining > 0:
+        await channel_layer.group_send(
+            game_group,
+            {
+                "type": "handle.message",
+                "channel": "timer",
+                "action": "timer_update",
+                "data": {"remaining": remaining},
+            },
+        )
+        await asyncio.sleep(1)
+        remaining -= 1
+
+    cache.set(timer_key, False, timeout=None)

@@ -12,12 +12,13 @@ import InteractiveMap from '@/components/InteractiveMap';
 import JTFMenu from '@/components/JTFMenu';
 import GamemasterMenu from '@/components/GamemasterMenu';
 import SendResourcePoints from '@/components/SendResourcePoints';
+import Timer from '@/components/Timer';
 import { Team, Unit, RoleInstance, UnitInstance } from '@/lib/Types'
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 import { WS_URL, getSessionStorageOrFetch } from '@/lib/utils';
 
 export default function MainMapPage() {
-    // const [socket, setSocket] = useState<WebSocket | null>(null);
+    const [socket, setSocket] = useState<WebSocket | null>(null);
     //const [messages, setMessages] = useState<string[]>([]);
     // const [input, setInput] = useState('');
 
@@ -34,7 +35,6 @@ export default function MainMapPage() {
     const [roleInstance, setRoleInstance] = useState<RoleInstance | null>(null);
     const [unitInstances, setUnitInstances] = useState<UnitInstance[]>([]);
 
-    const [timer, setTimer] = useState<number>(600); // 10 minutes in seconds
     const [mapValidationError, setMapValidationError] = useState<string | null>(null);
 
     const defaultState: Record<string, boolean> = {
@@ -51,7 +51,7 @@ export default function MainMapPage() {
             try {
                 // First validate map access
                 const validationRes = await authedFetch(`/api/game-instances/${join_code}/validate-map-access/`);
-                const data = await validationRes.json();
+                let data = await validationRes.json();
                 if (!validationRes.ok) {
                     throw new Error(data.error || data.detail || "Access denied");
                 }
@@ -63,18 +63,13 @@ export default function MainMapPage() {
                 sessionStorage.setItem('role_instance', JSON.stringify(data))
 
                 // If validation passed, fetch unit instances
+                // TODO: make these fetch in par
                 const unitInstancesRes = await authedFetch(`/api/game-instances/${join_code}/unit-instances/`);
                 if (!unitInstancesRes.ok) {
                     throw new Error(`UnitInstance fetch failed with ${unitInstancesRes.status}`);
                 }
-
-                const unitInstances = await unitInstancesRes.json();
-                if (Array.isArray(unitInstances)) {
-                    setUnitInstances(unitInstances);
-                } else {
-                    setUnitInstances([]);
-                    throw new Error(`Expected array from Unit fetch but got: ${unitInstances}`);
-                }
+                data = await unitInstancesRes.json();
+                setUnitInstances(data);
 
                 const teams = await getSessionStorageOrFetch<Team[]>('teams', async () => {
                     const res = await authedFetch("/api/teams/");
@@ -124,14 +119,15 @@ export default function MainMapPage() {
                     }
                 }
 
-                // Start the timer WebSocket only if validation succeeded
-                const ws = new WebSocket(`${WS_URL}/game-instances/${join_code}/global-timer/`);
-                ws.onmessage = (event) => {
-                    const data = JSON.parse(event.data);
-                    setTimer(data.remaining_seconds);
+                const ws = new WebSocket(`${WS_URL}/game-instances/${join_code}/`);
+                setSocket(ws);
+
+                // TODO: fire user_join event
+
+                return () => {
+                    // TODO: fire user_leave event
+                    ws.close();
                 };
-                // Clean up WebSocket on unmount
-                return () => ws.close();
 
             } catch (err: unknown) {
                 console.error(err);
@@ -189,11 +185,18 @@ export default function MainMapPage() {
                 })
             });
             const data = await res.json();
-            if (res.ok) {
-                setUnitInstances([...unitInstances, data]);
-            } else {
-                throw new Error(data.error || data.detail || 'Failed to add unit.');
+            if (!res.ok) {
+                throw new Error(data.error || data.detail || 'Failed to add unit instance.');
             }
+
+            if (socket?.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({
+                    channel: "units",
+                    action: "unit_create",
+                    data: data
+                }));
+            }
+
         } catch (err: unknown) {
             console.error(err);
             if (err instanceof Error) {
@@ -210,12 +213,22 @@ export default function MainMapPage() {
             const res = await authedFetch(`/api/unit-instances/${unitId}/`, {
                 method: 'DELETE'
             });
-            if (res.ok) {
-                setUnitInstances(unitInstances.filter(u => u.id !== unitId));
-            } else {
+            
+            if (!res.ok) {
                 const data = await res.json();
-                throw new Error(data.error || data.detail || data.message || 'Failed to delete unit instance.');
+                throw new Error(data.error || data.detail || 'Failed to delete unit instance.');
             }
+
+            if (socket?.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({
+                    channel: "units",
+                    action: "unit_delete",
+                    data: {
+                        id: unitId
+                    }
+                }));
+            }
+            
         } catch (err: unknown) {
             console.error(err);
             if (err instanceof Error) {
@@ -235,17 +248,17 @@ export default function MainMapPage() {
                             <CommandersIntent roleInstance={roleInstance} />
                         </div>
                         <div className="flex-shrink-0">
-                            <div className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg shadow-md mb-4 text-lg font-semibold">
-                                {Math.floor(timer / 60).toString().padStart(2, '0')}:
-                                {(timer % 60).toString().padStart(2, '0')}
-                            </div>
+                            <Timer 
+                                socket={socket}
+                            />
                         </div>
                     </div>
                 )}
                 <div className="w-full h-full bg-neutral-800 rounded-lg overflow-hidden">
                     <InteractiveMap
-                        mapSrc={mapSrc}
                         join_code={join_code}
+                        socket={socket}
+                        mapSrc={mapSrc}
                         unitInstances={unitInstances}
                         setUnitInstances={setUnitInstances} 
                         selectedUnitInstances={selectedUnitInstances}

@@ -9,6 +9,9 @@ from ..models.static import (
 from ..models.dynamic import (
     UnitInstance
 )
+from ..serializers import (
+    UnitInstanceSerializer
+)
 from ..check_roles import (
     require_any_role_instance, get_object_and_related_with_cache_or_404, get_user_role_instances
 )
@@ -34,17 +37,8 @@ def move_unit_instance(request, pk, row, column):
     unit_instance.tile = target_tile
     unit_instance.save()
 
-    return Response(
-        {
-            "unit_instance_id": unit_instance.id,
-            "unit_name": unit_instance.unit.name,
-            "new_tile": {
-                "row": target_tile.row, 
-                "column": target_tile.column
-            },
-        },
-        status=status.HTTP_200_OK
-    )
+    serializer = UnitInstanceSerializer(unit_instance)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated])

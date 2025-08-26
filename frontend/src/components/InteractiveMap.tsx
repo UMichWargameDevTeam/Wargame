@@ -3,12 +3,12 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
 import DraggableUnitInstance from './DraggableUnitInstance';
 import { UnitInstance } from "@/lib/Types";
-import { WS_URL } from '@/lib/utils';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 
 interface Props {
-    mapSrc: string;
     join_code: string;
+    socket: WebSocket | null;
+    mapSrc: string;
     unitInstances: UnitInstance[];
     setUnitInstances: React.Dispatch<React.SetStateAction<UnitInstance[]>>;
     selectedUnitInstances: Record<string, boolean>
@@ -19,10 +19,9 @@ const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 5;
 
 
-export default function InteractiveMap({ mapSrc, join_code, unitInstances, setUnitInstances, selectedUnitInstances }: Props) {
+export default function InteractiveMap({ join_code, socket, mapSrc, unitInstances, setUnitInstances, selectedUnitInstances }: Props) {
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const socketRef = useRef<WebSocket | null>(null);
     const imageRef = useRef<HTMLImageElement | null>(null);
 
     const [zoom, setZoom] = useState(1);
@@ -53,22 +52,38 @@ export default function InteractiveMap({ mapSrc, join_code, unitInstances, setUn
 
     // WebSocket setup
     useEffect(() => {
-        const socket = new WebSocket(`${WS_URL}/game-instances/${join_code}/unit-instances/`);
-        socketRef.current = socket;
+        if (!join_code || !socket) return;
 
-        socket.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            if (data.type === "unit_moved") {
-                setUnitInstances(prev =>
-                    prev.map(unitInstance =>
-                        unitInstance.id === data.payload.id ? data.payload : unitInstance
-                    )
-                );
+        const handleUnitsMessage = (event: any) => {
+            const msg = JSON.parse(event.data);
+            if (msg.channel === "units") {
+                switch (msg.action) {
+                    case "unit_attack":
+                        // TODO
+                        break;
+                    case "unit_create":
+                        setUnitInstances([...unitInstances, msg.data]);
+                        break;
+                    case "unit_delete":
+                        setUnitInstances(unitInstances.filter(u => u.id !== msg.data.id));
+                        break;
+                    case "unit_move":
+                        setUnitInstances(prev =>
+                            prev.map(unitInstance =>
+                                unitInstance.id === msg.data.id ? msg.data : unitInstance
+                            )
+                        );
+                        break;
+                }
             }
-        };
+        }
 
-        return () => socket.close();
-    }, [setUnitInstances, join_code]);
+        socket.addEventListener("message", handleUnitsMessage);
+
+        return () => {
+            socket.removeEventListener("message", handleUnitsMessage);
+        };
+    }, [join_code, socket, setUnitInstances]);
 
     function getLabelPart(row: number, col: number, useLowercase = false) {
         const letter = String.fromCharCode((useLowercase ? 97 : 65) + row); // a-z or A-Z
@@ -256,19 +271,29 @@ export default function InteractiveMap({ mapSrc, join_code, unitInstances, setUn
         if (!unitInstance) return;
 
         try {
-            await authedFetch(`/api/unit-instances/${unitInstance.id}/move/tiles/${unitInstance.tile.row}/${unitInstance.tile.column}/`, {
+            const res = await authedFetch(`/api/unit-instances/${unitInstance.id}/move/tiles/${unitInstance.tile.row}/${unitInstance.tile.column}/`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" }
             });
+            const data = await res.json();
 
-            if (socketRef.current?.readyState === WebSocket.OPEN) {
-                socketRef.current.send(JSON.stringify({
-                    type: "unit_moved",
-                    payload: unitInstance
+            if (!res.ok) {
+                throw new Error(data.error || data.detail || "Failed to move unit instance.");
+            }
+
+            if (socket?.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({
+                    channel: "units",
+                    action: "unit_move",
+                    data: data
                 }));
             }
-        } catch (error) {
-            console.error("Failed to update unit:", error);
+            
+        } catch (err: unknown) {
+            console.error(err);
+            if (err instanceof Error) {
+                alert(err.message);
+            }
         }
 
         setElementDragId(0);

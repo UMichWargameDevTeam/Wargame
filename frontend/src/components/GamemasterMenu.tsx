@@ -48,7 +48,7 @@ const GamemasterMenu = ({ join_code, units, teams, handleAddUnitInstance }: Game
                 setRoleInstances(roleInstances.filter(r => r.id !== roleId));
             } else {
                 const data = await res.json();
-                throw new Error(data.error || data.detail || data.message || 'Failed to delete role instance.');
+                throw new Error(data.error || data.detail || 'Failed to delete role instance.');
             }
         } catch (err: unknown) {
             console.error(err);
@@ -72,7 +72,7 @@ const GamemasterMenu = ({ join_code, units, teams, handleAddUnitInstance }: Game
                 window.location.href = '/'; // kick back to homepage
             } else {
                 const data = await res.json();
-                throw new Error(data.error || data.detail || data.message || "Failed to delete game.");
+                throw new Error(data.error || data.detail || "Failed to delete game.");
             }
         } catch (err: unknown) {
             console.error(err);

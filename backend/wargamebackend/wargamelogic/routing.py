@@ -1,11 +1,8 @@
-from django.urls import path
+from django.urls import re_path
 from .consumers import (
-    MainMapConsumer, UnitInstanceConsumer, TimerConsumer, GameUsersConsumer
+    GameConsumer
 )
 
 websocket_urlpatterns = [
-    path("ws/game-instances/<str:join_code>/users/", GameUsersConsumer.as_asgi()),
-    path("ws/game-instances/<str:join_code>/main-map/", MainMapConsumer.as_asgi()),
-    path("ws/game-instances/<str:join_code>/unit-instances/", UnitInstanceConsumer.as_asgi()),
-    path("ws/game-instances/<str:join_code>/global-timer/", TimerConsumer.as_asgi()),
+    re_path(r"^ws/game-instances/(?P<join_code>[A-Za-z0-9\-.]{1,100})/$", GameConsumer.as_asgi())
 ]
