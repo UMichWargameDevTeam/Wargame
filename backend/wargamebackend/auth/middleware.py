@@ -4,6 +4,11 @@ from django.contrib.auth.models import AnonymousUser
 from django.conf import settings
 import jwt
 
+# For websocket authentication, I had chat GPT generate this custom authentication
+# as opposed to the built-in AuthMiddlewareStack because that used sessions instead of JWT.
+# It made sense to make its authentication work the same way as it does for DRF,
+# i.e using JWT. This way, scope["user"] in a consumer should work the same way 
+# as request.user in DRF.
 class JWTAuthMiddleware:
     def __init__(self, app):
         self.app = app

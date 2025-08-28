@@ -5,7 +5,7 @@ import { RoleInstance } from '@/lib/Types';
 
 interface GameMasterMenuProps {
     join_code: string;
-    roleInstance: RoleInstance
+    roleInstance: RoleInstance;
 }
 
 export default function GamemasterMenu({ join_code, roleInstance }: GameMasterMenuProps) {

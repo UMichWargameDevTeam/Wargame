@@ -10,6 +10,10 @@ def get_redis_client():
 
 
 class GameConsumer(AsyncWebsocketConsumer):
+    # A user must be logged-in to connect to the WebSocket.
+    # If successful, they're added to two groups,
+    # One with everyone in their game, and one for just this game and user.
+    # These groups can be used to specify who a message should be sent to.
     async def connect(self):
         user = self.scope["user"]
         if not user or user.is_anonymous:
@@ -118,6 +122,10 @@ class GameConsumer(AsyncWebsocketConsumer):
     # ---------------- #
     # handlers         #
     # ---------------- #
+    # Can have handlers to handle specific channel/action messages.
+    # By default, messages are simply broadcast to everyone in the game,
+    # But with a handler you can make it send a message to only a specific user,
+    # and perform side-effects.
 
     async def handle_users_user_join(self, data):
         user = self.scope["user"]
@@ -170,12 +178,13 @@ class GameConsumer(AsyncWebsocketConsumer):
 # game timer     #
 # -------------- #
 async def start_timer(join_code, username):
+    # I'm pretty sure this only works under the assumption that we are using one channel
     channel_layer = get_channel_layer()
     timer_key = f"game_{join_code}_timer"
     game_group = f"game_{join_code}"
     redis_client = get_redis_client()
 
-    if redis_client.get(timer_key):
+    if redis_client.exists(timer_key):
         print(f"{username} tried starting {join_code}'s timer but there was already a key for it in the cache")
         return
     

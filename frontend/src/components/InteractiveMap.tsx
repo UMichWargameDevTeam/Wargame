@@ -11,7 +11,7 @@ interface InteractiveMapProps {
     mapSrc: string;
     unitInstances: UnitInstance[];
     setUnitInstances: React.Dispatch<React.SetStateAction<UnitInstance[]>>;
-    selectedUnitInstances: Record<string, boolean>
+    selectedUnitInstances: Record<string, boolean>;
 }
 
 const BASE_CELL_SIZE = 80;

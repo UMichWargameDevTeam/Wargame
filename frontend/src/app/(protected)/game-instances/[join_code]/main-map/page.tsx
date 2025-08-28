@@ -128,7 +128,7 @@ export default function MainMapPage() {
                             channel: "users",
                             action: "user_join",
                             data: validationData
-                        }))
+                        }));
                     }
 
                 }
@@ -174,15 +174,11 @@ export default function MainMapPage() {
         );
     }
 
-    const isOperationsOrLogistics = (role_instance: RoleInstance | null) => {
-        return role_instance && (role_instance.role.is_operations || role_instance.role.is_logistics);
-    };
-
     return (
         <div className="flex h-screen w-screen bg-neutral-900 text-white p-4 space-x-4">
-            {/* Map + + Header + Footer */}
+            {/* Map + Header + Footer */}
             <div className="flex flex-col w-[70%] h-full space-y-4">
-                {/* Header Combatant Commander and Chief of Staff */}
+                {/* Header for Combatant Commander and Chief of Staff */}
                 {(roleInstance?.role.name == "Combatant Commander" || roleInstance?.role.is_chief_of_staff) && (
                     <div className="flex space-x-4 w-full items-stretch">
                         <div className="flex-grow">
@@ -208,7 +204,7 @@ export default function MainMapPage() {
                 </div>
 
                 {/* Footer for Ops/Logs */}
-                {isOperationsOrLogistics(roleInstance) && (
+                {(roleInstance?.role.is_operations || roleInstance?.role.is_logistics) && (
                     <>
                         <FooterControls />
                     </>
@@ -220,7 +216,7 @@ export default function MainMapPage() {
                 <h2 className="text-lg mb-2">Team: {roleInstance?.team_instance.team.name || 'Unknown'}</h2>
                 <h2 className="text-lg mb-2">Role: {roleInstance?.role.name || 'Unknown'}</h2>
                 {/* Menu for Ops/Logs */}
-                {isOperationsOrLogistics(roleInstance) && (
+                {(roleInstance?.role.is_operations || roleInstance?.role.is_logistics) && (
                     <>
                         <UsersList
                             socketRef={socketRef}
