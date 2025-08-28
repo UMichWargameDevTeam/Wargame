@@ -3,13 +3,16 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-from ..models.static import (
+from wargamelogic.models.static import (
     Tile
 )
-from ..models.dynamic import (
+from wargamelogic.models.dynamic import (
     UnitInstance
 )
-from ..check_roles import (
+from wargamelogic.serializers import (
+    UnitInstanceSerializer
+)
+from wargamelogic.check_roles import (
     require_any_role_instance, get_object_and_related_with_cache_or_404, get_user_role_instances
 )
 
@@ -34,17 +37,8 @@ def move_unit_instance(request, pk, row, column):
     unit_instance.tile = target_tile
     unit_instance.save()
 
-    return Response(
-        {
-            "unit_instance_id": unit_instance.id,
-            "unit_name": unit_instance.unit.name,
-            "new_tile": {
-                "row": target_tile.row, 
-                "column": target_tile.column
-            },
-        },
-        status=status.HTTP_200_OK
-    )
+    serializer = UnitInstanceSerializer(unit_instance)
+    return Response(serializer.data, status=status.HTTP_200_OK)
 
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated])

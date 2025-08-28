@@ -1,17 +1,17 @@
 'use client';
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useState, useRef, RefObject, useCallback } from 'react';
+import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 import DraggableUnitInstance from './DraggableUnitInstance';
 import { UnitInstance } from "@/lib/Types";
-import { WS_URL } from '@/lib/utils';
-import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 
-interface Props {
+interface InteractiveMapProps {
+    socketRef: RefObject<WebSocket | null>;
+    socketReady: boolean;
     mapSrc: string;
-    join_code: string;
     unitInstances: UnitInstance[];
     setUnitInstances: React.Dispatch<React.SetStateAction<UnitInstance[]>>;
-    selectedUnitInstances: Record<string, boolean>
+    selectedUnitInstances: Record<string, boolean>;
 }
 
 const BASE_CELL_SIZE = 80;
@@ -19,10 +19,11 @@ const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 5;
 
 
-export default function InteractiveMap({ mapSrc, join_code, unitInstances, setUnitInstances, selectedUnitInstances }: Props) {
+export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitInstances, setUnitInstances, selectedUnitInstances }: InteractiveMapProps) {
+    const authedFetch = useAuthedFetch()
+    
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
-    const socketRef = useRef<WebSocket | null>(null);
     const imageRef = useRef<HTMLImageElement | null>(null);
 
     const [zoom, setZoom] = useState(1);
@@ -31,7 +32,6 @@ export default function InteractiveMap({ mapSrc, join_code, unitInstances, setUn
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
     const [elementDragId, setElementDragId] = useState<number>(0);
     const [showGrid, setShowGrid] = useState(true);
-    const authedFetch = useAuthedFetch()
 
     useEffect(() => {
         const savedZoom = sessionStorage.getItem('map_zoom');
@@ -53,22 +53,39 @@ export default function InteractiveMap({ mapSrc, join_code, unitInstances, setUn
 
     // WebSocket setup
     useEffect(() => {
-        const socket = new WebSocket(`${WS_URL}/game-instances/${join_code}/unit-instances/`);
-        socketRef.current = socket;
+        if (!socketReady || !socketRef.current) return;
+        const cachedSocket = socketRef.current;
 
-        socket.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            if (data.type === "unit_moved") {
-                setUnitInstances(prev =>
-                    prev.map(unitInstance =>
-                        unitInstance.id === data.payload.id ? data.payload : unitInstance
-                    )
-                );
+        const handleUnitsMessage = (event: MessageEvent) => {
+            const msg  = JSON.parse(event.data);
+            if (msg.channel === "units") {
+                switch (msg.action) {
+                    case "unit_attack":
+                        // TODO
+                        break;
+                    case "unit_create":
+                        setUnitInstances(prev => [...prev, msg.data]);
+                        break;
+                    case "unit_delete":
+                        setUnitInstances(prev => prev.filter(u => u.id !== msg.data.id));
+                        break;
+                    case "unit_move":
+                        setUnitInstances(prev =>
+                            prev.map(unitInstance =>
+                                unitInstance.id === msg.data.id ? msg.data : unitInstance
+                            )
+                        );
+                        break;
+                }
             }
-        };
+        }
 
-        return () => socket.close();
-    }, [setUnitInstances, join_code]);
+        cachedSocket.addEventListener("message", handleUnitsMessage);
+
+        return () => {
+            cachedSocket.removeEventListener("message", handleUnitsMessage);
+        };
+    }, [socketRef, socketReady, setUnitInstances]);
 
     function getLabelPart(row: number, col: number, useLowercase = false) {
         const letter = String.fromCharCode((useLowercase ? 97 : 65) + row); // a-z or A-Z
@@ -256,19 +273,29 @@ export default function InteractiveMap({ mapSrc, join_code, unitInstances, setUn
         if (!unitInstance) return;
 
         try {
-            await authedFetch(`/api/unit-instances/${unitInstance.id}/move/tiles/${unitInstance.tile.row}/${unitInstance.tile.column}/`, {
+            const res = await authedFetch(`/api/unit-instances/${unitInstance.id}/move/tiles/${unitInstance.tile.row}/${unitInstance.tile.column}/`, {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" }
             });
+            const data = await res.json();
+
+            if (!res.ok) {
+                throw new Error(data.error || data.detail || "Failed to move unit instance.");
+            }
 
             if (socketRef.current?.readyState === WebSocket.OPEN) {
                 socketRef.current.send(JSON.stringify({
-                    type: "unit_moved",
-                    payload: unitInstance
+                    channel: "units",
+                    action: "unit_move",
+                    data: data
                 }));
             }
-        } catch (error) {
-            console.error("Failed to update unit:", error);
+            
+        } catch (err: unknown) {
+            console.error(err);
+            if (err instanceof Error) {
+                alert(err.message);
+            }
         }
 
         setElementDragId(0);

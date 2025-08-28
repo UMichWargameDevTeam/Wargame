@@ -1,9 +1,9 @@
 from rest_framework import serializers
 from django.contrib.auth.models import User
-from .models.static import (
+from wargamelogic.models.static import (
     Team, Branch, Role, Unit, UnitBranch, Attack, Ability, Landmark, Tile
 )
-from .models.dynamic import (
+from wargamelogic.models.dynamic import (
     GameInstance, TeamInstance, RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile
 )
 

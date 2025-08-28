@@ -1,9 +1,9 @@
 from rest_framework.routers import DefaultRouter
 from django.urls import path, include
-from .views import (
-    get, post, patch
+from wargamelogic.views import (
+    get, post, patch, delete
 )
-from .view_sets import (
+from wargamelogic.view_sets import (
     TeamViewSet, BranchViewSet, RoleViewSet, UnitViewSet, UnitBranchViewSet, AttackViewSet, AbilityViewSet, LandmarkViewSet, TileViewSet,
     GameInstanceViewSet, TeamInstanceViewSet, RoleInstanceViewSet, UnitInstanceViewSet, LandmarkInstanceViewSet, LandmarkInstanceTileViewSet
 )
@@ -55,6 +55,8 @@ urlpatterns = [
 
     path('api/unit-instances/<int:pk>/move/tiles/<int:row>/<int:column>/', patch.move_unit_instance, name='move_unit_instance'),
     path('api/unit-instances/<int:pk>/attacks/<str:attack_name>/use/', patch.use_attack, name='use_attack'),
+
+    path("api/game-instances/delete/<str:join_code>/", delete.delete_game_instance, name="delete_game_instance"),
 
     path('api/', include(router.urls)),
 ]

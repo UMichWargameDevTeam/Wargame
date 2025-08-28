@@ -3,17 +3,17 @@ from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
-from ..models.static import (
+from wargamelogic.models.static import (
     Team, Role, Unit, Attack, Ability, Landmark, Tile
 )
-from ..models.dynamic import (
+from wargamelogic.models.dynamic import (
     GameInstance, TeamInstance, RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile
 )
-from ..serializers import (
+from wargamelogic.serializers import (
     TeamSerializer, RoleSerializer, UnitSerializer, AttackSerializer, AbilitySerializer, LandmarkSerializer, TileSerializer,
     TeamInstanceSerializer, RoleInstanceSerializer, UnitInstanceSerializer, LandmarkInstanceSerializer,
 )
-from ..check_roles import (
+from wargamelogic.check_roles import (
     require_role_instance, require_any_role_instance
 )
 
@@ -33,7 +33,7 @@ def validate_map_access(request, join_code):
     try:
         role_instance = RoleInstance.objects.get(team_instance__game_instance=game_instance, user=request.user)
     except RoleInstance.DoesNotExist:
-        return Response({"error": f"You do not have a role in the game with join code'{join_code}'"}, status=status.HTTP_403_FORBIDDEN)
+        return Response({"error": f"You do not have a role in the game with join code '{join_code}'"}, status=status.HTTP_403_FORBIDDEN)
     
     serializer = RoleInstanceSerializer(role_instance)
     return Response(serializer.data, status=status.HTTP_200_OK)

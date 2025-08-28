@@ -4,10 +4,10 @@ from rest_framework.test import APIClient
 from django.test import TestCase
 from django.contrib.auth.models import User
 from urllib.parse import quote
-from .models.static import (
+from wargamelogic.models.static import (
     Team, Branch, Role, Unit, Attack, UnitBranch, Landmark, Tile
 )
-from .models.dynamic import (
+from wargamelogic.models.dynamic import (
     GameInstance, TeamInstance, RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile
 )
 
