@@ -2,9 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Team, Branch, Role } from '@/lib/Types'
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
-import { WS_URL } from '@/lib/utils';
+import { Team, Branch, Role } from '@/lib/Types'
 
 export default function RoleSelectPage() {
     const router = useRouter();
@@ -29,7 +28,7 @@ export default function RoleSelectPage() {
             .then(res => res.json())
             .then(data => setTeams(Array.isArray(data) ? data : data.results || []))
             .catch(err => console.error("Failed to fetch teams", err));
-
+          
         authedFetch('/api/branches/')
             .then(res => res.json())
             .then(data => setBranches(Array.isArray(data) ? data : data.results || []))
@@ -41,14 +40,19 @@ export default function RoleSelectPage() {
             .catch(err => console.error("Failed to fetch roles", err));
     }, [authedFetch]);
 
+    function isValidJoinCode(code: string) {
+        const regex = /^[A-Za-z0-9\-.]+$/;
+        return code.length <= 100 && regex.test(code);
+    }
+
     const handleRoleSelect = (role: string | null = null, branch: string | null = null) => {
         setSelectedRole(role);
         setSelectedBranch(branch)
     };
 
     const handleCreateGame = async () => {
-        if (!createCode.trim()) {
-            alert("Please enter a Join Code game before trying to create a game!");
+        if (!isValidJoinCode(createCode)) {
+            alert("Please enter a valid Join Code before trying to create a game!");
             return;
         }
 
@@ -76,20 +80,7 @@ export default function RoleSelectPage() {
             sessionStorage.setItem('branches', JSON.stringify(branches))
             sessionStorage.setItem('role_instance', JSON.stringify(data))
 
-            // Optionally send "joined" event before redirect
-            const socket = new WebSocket(`${WS_URL}/game-instances/${data.team_instance.game_instance.join_code}/users/`);
-            socket.onopen = () => {
-                socket.send(JSON.stringify({
-                    type: 'join',
-                    username: data.user.username,
-                    join_code: data.team_instance.game_instance.join_code,
-                    team_name: data.team_name,
-                    branch_name: data.branch_name,
-                    role_name: data.role_name,
-                    ready: false,
-                }));
-                router.push(`/game-instances/${data.team_instance.game_instance.join_code}/main-map/`);
-            };
+            router.push(`/game-instances/${data.team_instance.game_instance.join_code}/main-map/`);
 
         } catch (err: unknown) {
             console.error(err);
@@ -100,8 +91,8 @@ export default function RoleSelectPage() {
     };
 
     const handleJoinGame = async () => {
-        if (!join_code.trim()) {
-            alert("Please enter a Join Code before trying to join a game!");
+        if (!isValidJoinCode(join_code)) {
+            alert("Please enter a valid Join Code before trying to join a game!");
             return;
         }
 
@@ -123,24 +114,17 @@ export default function RoleSelectPage() {
 
             const data = await res.json();
 
-            // Only store core game + user info (not team/branch/role yet)
             sessionStorage.setItem('username', data.user.username);
             sessionStorage.setItem('join_code', data.team_instance.game_instance.join_code);
+            sessionStorage.setItem('team_name', data.team_instance.team.name);
+            sessionStorage.setItem('branch_name', data.role.branch?.name ?? 'None');
+            sessionStorage.setItem('role_name', data.role.name);
 
-            sessionStorage.setItem('teams', JSON.stringify(teams));
-            sessionStorage.setItem('branches', JSON.stringify(branches));
-            sessionStorage.setItem('role_instance', JSON.stringify(data));
+            sessionStorage.setItem('teams', JSON.stringify(teams))
+            sessionStorage.setItem('branches', JSON.stringify(branches))
+            sessionStorage.setItem('role_instance', JSON.stringify(data)) 
 
-            // Fire websocket event (optional)
-            const socket = new WebSocket(`${WS_URL}/game-instances/${data.team_instance.game_instance.join_code}/users/`);
-            socket.onopen = () => {
-                socket.send(JSON.stringify({
-                    type: 'join',
-                    username: data.user.username,
-                    join_code: data.team_instance.game_instance.join_code,
-                    ready: false,
-                }));
-            };
+            router.push(`/game-instances/${data.team_instance.game_instance.join_code}/main-map/`);
 
         } catch (err: unknown) {
             console.error(err);
@@ -150,21 +134,7 @@ export default function RoleSelectPage() {
         }
     };
 
-    // Continue button handler
-    const handleContinue = () => {
-        const joinCode = sessionStorage.getItem('join_code');
-        const team = sessionStorage.getItem('team_name');
-        const branch = sessionStorage.getItem('branch_name');
-        const role = sessionStorage.getItem('role_name');
-
-        if (joinCode && team && branch && role) {
-            router.push(`/game-instances/${joinCode}/main-map/`);
-        } else {
-            alert("Please select a team, branch, and role before continuing.");
-        }
-    };
-
-    const handleLogout = () => {
+    const handleLogout = async () => {             
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         sessionStorage.clear();
@@ -211,9 +181,9 @@ export default function RoleSelectPage() {
                             />
                             <button
                                 onClick={handleCreateGame}
-                                disabled={!createCode.trim()}
+                                disabled={!isValidJoinCode(createCode)}
                                 className={`px-4 py-2 rounded transition
-                                    ${!createCode.trim()
+                                    ${!isValidJoinCode(createCode)
                                         ? "bg-gray-500 cursor-not-allowed"
                                         : "bg-purple-700 hover:bg-purple-600 cursor-pointer"
                                     }`}
@@ -236,24 +206,8 @@ export default function RoleSelectPage() {
                                 placeholder="Enter the game's join code here..."
                                 className="flex-1 px-4 py-2 rounded bg-white text-black"
                             />
-                            {/* Join game button */}
-                            <button
-                                onClick={handleJoinGame}
-                                disabled={!join_code.trim()}
-                                className={`px-4 py-2 rounded transition
-                                ${!join_code.trim()
-                                        ? "bg-gray-500 cursor-not-allowed"
-                                        : "bg-blue-600 hover:bg-blue-700 cursor-pointer"
-                                    }`}
-                            >
-                                {sessionStorage.getItem('join_code')
-                                    ? `Joined Game: ${sessionStorage.getItem('join_code')}`
-                                    : "Join Game"}
-                            </button>
-
-                            {joinError && <p className="text-red-400 mb-2">{joinError}</p>}
-
                         </div>
+
                         <div className="mt-4">
                             {/* Team Selector */}
                             <h3 className="text-lg font-semibold mb-1">Select Your Team</h3>
@@ -263,23 +217,8 @@ export default function RoleSelectPage() {
                                     .map((t: Team) => (
                                         <button
                                             key={t.id}
-                                            onClick={() => {
-                                                const newTeam = t.name !== selectedTeam ? t.name : null;
-                                                setSelectedTeam(newTeam);
-                                                if (newTeam) {
-                                                    sessionStorage.setItem('team_name', newTeam);
-                                                } else {
-                                                    sessionStorage.removeItem('team_name');
-                                                }
-                                            }}
-                                            className={`px-4 py-2 rounded cursor-pointer ${selectedTeam === t.name
-                                                ? t.name === 'Red'
-                                                    ? 'bg-red-600'
-                                                    : t.name === 'Blue'
-                                                        ? 'bg-blue-600'
-                                                        : 'bg-green-600'
-                                                : 'bg-gray-600 hover:bg-gray-500'
-                                                }`}
+                                            onClick={() => setSelectedTeam(t.name !== selectedTeam ? t.name : null)}
+                                            className={`px-4 py-2 rounded cursor-pointer ${selectedTeam === t.name ? 'bg-green-600' : 'bg-gray-600 hover:bg-gray-500'}`}
                                         >
                                             {t.name}
                                         </button>
@@ -294,20 +233,8 @@ export default function RoleSelectPage() {
                                     .map((r: Role) => (
                                         <button
                                             key={r.id}
-                                            onClick={() => {
-                                                const newRole = r.name !== selectedRole ? r.name : null;
-                                                setSelectedRole(newRole);
-                                                setSelectedBranch(null); // branch-neutral clears branch
-                                                if (newRole) {
-                                                    sessionStorage.setItem('role_name', newRole);
-                                                    sessionStorage.setItem('branch_name', 'None');
-                                                } else {
-                                                    sessionStorage.removeItem('role_name');
-                                                    sessionStorage.removeItem('branch_name');
-                                                }
-                                            }}
-                                            className={`px-4 py-2 rounded cursor-pointer ${selectedRole === r.name ? 'bg-green-600' : 'bg-gray-600 hover:bg-gray-500'
-                                                }`}
+                                            onClick={() => handleRoleSelect(r.name !== selectedRole ? r.name : null, null)}
+                                            className={`px-4 py-2 rounded cursor-pointer ${selectedRole === r.name ? 'bg-green-600' : 'bg-gray-600 hover:bg-gray-500'}`}
                                         >
                                             {r.name}
                                         </button>
@@ -320,28 +247,17 @@ export default function RoleSelectPage() {
                                     {/* Branch Selector */}
                                     <h4 className="text-md font-medium mb-1">Branch</h4>
                                     <div className="flex gap-2 flex-wrap">
-                                        {branches.map((b: Branch) => (
-                                            <button
-                                                key={b.id}
-                                                onClick={() => {
-                                                    const newBranch = b.name !== selectedBranch ? b.name : null;
-                                                    setSelectedBranch(newBranch);
-                                                    setSelectedRole(null); // reset role if branch changes
-                                                    if (newBranch) {
-                                                        sessionStorage.setItem('branch_name', newBranch);
-                                                        sessionStorage.removeItem('role_name');
-                                                    } else {
-                                                        sessionStorage.removeItem('branch_name');
-                                                    }
-                                                }}
-                                                className={`px-4 py-2 rounded cursor-pointer ${selectedBranch === b.name
-                                                    ? 'bg-green-600'
-                                                    : 'bg-gray-600 hover:bg-gray-500'
-                                                    }`}
-                                            >
-                                                {b.name}
-                                            </button>
-                                        ))}
+                                        {branches
+                                            .map((b: Branch) => (
+                                                <button
+                                                    key={b.id}
+                                                    onClick={() => handleRoleSelect(null, b.name !== selectedBranch ? b.name : null)}
+                                                    className={`px-4 py-2 rounded cursor-pointer ${selectedBranch === b.name ? 'bg-green-600' : 'bg-gray-600 hover:bg-gray-500'}`}
+                                                >
+                                                    {b.name}
+                                                </button>
+                                            ))
+                                        }
                                     </div>
                                 </div>
 
@@ -355,20 +271,8 @@ export default function RoleSelectPage() {
                                                 .map((r: Role) => (
                                                     <button
                                                         key={r.id}
-                                                        onClick={() => {
-                                                            const newRole = r.name !== selectedRole ? r.name : null;
-                                                            setSelectedRole(newRole);
-                                                            if (newRole) {
-                                                                sessionStorage.setItem('role_name', newRole);
-                                                                sessionStorage.setItem('branch_name', selectedBranch);
-                                                            } else {
-                                                                sessionStorage.removeItem('role_name');
-                                                            }
-                                                        }}
-                                                        className={`px-4 py-2 rounded cursor-pointer ${selectedRole === r.name
-                                                            ? 'bg-green-600'
-                                                            : 'bg-gray-600 hover:bg-gray-500'
-                                                            }`}
+                                                        onClick={() => handleRoleSelect(r.name !== selectedRole ? r.name : null, r.branch.name)}
+                                                        className={`px-4 py-2 rounded cursor-pointer ${selectedRole === r.name ? 'bg-green-600' : 'bg-gray-600 hover:bg-gray-500'}`}
                                                     >
                                                         {r.name}
                                                     </button>
@@ -379,31 +283,23 @@ export default function RoleSelectPage() {
                                     </div>
                                 </div>
                             </div>
+
                         </div>
-
                     </div>
-
-                    {/* Continue button */}
+                    
+                    {/* Join game button */}
                     <button
-                        onClick={handleContinue}
-                        disabled={
-                            !sessionStorage.getItem('join_code') ||
-                            !sessionStorage.getItem('team_name') ||
-                            !sessionStorage.getItem('branch_name') ||
-                            !sessionStorage.getItem('role_name')
-                        }
-                        className={`mt-4 px-4 py-2 rounded transition
-        ${(!sessionStorage.getItem('join_code') ||
-                                !sessionStorage.getItem('team_name') ||
-                                !sessionStorage.getItem('branch_name') ||
-                                !sessionStorage.getItem('role_name'))
+                        onClick={handleJoinGame}
+                        disabled={!isValidJoinCode(join_code)}
+                        className={`px-4 py-2 rounded transition
+                            ${!isValidJoinCode(join_code)
                                 ? "bg-gray-500 cursor-not-allowed"
-                                : "bg-green-600 hover:bg-green-700 cursor-pointer"
+                                : "bg-blue-600 hover:bg-blue-700 cursor-pointer"
                             }`}
                     >
-                        Continue
+                        Join Game
                     </button>
-
+                    {joinError && <p className="text-red-400 mb-2">{joinError}</p>}
 
                 </div>
             </div>

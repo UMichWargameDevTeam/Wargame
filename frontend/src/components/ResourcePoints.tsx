@@ -1,13 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { RoleInstance } from '@/lib/Types';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
+import { RoleInstance } from '@/lib/Types';
 
 export default function ResourcePoints() {
+    const authedFetch = useAuthedFetch();
+
     const [open, setOpen] = useState(true);
     const [resources, setResources] = useState<RoleInstance[]>([]);
-    const authedFetch = useAuthedFetch();
 
     useEffect(() => {
         const fetchResources = async () => {

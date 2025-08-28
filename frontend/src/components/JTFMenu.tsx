@@ -5,10 +5,11 @@ import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 import { getSessionStorageOrFetch } from '@/lib/utils';
 import { Branch } from '@/lib/Types';
 
-const JTFMenu = () => {
+export default function JTFMenu() {
+    const authedFetch = useAuthedFetch();
+
     const [branches, setBranches] = useState<Branch[]>([]);
     const [activeTab, setActiveTab] = useState<string | null>(null);
-    const authedFetch = useAuthedFetch();
 
     useEffect(() => {
         const fetchBranches = async () => {
@@ -61,5 +62,3 @@ const JTFMenu = () => {
         </div>
     );
 };
-
-export default JTFMenu;

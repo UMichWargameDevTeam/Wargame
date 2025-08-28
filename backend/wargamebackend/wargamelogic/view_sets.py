@@ -2,17 +2,17 @@ import rest_framework.decorators
 from rest_framework import viewsets
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, SAFE_METHODS
 from django.shortcuts import get_object_or_404
-from .models.static import (
+from wargamelogic.models.static import (
     Team, Branch, Role, Unit, UnitBranch, Attack, Ability, Landmark, Tile
 )
-from .models.dynamic import (
+from wargamelogic.models.dynamic import (
     GameInstance, TeamInstance, RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile
 )
-from .serializers import (
+from wargamelogic.serializers import (
     TeamSerializer, BranchSerializer, RoleSerializer, UnitSerializer, UnitBranchSerializer, AttackSerializer, AbilitySerializer, TileSerializer, LandmarkSerializer,
     GameInstanceSerializer, TeamInstanceSerializer, RoleInstanceSerializer, UnitInstanceSerializer, LandmarkInstanceSerializer, LandmarkInstanceTileSerializer,
 )
-from .check_roles import (
+from wargamelogic.check_roles import (
     require_role_instance, require_any_role_instance, get_object_and_related_with_cache_or_404
 )
 
@@ -112,7 +112,7 @@ class GameInstanceViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]
     queryset = GameInstance.objects.all()
     serializer_class = GameInstanceSerializer
-    http_method_names = ['get', 'post', 'patch', 'put', 'delete']
+    http_method_names = ['get', 'post', 'patch', 'put']
     
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -137,12 +137,6 @@ class GameInstanceViewSet(viewsets.ModelViewSet):
     def update(self, request, *args, **kwargs):
         return super().update(request, *args, **kwargs)
 
-    @require_role_instance({
-        'team_instance.game_instance': lambda request, kwargs: get_object_or_404(GameInstance, pk=kwargs['pk']), 
-        'role.name':'Gamemaster'
-    })
-    def destroy(self, request, *args, **kwargs):
-        return super().destroy(request, *args, **kwargs)
 
 class TeamInstanceViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]

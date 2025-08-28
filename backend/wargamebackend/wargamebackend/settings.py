@@ -172,6 +172,21 @@ CHANNEL_LAYERS = {
     },
 }
 
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": f"{REDIS_URL}/1",  # database 1
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            'CONNECTION_POOL_KWARGS': {
+                # I doubt we'll have more than 1000 concurrent users
+                'max_connections': 1000,
+                'retry_on_timeout': True,
+            }
+        }
+    }
+}
+
 CORS_ALLOW_ALL_ORIGINS = True
 
 

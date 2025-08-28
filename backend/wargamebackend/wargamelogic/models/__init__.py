@@ -1,2 +1,2 @@
-from .static import *
-from .dynamic import *
+from wargamelogic.models.static import *
+from wargamelogic.models.dynamic import *
