@@ -5,10 +5,11 @@ import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 import { getSessionStorageOrFetch } from '@/lib/utils';
 import { Branch } from '@/lib/Types';
 
-const SendResourcePoints = () => {
+export default function SendResourcePoints() {
+    const authedFetch = useAuthedFetch();
+
     const [branches, setBranches] = useState<Branch[]>([]);
     const [inputs, setInputs] = useState<Record<string, string>>({}); // start as empty object
-    const authedFetch = useAuthedFetch();
 
     useEffect(() => {
         const fetchBranches = async () => {
@@ -77,5 +78,3 @@ const SendResourcePoints = () => {
         </div>
     );
 };
-
-export default SendResourcePoints;

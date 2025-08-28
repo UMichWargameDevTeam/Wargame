@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Team, Branch, Role } from '@/lib/Types'
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
+import { Team, Branch, Role } from '@/lib/Types'
 
 export default function RoleSelectPage() {
     const router = useRouter();
@@ -134,7 +134,7 @@ export default function RoleSelectPage() {
         }
     };
 
-    const handleLogout = () => {
+    const handleLogout = async () => {             
         localStorage.removeItem('accessToken');
         localStorage.removeItem('refreshToken');
         sessionStorage.clear();

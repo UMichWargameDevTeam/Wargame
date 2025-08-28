@@ -1,5 +1,5 @@
 from django.urls import re_path
-from .consumers import (
+from wargamelogic.consumers import (
     GameConsumer
 )
 

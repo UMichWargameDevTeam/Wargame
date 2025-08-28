@@ -3,13 +3,13 @@
 import React, { useState } from 'react';
 import { UnitInstance } from '@/lib/Types';
 
-interface Props {
+interface DraggableUnitInstanceProps {
     unitInstance: UnitInstance;
     cellSize: number;
     onMouseDown: (id: string | number) => void;
 }
 
-export default function DraggableUnitInstance({ unitInstance, cellSize, onMouseDown }: Props) {
+export default function DraggableUnitInstance({ unitInstance, cellSize, onMouseDown }: DraggableUnitInstanceProps) {
     const [showInfo, setShowInfo] = useState(false);
 
     const toggleInfo = (e: React.MouseEvent) => {

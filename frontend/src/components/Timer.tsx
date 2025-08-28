@@ -1,17 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, RefObject } from 'react';
 
-interface Props {
-    socket: WebSocket | null;
+interface TimerProps {
+    socketRef: RefObject<WebSocket | null>;
+    socketReady: boolean;
 }
 
-const Timer = ({ socket }: Props) => {
+export default function Timer({ socketRef, socketReady }: TimerProps) {
     const [timer, setTimer] = useState<number>(600);
 
     // WebSocket setup
     useEffect(() => {
-        if (!socket) return;
+        if (!socketReady || !socketRef.current) return;
+        const cachedSocket = socketRef.current;
 
-        const handleTimerMessage = (event: any) => {
+        const handleTimerMessage = (event: MessageEvent) => {
             const msg = JSON.parse(event.data);
             if (msg.channel === "timer") {
                 switch (msg.action) {
@@ -22,12 +24,12 @@ const Timer = ({ socket }: Props) => {
             }
         }
 
-        socket.addEventListener("message", handleTimerMessage);
+        cachedSocket.addEventListener("message", handleTimerMessage);
 
         return () => {
-            socket.removeEventListener("message", handleTimerMessage);
+            cachedSocket.removeEventListener("message", handleTimerMessage);
         };
-    }, [socket, setTimer]);
+    }, [socketRef, socketReady, setTimer]);
 
     return (
         <div className="w-full bg-blue-600 text-white px-6 py-3 rounded-lg shadow-md mb-4 text-lg font-semibold">
@@ -36,5 +38,3 @@ const Timer = ({ socket }: Props) => {
         </div>
     )
 }
-
-export default Timer;

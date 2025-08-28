@@ -3,16 +3,16 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-from ..models.static import (
+from wargamelogic.models.static import (
     Tile
 )
-from ..models.dynamic import (
+from wargamelogic.models.dynamic import (
     UnitInstance
 )
-from ..serializers import (
+from wargamelogic.serializers import (
     UnitInstanceSerializer
 )
-from ..check_roles import (
+from wargamelogic.check_roles import (
     require_any_role_instance, get_object_and_related_with_cache_or_404, get_user_role_instances
 )
 

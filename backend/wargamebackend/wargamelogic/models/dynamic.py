@@ -1,6 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
-from .static import (
+from wargamelogic.models.static import (
     Team, Role, Unit, Landmark, Tile
 )
 

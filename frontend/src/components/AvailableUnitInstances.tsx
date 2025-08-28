@@ -1,18 +1,54 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, RefObject } from 'react';
+import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 import { RoleInstance, UnitInstance } from "@/lib/Types"
 
 interface AvailableUnitInstancesProps {
-    roleInstance: RoleInstance,
-    unitInstances: UnitInstance[],
-    handleDeleteUnitInstance?: (id: number) => void
+    socketRef: RefObject<WebSocket | null>;
+    socketReady: boolean;
+    roleInstance: RoleInstance;
+    unitInstances: UnitInstance[];
 }
 
-export default function AvailableUnitInstances({ roleInstance, unitInstances, handleDeleteUnitInstance }: AvailableUnitInstancesProps) {
+export default function AvailableUnitInstances({ socketRef, socketReady, roleInstance, unitInstances }: AvailableUnitInstancesProps) {
+    const authedFetch = useAuthedFetch()
+    
     const [open, setOpen] = useState(true);
 
     const isGamemaster = roleInstance.role.name === "Gamemaster";
+
+    const handleDeleteUnitInstance = async (unitId: number) => {
+        if (!socketReady) return;
+        if (!confirm("Are you sure you want to delete this Unit Instance?")) return;
+
+        try {
+            const res = await authedFetch(`/api/unit-instances/${unitId}/`, {
+                method: 'DELETE'
+            });
+            
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || data.detail || 'Failed to delete unit instance.');
+            }
+
+            if (socketRef.current?.readyState === WebSocket.OPEN) {
+                socketRef.current.send(JSON.stringify({
+                    channel: "units",
+                    action: "unit_delete",
+                    data: {
+                        id: unitId
+                    }
+                }));
+            }
+            
+        } catch (err: unknown) {
+            console.error(err);
+            if (err instanceof Error) {
+                alert(err.message);
+            }
+        }
+    };
 
     return (
         <div className="bg-neutral-700 rounded-lg mb-4 p-4 max-h-[300px] overflow-y-auto">

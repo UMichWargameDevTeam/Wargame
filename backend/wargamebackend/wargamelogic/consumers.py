@@ -4,6 +4,11 @@ from django.core.cache import cache
 from channels.layers import get_channel_layer
 from channels.generic.websocket import AsyncWebsocketConsumer
 
+
+def get_redis_client():
+    return cache.client.get_client(write=True)
+
+
 class GameConsumer(AsyncWebsocketConsumer):
     async def connect(self):
         user = self.scope["user"]
@@ -13,56 +18,27 @@ class GameConsumer(AsyncWebsocketConsumer):
 
         self.join_code = self.scope["url_route"]["kwargs"]["join_code"]
         self.game_group = f"game_{self.join_code}"
-        # use user's id instead of username since usernames can contain characters that aren't allowed in a group name
         self.user_group = f"game_{self.join_code}_user_{user.id}"
 
-        key = f"game_{self.join_code}_users"
-        users = cache.get(key, {})
-
-        user_info = {
-            "id": user.id,
-            "username": user.username,
-            "is_staff": user.is_staff,
-        }
-        
         await self.channel_layer.group_add(self.game_group, self.channel_name)
         await self.channel_layer.group_add(self.user_group, self.channel_name)
 
+        print(f"{user.username} connected.")
         await self.accept()
 
-        await self.send(text_data=json.dumps({
-            "channel": "users",
-            "action": "user_list",
-            "data": {
-                "users": list(users.values())
-            }
-        }))
-
-        users[user.id] = user_info
-        cache.set(key, users, timeout=None)
-
-        await self.channel_layer.group_send(
-            self.game_group,
-            {
-                "type": "handle.message",
-                "channel": "users",
-                "action": "user_join",
-                "data": user_info,
-            }
-        )
-
-        if len(users) == 1:
-            asyncio.create_task(start_timer(self.join_code))
-
-        
     async def disconnect(self, close_code):
         user = self.scope["user"]
+        if not hasattr(self, "join_code"):
+            return
 
-        key = f"game_{self.join_code}_users"
-        users = cache.get(key, {})
-        if user.id in users:
-            user_info = users.pop(user.id)
-            cache.set(key, users, timeout=None)
+        redis_client = get_redis_client()
+        role_key = f"game_{self.join_code}_role_instances"
+
+        # Remove role instance and broadcast leave
+        role_instance_json = redis_client.hget(role_key, user.id)
+        if role_instance_json:
+            role_instance = json.loads(role_instance_json)
+            redis_client.hdel(role_key, user.id)
 
             await self.channel_layer.group_send(
                 self.game_group,
@@ -70,12 +46,15 @@ class GameConsumer(AsyncWebsocketConsumer):
                     "type": "handle.message",
                     "channel": "users",
                     "action": "user_leave",
-                    "data": user_info,
+                    "data": role_instance,
                 }
             )
-        
+
+        # Remove from channel groups
         await self.channel_layer.group_discard(self.game_group, self.channel_name)
         await self.channel_layer.group_discard(self.user_group, self.channel_name)
+
+        print(f"{user.username} disconnected.")
     
     # when sending a message over a websocket in the browser,
     # it gets sent to this function to handle it, which then sends the message
@@ -93,7 +72,6 @@ class GameConsumer(AsyncWebsocketConsumer):
         channel = event.get("channel", "default")
         action = event.get("action", "unknown")
         data = event.get("data", {})
-
         data["sender_id"] = self.scope["user"].id
 
         handler_name = f"handle_{channel}_{action}"
@@ -104,15 +82,16 @@ class GameConsumer(AsyncWebsocketConsumer):
         else:
             target_group = self.game_group
 
-        await self.channel_layer.group_send(
-            target_group,
-            {
-                "type": "handle.message",
-                "channel": channel,
-                "action": action,
-                "data": data,
-            }
-        )
+        if target_group:  # only send if target_group is valid
+            await self.channel_layer.group_send(
+                target_group,
+                {
+                    "type": "handle.message",
+                    "channel": channel,
+                    "action": action,
+                    "data": data,
+                }
+            )
 
     # when receiving a message over a websocket from a group,
     # it gets handled by this function,
@@ -121,9 +100,9 @@ class GameConsumer(AsyncWebsocketConsumer):
         """
         Receive from group and forward to browser.
         Example of how to handle in the browser:
-        socket.addEventListener("message", event => {
+        socketRef.current?.addEventListener("message", event => {
             const msg = JSON.parse(event.data);
-            if (msg.channel == "chat") {
+            if (msg.channel == "users") {
                 ...
             }
         });
@@ -135,27 +114,74 @@ class GameConsumer(AsyncWebsocketConsumer):
                 "data": event["data"],
             })
         )
-    
-    # --------------- #
-    # handlers        #
-    # --------------- #
+
+    # ---------------- #
+    # handlers         #
+    # ---------------- #
+
+    async def handle_users_user_join(self, data):
+        user = self.scope["user"]
+        if data.get("user", {}).get("username") != user.username:
+            print(f"{user.username} tried joining as {data.get('user', {}).get('username')}")
+            return self.user_group
+
+        redis_client = get_redis_client()
+        role_key = f"game_{self.join_code}_role_instances"
+
+        # Send existing role instances to the new user
+        role_instances = {
+            int(uid): json.loads(val)
+            for uid, val in redis_client.hgetall(role_key).items()
+        }
+        await self.send(
+            text_data=json.dumps({
+                "channel": "users",
+                "action": "users_list",
+                "data": list(role_instances.values()),
+            })
+        )
+
+        # Check if user already joined
+        if redis_client.hexists(role_key, user.id):
+            print(f"{user.username} tried joining {self.join_code}, a game they had already joined.")
+            await self.send(text_data=json.dumps({
+                "channel": "users",
+                "action": "error",
+                "data": {"message": "Already joined"}
+            }))
+            return None
+
+        # Store this user's role instance
+        redis_client.hset(role_key, user.id, json.dumps(data))
+
+        # If this is the first user, start the timer
+        if redis_client.hlen(role_key) == 1:
+            asyncio.create_task(start_timer(self.join_code, user.username))
+
+        return self.game_group
+
     async def handle_messages_message_send(self, data):
         recipient_id = data.get("id")
         target_group = f"game_{self.join_code}_user_{recipient_id}"
         return target_group
 
+
 # -------------- #
 # game timer     #
 # -------------- #
-async def start_timer(join_code):
-    channel_layer = get_channel_layer()  # get the global/shared layer
+async def start_timer(join_code, username):
+    channel_layer = get_channel_layer()
     timer_key = f"game_{join_code}_timer"
-    users_key = f"game_{join_code}_users"
     game_group = f"game_{join_code}"
+    redis_client = get_redis_client()
 
-    if cache.get(timer_key, False):
+    if redis_client.get(timer_key):
+        print(f"{username} tried starting {join_code}'s timer but there was already a key for it in the cache")
         return
-    cache.set(timer_key, True, timeout=None)
+    
+    print(f"{username} started {join_code}'s timer.")
+
+    redis_client.set(timer_key, 1)
 
     remaining = 600
     while remaining > 0:
@@ -171,4 +197,4 @@ async def start_timer(join_code):
         await asyncio.sleep(1)
         remaining -= 1
 
-    cache.set(timer_key, False, timeout=None)
+    redis_client.set(timer_key, 0)

@@ -1,8 +1,8 @@
 from django.contrib import admin
-from .models.static import (
+from wargamelogic.models.static import (
     Team, Branch, Role, Unit, UnitBranch, Attack, Ability, Tile, Landmark,
 )
-from .models.dynamic import (
+from wargamelogic.models.dynamic import (
     GameInstance, TeamInstance, RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile
 )
 

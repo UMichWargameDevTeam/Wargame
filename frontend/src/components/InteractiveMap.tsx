@@ -1,13 +1,13 @@
 'use client';
 
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useState, useRef, RefObject, useCallback } from 'react';
+import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 import DraggableUnitInstance from './DraggableUnitInstance';
 import { UnitInstance } from "@/lib/Types";
-import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 
-interface Props {
-    join_code: string;
-    socket: WebSocket | null;
+interface InteractiveMapProps {
+    socketRef: RefObject<WebSocket | null>;
+    socketReady: boolean;
     mapSrc: string;
     unitInstances: UnitInstance[];
     setUnitInstances: React.Dispatch<React.SetStateAction<UnitInstance[]>>;
@@ -19,7 +19,9 @@ const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 5;
 
 
-export default function InteractiveMap({ join_code, socket, mapSrc, unitInstances, setUnitInstances, selectedUnitInstances }: Props) {
+export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitInstances, setUnitInstances, selectedUnitInstances }: InteractiveMapProps) {
+    const authedFetch = useAuthedFetch()
+    
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const imageRef = useRef<HTMLImageElement | null>(null);
@@ -30,7 +32,6 @@ export default function InteractiveMap({ join_code, socket, mapSrc, unitInstance
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
     const [elementDragId, setElementDragId] = useState<number>(0);
     const [showGrid, setShowGrid] = useState(true);
-    const authedFetch = useAuthedFetch()
 
     useEffect(() => {
         const savedZoom = sessionStorage.getItem('map_zoom');
@@ -52,20 +53,21 @@ export default function InteractiveMap({ join_code, socket, mapSrc, unitInstance
 
     // WebSocket setup
     useEffect(() => {
-        if (!join_code || !socket) return;
+        if (!socketReady || !socketRef.current) return;
+        const cachedSocket = socketRef.current;
 
-        const handleUnitsMessage = (event: any) => {
-            const msg = JSON.parse(event.data);
+        const handleUnitsMessage = (event: MessageEvent) => {
+            const msg  = JSON.parse(event.data);
             if (msg.channel === "units") {
                 switch (msg.action) {
                     case "unit_attack":
                         // TODO
                         break;
                     case "unit_create":
-                        setUnitInstances([...unitInstances, msg.data]);
+                        setUnitInstances(prev => [...prev, msg.data]);
                         break;
                     case "unit_delete":
-                        setUnitInstances(unitInstances.filter(u => u.id !== msg.data.id));
+                        setUnitInstances(prev => prev.filter(u => u.id !== msg.data.id));
                         break;
                     case "unit_move":
                         setUnitInstances(prev =>
@@ -78,12 +80,12 @@ export default function InteractiveMap({ join_code, socket, mapSrc, unitInstance
             }
         }
 
-        socket.addEventListener("message", handleUnitsMessage);
+        cachedSocket.addEventListener("message", handleUnitsMessage);
 
         return () => {
-            socket.removeEventListener("message", handleUnitsMessage);
+            cachedSocket.removeEventListener("message", handleUnitsMessage);
         };
-    }, [join_code, socket, setUnitInstances]);
+    }, [socketRef, socketReady, setUnitInstances]);
 
     function getLabelPart(row: number, col: number, useLowercase = false) {
         const letter = String.fromCharCode((useLowercase ? 97 : 65) + row); // a-z or A-Z
@@ -281,8 +283,8 @@ export default function InteractiveMap({ join_code, socket, mapSrc, unitInstance
                 throw new Error(data.error || data.detail || "Failed to move unit instance.");
             }
 
-            if (socket?.readyState === WebSocket.OPEN) {
-                socket.send(JSON.stringify({
+            if (socketRef.current?.readyState === WebSocket.OPEN) {
+                socketRef.current.send(JSON.stringify({
                     channel: "units",
                     action: "unit_move",
                     data: data

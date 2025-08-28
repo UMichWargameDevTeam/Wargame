@@ -5,7 +5,7 @@ from django.db.models import Model, QuerySet
 from django.shortcuts import get_object_or_404
 from functools import wraps
 from datetime import datetime
-from .models import (
+from wargamelogic.models import (
     RoleInstance
 )
 
