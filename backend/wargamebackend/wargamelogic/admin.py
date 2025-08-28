@@ -42,6 +42,14 @@ class AbilityInline(admin.TabularInline):
     extra = 1
 
 
+@admin.register(Role)
+class RoleAdmin(admin.ModelAdmin):
+    list_display = ("name", "branch", "is_chief_of_staff", "is_commander", "is_vice_commander", "is_operations",
+                    "is_logistics", "description")
+    search_fields = ("name", "branch__name")
+    list_filter = ("branch", "is_chief_of_staff", "is_commander", "is_vice_commander", "is_operations", "is_logistics")
+
+
 @admin.register(Unit)
 class UnitAdmin(admin.ModelAdmin):
     inlines = [UnitBranchInline, AttackInline, AbilityInline]
@@ -76,12 +84,9 @@ class LandmarkAdmin(admin.ModelAdmin):
     list_filter = ("can_repair",)
 
 
-@admin.register(Role)
-class RoleAdmin(admin.ModelAdmin):
-    list_display = ("name", "branch", "is_chief_of_staff", "is_commander", "is_vice_commander", "is_operations",
-                    "is_logistics", "description")
-    search_fields = ("name", "branch__name")
-    list_filter = ("branch", "is_chief_of_staff", "is_commander", "is_vice_commander", "is_operations", "is_logistics")
+@admin.register(Tile)
+class TileAdmin(admin.ModelAdmin):
+    search_fields = ('row', 'column')
 
 
 @admin.register(GameInstance)
@@ -119,7 +124,6 @@ class UnitInstanceAdmin(admin.ModelAdmin):
 admin.site.register(Team)
 admin.site.register(Branch)
 admin.site.register(UnitBranch)
-admin.site.register(Tile)
 
 admin.site.register(LandmarkInstance)
 admin.site.register(LandmarkInstanceTile)
