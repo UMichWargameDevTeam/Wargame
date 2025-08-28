@@ -208,12 +208,12 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
 
             // Top edge (columns)
             for (let col = 0; col < cols * groupSize; col += groupSize) {
-                const start = col + 1;
-                const end = Math.min(col + groupSize, cols * groupSize);
-                const label = start === end ? `${start}` : `${start}-${end}`;
+                const start = col;
+                const end = Math.min(col + groupSize, cols * groupSize) - 1;
+                const label = level === 2 ? `${start}` : `${start}-${end}`;
 
                 // Anchor at the first tile in the group
-                const x = col * 20;
+                const x = col * 20 + 8;
                 ctx.textAlign = 'left';
                 ctx.textBaseline = 'bottom';
                 ctx.fillText(label, x, -2);
@@ -221,12 +221,12 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
 
             // Left edge (rows)
             for (let row = 0; row < rows * groupSize; row += groupSize) {
-                const start = row + 1;
-                const end = Math.min(row + groupSize, rows * groupSize);
-                const label = start === end ? `${start}` : `${start}-${end}`;
+                const start = row;
+                const end = Math.min(row + groupSize, rows * groupSize) - 1;
+                const label = level === 2 ? `${start}` : `${start}-${end}`;
 
                 // Anchor at the first tile in the group
-                const y = row * 20;
+                const y = row * 20 + 8;
                 ctx.textAlign = 'right';
                 ctx.textBaseline = 'top';
                 ctx.fillText(label, -4, y);
