@@ -175,6 +175,45 @@ export default function InteractiveMap({ mapSrc, join_code, unitInstances, setUn
                     ctx.fillText(label, col * cellSize + 2, row * cellSize + 12 / zoom);
                 }
             }
+            
+            // Axis labels (top + left edges)
+            ctx.fillStyle = 'white';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+
+            let groupSize = 1;
+            if (level === 0) groupSize = 4;
+            else if (level === 1) groupSize = 2;
+            else if (level === 2) groupSize = 1;
+
+            const fontSize = 14 / zoom;
+            ctx.font = `${fontSize}px sans-serif`;
+
+            // Top edge (columns)
+            for (let col = 0; col < cols * groupSize; col += groupSize) {
+                const start = col + 1;
+                const end = Math.min(col + groupSize, cols * groupSize);
+                const label = start === end ? `${start}` : `${start}-${end}`;
+
+                // Anchor at the first tile in the group
+                const x = col * 20;
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'bottom';
+                ctx.fillText(label, x, -2);
+            }
+
+            // Left edge (rows)
+            for (let row = 0; row < rows * groupSize; row += groupSize) {
+                const start = row + 1;
+                const end = Math.min(row + groupSize, rows * groupSize);
+                const label = start === end ? `${start}` : `${start}-${end}`;
+
+                // Anchor at the first tile in the group
+                const y = row * 20;
+                ctx.textAlign = 'right';
+                ctx.textBaseline = 'top';
+                ctx.fillText(label, -4, y);
+            }
 
             ctx.restore();
         }
