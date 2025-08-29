@@ -1,21 +1,28 @@
 'use client';
 
+import { useState, RefObject } from 'react';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 import { RoleInstance } from '@/lib/Types';
 
 interface GameMasterMenuProps {
-    join_code: string;
+    joinCode: string;
+    socketRef: RefObject<WebSocket | null>;
+    socketReady: boolean;
     roleInstance: RoleInstance;
 }
 
-export default function GamemasterMenu({ join_code, roleInstance }: GameMasterMenuProps) {
+export default function GamemasterMenu({ joinCode, socketRef, socketReady, roleInstance }: GameMasterMenuProps) {
+
     const authedFetch = useAuthedFetch();
 
+    const [deletingGame, setDeletingGame] = useState<boolean>(false);
+
     const handleDeleteGame = async () => {
-        if (!join_code) return;
+        if (!socketReady || !socketRef.current) return;
         if (!confirm("Are you sure you want to delete this Game Instance?")) return;
 
         try {
+            setDeletingGame(true);
             const res = await authedFetch(`/api/game-instances/delete/${roleInstance.team_instance.game_instance.join_code}/`, {
                 method: 'DELETE'
             });
@@ -25,15 +32,20 @@ export default function GamemasterMenu({ join_code, roleInstance }: GameMasterMe
                 throw new Error(data.error || data.detail || "Failed to delete game.");
             }
 
-            alert("Game deleted.");
-            sessionStorage.clear();
-            window.location.href = '/'; // kick back to homepage
+            if (socketRef.current?.readyState === WebSocket.OPEN) {
+                socketRef.current.send(JSON.stringify({
+                    channel: "games",
+                    action: "delete",
+                    data: { join_code: joinCode }
+                }));
+            }
             
         } catch (err: unknown) {
             console.error(err);
             if (err instanceof Error) {
                 alert(err.message);
             }
+            setDeletingGame(false);
         }
     };
 
@@ -44,9 +56,15 @@ export default function GamemasterMenu({ join_code, roleInstance }: GameMasterMe
             <div>
                 <button
                     onClick={handleDeleteGame}
-                    className="bg-red-700 px-3 py-2 rounded hover:bg-red-600"
+                    disabled={deletingGame}
+                    className={`px-3 py-2 rounded transition
+                        ${deletingGame
+                            ? "bg-gray-500 cursor-not-allowed"
+                            : "bg-red-700 hover:bg-red-600 cursor-pointer"
+                        }
+                    `}
                 >
-                    Delete Game
+                    {deletingGame ? "Deleting Game..." : "Delete Game"}
                 </button>
             </div>
         </div>

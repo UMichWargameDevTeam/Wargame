@@ -22,15 +22,20 @@ import { Team, Unit, RoleInstance, UnitInstance } from '@/lib/Types'
 
 export default function MainMapPage() {
     const params = useParams();
-    const authedFetch = useAuthedFetch()
+    const authedFetch = useAuthedFetch();
 
-    const join_code = params.join_code as string;const socketRef = useRef<WebSocket | null>(null);
+    const joinCode = params.join_code as string;
+
+    const [mapSrc, setMapSrc] = useState<string>('/maps/taiwan_middle_clean.png');
+    const defaultState: Record<string, boolean> = {
+        Air: true,
+        Ground: true,
+        Sea: true,
+    };
+    const [selectedUnitInstances, setSelectedUnitInstances] = useState<Record<string, boolean>>(defaultState);
+
+    const socketRef = useRef<WebSocket | null>(null);
     const [socketReady, setSocketReady] = useState<boolean>(false);
-
-    // const [messages, setMessages] = useState<string[]>([]);
-    // const [input, setInput] = useState('');
-
-    const [mapSrc, setMapSrc] = useState('/maps/taiwan_middle_clean.png');
 
     const [teams, setTeams] = useState<Team[]>([]);
     const [units, setUnits] = useState<Unit[]>([]);
@@ -40,42 +45,51 @@ export default function MainMapPage() {
     const [roleInstance, setRoleInstance] = useState<RoleInstance | null>(null);
     const [unitInstances, setUnitInstances] = useState<UnitInstance[]>([]);
 
-    const [mapValidationError, setMapValidationError] = useState<string | null>(null);
-
-    const defaultState: Record<string, boolean> = {
-        Air: true,
-        Ground: true,
-        Sea: true,
-    };
-    const [selectedUnitInstances, setSelectedUnitInstances] = useState<Record<string, boolean>>(defaultState);
+    const [validationError, setValidationError] = useState<string | null>(null);
 
     useEffect(() => {
         let ws: WebSocket | null = null;
 
+        const validateAccess = async () => {
+            try {
+                const res = await authedFetch(`/api/game-instances/${joinCode}/validate-map-access/`);
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.error || data.detail || "Access denied");
+                }
+                sessionStorage.setItem('role_instance', JSON.stringify(data));
+                setRoleInstance(data);
+
+                return data;
+            } catch (err: unknown) {
+                console.error(err);
+                if (err instanceof Error) {
+                    setValidationError(err.message);
+                }
+                return null;
+            }
+        }
+
         const fetchData = async () => {
             try {
-                // First validate map access
-                const validationRes = await authedFetch(`/api/game-instances/${join_code}/validate-map-access/`);
-                const validationData = await validationRes.json();
-                if (!validationRes.ok) {
-                    throw new Error(validationData.error || validationData.detail || "Access denied");
+                const storedMap = sessionStorage.getItem('mapSrc');
+                if (storedMap) {
+                    setMapSrc(storedMap);
                 }
-                sessionStorage.setItem('username', validationData.user.username);
-                sessionStorage.setItem('join_code', validationData.team_instance.game_instance.join_code);
-                sessionStorage.setItem('team_name', validationData.team_instance.team.name);
-                sessionStorage.setItem('branch_name', validationData.role.branch?.name ?? 'None');
-                sessionStorage.setItem('role_name', validationData.role.name);
-                sessionStorage.setItem('role_instance', JSON.stringify(validationData))
-                setRoleInstance(validationData);
 
-                // If validation passed, fetch database data
+                const stored = sessionStorage.getItem('unitInstanceDisplay');
+                if (stored) {
+                    const parsed = JSON.parse(stored);
+                    setSelectedUnitInstances((prev) => ({ ...prev, ...parsed }));
+                }
+
                 // Unit instances
-                authedFetch(`/api/game-instances/${join_code}/unit-instances/`)
+                authedFetch(`/api/game-instances/${joinCode}/unit-instances/`)
                     .then(res => {
                         if (!res.ok) throw new Error(`UnitInstance fetch failed with ${res.status}`);
                         return res.json();
                     })
-                    .then(data => setUnitInstances(data))
+                    .then(data => setUnitInstances(data));
 
                 // Teams
                 getSessionStorageOrFetch<Team[]>('teams', async () => {
@@ -83,7 +97,7 @@ export default function MainMapPage() {
                     if (!res.ok) throw new Error(`Team fetch failed with ${res.status}`);
                     return res.json();
                 })
-                    .then(data => setTeams(data))
+                    .then(data => setTeams(data));
 
                 // Units
                 getSessionStorageOrFetch<Unit[]>('units', async () => {
@@ -91,7 +105,7 @@ export default function MainMapPage() {
                     if (!res.ok) throw new Error(`Unit fetch failed with ${res.status}`);
                     return res.json();
                 })
-                    .then(data => setUnits(data))
+                    .then(data => setUnits(data));
 
                 /*
                 // Attacks
@@ -100,7 +114,7 @@ export default function MainMapPage() {
                     if (!res.ok) throw new Error(`Attack fetch failed with ${res.status}`);
                     return res.json();
                 })
-                    .then(data => setAttacks(data))
+                    .then(data => setAttacks(data));
                 
                 // Abilities
                 getSessionStorageOrFetch<Ability[]>('abilities', async () => {
@@ -108,68 +122,80 @@ export default function MainMapPage() {
                     if (!res.ok) throw new Error(`Ability fetch failed with ${res.status}`);
                     return res.json();
                 })
-                    .then(data => setAbilities(data))
+                    .then(data => setAbilities(data));
                 */
-
-                const stored = sessionStorage.getItem('unitInstanceDisplay');
-                if (stored) {
-                    const parsed = JSON.parse(stored);
-                    setSelectedUnitInstances((prev) => ({ ...prev, ...parsed }));
-                }
-
-                if (!socketRef.current) {
-                    const token = localStorage.getItem("accessToken");
-                    ws = new WebSocket(`${WS_URL}/game-instances/testcode2/?token=${token}`);
-                    socketRef.current = ws;
-
-                    ws.onopen = () => {
-                        setSocketReady(true);
-                        socketRef.current?.send(JSON.stringify({
-                            channel: "users",
-                            action: "user_join",
-                            data: validationData
-                        }));
-                    }
-
-                }
 
             } catch (err: unknown) {
                 console.error(err);
                 if (err instanceof Error) {
-                    setMapValidationError(err.message);
+                    setValidationError(err.message);
                 }
             }
         };
 
-        fetchData();
+        const connectToWebsocket = (roleInstanceData: RoleInstance) => {
+            if (socketRef.current) return;
+
+            const token = localStorage.getItem("accessToken");
+            ws = new WebSocket(`${WS_URL}/game-instances/${joinCode}/?token=${token}`);
+            socketRef.current = ws;
+
+            ws.onopen = () => {
+                setSocketReady(true);
+                socketRef.current?.addEventListener("message", handleGamesMessage);
+                socketRef.current?.addEventListener("message", handleRoleInstancesMessage);
+                socketRef.current?.send(JSON.stringify({
+                    channel: "users",
+                    action: "join",
+                    data: roleInstanceData
+                }));
+            }
+        }
+
+        const handleGamesMessage = (event: MessageEvent) => {
+            const msg  = JSON.parse(event.data);
+            if (msg.channel === "games") {
+                switch (msg.action) {
+                    case "delete":
+                        alert("This game was deleted.");
+                        sessionStorage.clear();
+                        window.location.href = "/roleselect"; 
+                        break;
+                }
+            }
+        }
+
+        const handleRoleInstancesMessage = (event: MessageEvent) => {
+            const msg  = JSON.parse(event.data);
+            if (msg.channel === "role_instances") {
+                switch (msg.action) {
+                    case "delete":
+                        alert("Your role in this game was deleted.");
+                        sessionStorage.clear();
+                        window.location.href = "/roleselect"; 
+                        break;
+                }
+            }
+        }
+
+        (async () => {
+            const roleInstanceData = await validateAccess();
+            if (!roleInstanceData) return;
+            fetchData();
+            connectToWebsocket(roleInstanceData);
+        })();
 
         return () => {
             ws?.close();
             socketRef.current = null;
             setSocketReady(false);
         };
-    }, [authedFetch, join_code]);
+    }, [authedFetch, joinCode]);
 
-    useEffect(() => {
-        const storedMap = sessionStorage.getItem('mapSrc');
-        if (storedMap) {
-            setMapSrc(storedMap);
-        }
-    }, []);
-
-    // used for sending messages over websockets - currently not in use
-    // const sendMessage = () => {
-    //     if (socket && socket.readyState === WebSocket.OPEN) {
-    //         const payload = JSON.stringify({ message: input });
-    //         socket.send(payload);
-    //         setInput('');
-    //     }
-    // };
-
-    if (mapValidationError) {
+    if (validationError) {
         return ( 
             <div className="flex items-center justify-center h-screen text-white bg-neutral-900">
-                <h1 className="text-xl font-bold">{mapValidationError}</h1> 
+                <h1 className="text-xl font-bold">{validationError}</h1> 
             </div>
         );
     }
@@ -250,7 +276,10 @@ export default function MainMapPage() {
                             roleInstance={roleInstance}
                             unitInstances={unitInstances} 
                         />
-                        <ResourcePoints />
+                        <ResourcePoints 
+                            joinCode={joinCode}
+                            roleInstance={roleInstance}
+                        />
                     </>
                 )}
                 {/* Menu for Combatant Commander */}
@@ -291,14 +320,16 @@ export default function MainMapPage() {
                             unitInstances={unitInstances}
                         />
                         <AddUnitInstance
-                            join_code={join_code}
+                            joinCode={joinCode}
                             socketRef={socketRef}
                             socketReady={socketReady}
                             units={units}
                             teams={teams}
                         />
                         <GamemasterMenu
-                            join_code={join_code}
+                            joinCode={joinCode}
+                            socketRef={socketRef}
+                            socketReady={socketReady}
                             roleInstance={roleInstance}
                         />
                     </>

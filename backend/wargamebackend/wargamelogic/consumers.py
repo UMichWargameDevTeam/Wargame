@@ -49,7 +49,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                 {
                     "type": "handle.message",
                     "channel": "users",
-                    "action": "user_leave",
+                    "action": "leave",
                     "data": role_instance,
                 }
             )
@@ -68,7 +68,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         text_data JSON format:
         {
             "channel": "messages" | "points" | "timer" | "units" | "users" | ...,
-            "action": "message_send" | "points_send" | "unit_move" | ...,
+            "action": "send" | "send" | "move" | ...,
             "data": {...}
         }
         """
@@ -127,7 +127,7 @@ class GameConsumer(AsyncWebsocketConsumer):
     # But with a handler you can make it send a message to only a specific user,
     # and perform side-effects.
 
-    async def handle_users_user_join(self, data):
+    async def handle_users_join(self, data):
         user = self.scope["user"]
         if data.get("user", {}).get("username") != user.username:
             print(f"{user.username} tried joining as {data.get('user', {}).get('username')}")
@@ -144,7 +144,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         await self.send(
             text_data=json.dumps({
                 "channel": "users",
-                "action": "users_list",
+                "action": "list",
                 "data": list(role_instances.values()),
             })
         )
@@ -167,9 +167,18 @@ class GameConsumer(AsyncWebsocketConsumer):
             asyncio.create_task(start_timer(self.join_code, user.username))
 
         return self.game_group
-
-    async def handle_messages_message_send(self, data):
+    
+    async def handle_role_instances_delete(self, data):
         recipient_id = data.get("id")
+        if not recipient_id:
+            return None
+        target_group = f"game_{self.join_code}_user_{recipient_id}"
+        return target_group
+
+    async def handle_messages_send(self, data):
+        recipient_id = data.get("id")
+        if not recipient_id:
+            return None
         target_group = f"game_{self.join_code}_user_{recipient_id}"
         return target_group
 
@@ -199,7 +208,7 @@ async def start_timer(join_code, username):
             {
                 "type": "handle.message",
                 "channel": "timer",
-                "action": "timer_update",
+                "action": "update",
                 "data": {"remaining": remaining},
             },
         )

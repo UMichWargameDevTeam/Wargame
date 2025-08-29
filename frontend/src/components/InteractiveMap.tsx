@@ -29,12 +29,13 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const imageRef = useRef<HTMLImageElement | null>(null);
 
-    const [zoom, setZoom] = useState(1);
+    const [zoom, setZoom] = useState<number>(1);
     const [offset, setOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-    const [dragging, setDragging] = useState(false); // panning
+
+    const [dragging, setDragging] = useState<boolean>(false); // panning
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
     const [elementDragId, setElementDragId] = useState<number>(0); // id of unit being dragged (toggle)
-    const [showGrid, setShowGrid] = useState(true);
+    const [showGrid, setShowGrid] = useState<boolean>(true);
 
     useEffect(() => {
         const savedZoom = sessionStorage.getItem('map_zoom');
@@ -57,15 +58,17 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
             const msg  = JSON.parse(event.data);
             if (msg.channel === "units") {
                 switch (msg.action) {
-                    case "unit_attack":
+
+                    case "attack":
+                        // TODO
                         break;
-                    case "unit_create":
+                    case "create":
                         setUnitInstances(prev => [...prev, msg.data]);
                         break;
-                    case "unit_delete":
+                    case "delete":
                         setUnitInstances(prev => prev.filter(u => u.id !== msg.data.id));
                         break;
-                    case "unit_move":
+                    case "move":
                         setUnitInstances(prev =>
                             prev.map(unitInstance =>
                                 unitInstance.id === msg.data.id ? msg.data : unitInstance
@@ -307,13 +310,15 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
                 if (socketRef.current?.readyState === WebSocket.OPEN) {
                     socketRef.current.send(JSON.stringify({
                         channel: "units",
-                        action: "unit_move",
+                        action: "move",
                         data: data
                     }));
                 }
             } catch (err: unknown) {
                 console.error(err);
-                if (err instanceof Error) alert(err.message);
+                if (err instanceof Error) {
+                  alert(err.message);
+                }
             }
         } else {
             // start dragging this unit (will move on mousemove)

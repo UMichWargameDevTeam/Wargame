@@ -14,6 +14,7 @@ export default function UsersList({ socketRef, socketReady, roleInstance }: User
     const authedFetch = useAuthedFetch();
     
     const [roleInstances, setRoleInstances] = useState<RoleInstance[]>([]);
+    const [deletingRoleInstance, setDeletingRoleInstance] = useState<number | null>(null);
 
     // WebSocket setup
     useEffect(() => {
@@ -24,13 +25,13 @@ export default function UsersList({ socketRef, socketReady, roleInstance }: User
             const msg = JSON.parse(event.data);
             if (msg.channel === "users") {
                 switch (msg.action) {
-                    case "users_list":
+                    case "list":
                         setRoleInstances(() => msg.data);
                         break;
-                    case "user_join":
+                    case "join":
                         setRoleInstances(prev => [...prev, msg.data]);
                         break;
-                    case "user_leave":
+                    case "leave":
                         setRoleInstances(prev => prev.filter(r => r.id !== msg.data.id));
                         break;
                 }
@@ -45,9 +46,11 @@ export default function UsersList({ socketRef, socketReady, roleInstance }: User
     }, [socketRef, socketReady]);
 
     const handleDeleteRoleInstance = async (roleId: number) => {
+        if (!socketReady || !socketRef.current) return;
         if (!confirm("Are you sure you want to delete this Role Instance?")) return;
 
         try {
+            setDeletingRoleInstance(roleId);
             const res = await authedFetch(`/api/role-instances/${roleId}/`, {
                 method: 'DELETE'
             });
@@ -57,6 +60,16 @@ export default function UsersList({ socketRef, socketReady, roleInstance }: User
                 throw new Error(data.error || data.detail || 'Failed to delete role instance.');
             }
 
+            const roleUserId = roleInstances.find(ri => ri.id === roleId)?.user.id;
+
+            if (socketRef.current?.readyState === WebSocket.OPEN && roleUserId) {
+                socketRef.current.send(JSON.stringify({
+                    channel: "role_instances",
+                    action: "delete",
+                    data: { id: roleUserId }
+                }));
+            }
+
             setRoleInstances(prev => prev.filter(r => r.id !== roleId));
 
         } catch (err: unknown) {
@@ -64,6 +77,8 @@ export default function UsersList({ socketRef, socketReady, roleInstance }: User
             if (err instanceof Error) {
                 alert(err.message);
             }
+        } finally {
+            setDeletingRoleInstance(null);
         }
     };
 
@@ -116,9 +131,15 @@ export default function UsersList({ socketRef, socketReady, roleInstance }: User
                                                         {roleInstance?.role.name === "Gamemaster" && (
                                                             <button
                                                                 onClick={() => handleDeleteRoleInstance(ri.id)}
-                                                                className="bg-red-600 px-2 py-0.5 rounded hover:bg-red-500 text-xs"
+                                                                disabled={deletingRoleInstance === ri.id} 
+                                                                className={`px-2 py-0.5 rounded text-xs transition
+                                                                    ${deletingRoleInstance === ri.id
+                                                                        ? "bg-gray-500 cursor-not-allowed"
+                                                                        : "bg-red-600 hover:bg-red-500 cursor-pointer"
+                                                                    }
+                                                                `}
                                                             >
-                                                                Delete
+                                                                {deletingRoleInstance === ri.id ? "Deleting..." : "Delete"}
                                                             </button>
                                                         )}
                                                     </li>

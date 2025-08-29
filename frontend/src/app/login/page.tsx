@@ -7,17 +7,17 @@ import {BACKEND_URL } from '@/lib/utils';
 
 export default function LoginForm() {
     const router = useRouter();
-    const [username, setUsername] = useState("");
-    const [password, setPassword] = useState("");
-    const [showPassword, setShowPassword] = useState(false);
-    const [error, setError] = useState("");
-    const [loading, setLoading] = useState(false);
+    const [username, setUsername] = useState<string>("");
+    const [password, setPassword] = useState<string>("");
+    const [showPassword, setShowPassword] = useState<boolean>(false);
+    const [error, setError] = useState<string>("");
+    const [loading, setLoading] = useState<boolean>(false);
 
     // Redirect if already logged in
     useEffect(() => {
         const token = localStorage.getItem("accessToken");
         if (token) {
-            router.push('/roleselect')// role selection page
+            router.push("/roleselect");
         }
     }, [router]);
 
@@ -48,7 +48,7 @@ export default function LoginForm() {
             localStorage.setItem("refreshToken", data.refresh);
             sessionStorage.setItem("username", username);
 
-            router.push('/roleselect') // after login
+            router.push("/roleselect"); // after login
         } catch (err: unknown) {
             console.error(err);
             if (err instanceof Error) {
