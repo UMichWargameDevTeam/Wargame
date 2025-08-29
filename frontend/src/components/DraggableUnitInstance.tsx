@@ -5,11 +5,14 @@ import { UnitInstance } from '@/lib/Types';
 
 interface DraggableUnitInstanceProps {
     unitInstance: UnitInstance;
-    cellSize: number;
-    onMouseDown: (id: string | number) => void;
+    cellSize: number; // FINE_CELL_SIZE (world px, e.g., 20)
+    zoom: number;
+    offset: { x: number; y: number };
+    onToggleDrag: (id: number) => void;
 }
 
-export default function DraggableUnitInstance({ unitInstance, cellSize, onMouseDown }: DraggableUnitInstanceProps) {
+
+export default function DraggableUnitInstance({ unitInstance, cellSize, zoom, offset, onToggleDrag }: DraggableUnitInstanceProps) {
     const [showInfo, setShowInfo] = useState<boolean>(false);
 
     const toggleInfo = (e: React.MouseEvent) => {
@@ -17,23 +20,34 @@ export default function DraggableUnitInstance({ unitInstance, cellSize, onMouseD
         setShowInfo(prev => !prev);
     };
 
+    // Convert world -> screen coords using same transform as the canvas:
+    const left = offset.x + zoom * (unitInstance.tile.column * cellSize);
+    const top = offset.y + zoom * (unitInstance.tile.row * cellSize);
+    const size = Math.max(6, Math.round(zoom * cellSize)); // floor/ceil to integer px, min size to stay visible
+
     return (
         <div
             style={{
                 position: 'absolute',
-                left: unitInstance.tile.column * cellSize,
-                top: unitInstance.tile.row * cellSize,
-                width: cellSize,
-                height: cellSize,
+                left,
+                top,
+                width: size,
+                height: size,
                 backgroundColor: unitInstance.team_instance.team.name === "Red" ? 'red' : 'blue',
                 borderRadius: '50%',
-                cursor: 'grab',
+                cursor: 'pointer',
+                zIndex: 40,
             }}
-            onMouseDown={(e) => {
+            // single click toggles drag on/off
+            onClick={(e) => {
                 e.stopPropagation();
-                onMouseDown(unitInstance.id);
+                onToggleDrag(unitInstance.id);
             }}
-            onClick={toggleInfo}
+            // double click shows info
+            onDoubleClick={(e) => {
+                e.stopPropagation();
+                toggleInfo(e);
+            }}
             title={unitInstance.unit.name}
         >
             {showInfo && (
