@@ -18,7 +18,6 @@ import ResourcePoints from '@/components/ResourcePoints';
 import JTFMenu from '@/components/JTFMenu';
 import SendResourcePoints from '@/components/SendResourcePoints';
 import GamemasterMenu from '@/components/GamemasterMenu';
-import { RoleInstance, UnitInstance, Team, Unit, Attack } from '@/lib/Types';
 
 export default function MainMapPage() {
     const params = useParams();
@@ -33,8 +32,6 @@ export default function MainMapPage() {
         roleInstance,
         teams,
         units,
-        attacks,
-        abilities,
         unitInstances,
         setUnitInstances,
         validationError
