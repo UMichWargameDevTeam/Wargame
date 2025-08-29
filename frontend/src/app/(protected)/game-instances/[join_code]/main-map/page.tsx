@@ -15,9 +15,10 @@ import InteractiveMap from '@/components/InteractiveMap';
 import JTFMenu from '@/components/JTFMenu';
 import GamemasterMenu from '@/components/GamemasterMenu';
 import SendResourcePoints from '@/components/SendResourcePoints';
+import UnitAttackDisplay from '@/components/UnitAttackDisplay';
 import Timer from '@/components/Timer';
 import UsersList from '@/components/UsersList';
-import { Team, Unit, RoleInstance, UnitInstance } from '@/lib/Types'
+import { Team, Unit, Attack, RoleInstance, UnitInstance } from '@/lib/Types'
 
 
 export default function MainMapPage() {
@@ -34,7 +35,7 @@ export default function MainMapPage() {
 
     const [teams, setTeams] = useState<Team[]>([]);
     const [units, setUnits] = useState<Unit[]>([]);
-    // const [attacks, setAttacks] = useState<Attack[]>([]);
+     const [attacks, setAttacks] = useState<Attack[]>([]);
     // const [abilities, setAbilities] = useState<Ability[]>([]);
 
     const [roleInstance, setRoleInstance] = useState<RoleInstance | null>(null);
@@ -93,7 +94,7 @@ export default function MainMapPage() {
                 })
                     .then(data => setUnits(data))
 
-                /*
+                
                 // Attacks
                 getSessionStorageOrFetch<Attack[]>('attacks', async () => {
                     const res = await authedFetch("/api/attacks/");
@@ -101,7 +102,7 @@ export default function MainMapPage() {
                     return res.json();
                 })
                     .then(data => setAttacks(data))
-                
+                /*
                 // Abilities
                 getSessionStorageOrFetch<Ability[]>('abilities', async () => {
                     const res = await authedFetch("/api/abilities/");
