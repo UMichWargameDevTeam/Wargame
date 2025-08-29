@@ -69,8 +69,9 @@ def use_attack(request, pk, attack_name):
     if role_instance.supply_points < attack.cost:
         return Response({"detail": "Not enough supply points to perform this attack."}, status=status.HTTP_400_BAD_REQUEST)
 
+    
     role_instance.supply_points -= attack.cost
-    # TODO: actual attack logic here
+
     role_instance.save()
 
     return Response(
