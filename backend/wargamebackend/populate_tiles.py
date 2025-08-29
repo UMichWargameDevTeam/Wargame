@@ -12,8 +12,8 @@ def wipe_tiles():
 
 def populate_tiles():
     tiles_to_create = []
-    for row in range(25):
-        for column in range(40):
+    for row in range(41):
+        for column in range(81):
             tiles_to_create.append(Tile(row=row, column=column, terrain="Plains/Grasslands"))
     
     Tile.objects.bulk_create(tiles_to_create)
@@ -22,5 +22,5 @@ def populate_tiles():
 if __name__ == "__main__":
     # warning: if you wipe tiles, you'll also delete all unit instances
     # and landmark instance tiles that were on/associated with those tiles.
-    # wipe_tiles()
+    wipe_tiles()
     populate_tiles()

@@ -350,7 +350,7 @@ export default function RoleSelectPage() {
                 className={`absolute bottom-6 left-6 text-sm px-4 py-2 rounded transition
                     ${loggingOut
                         ? "bg-gray-500 cursor-not-allowed"
-                        : "bg-red-600 hover:bg-red-700 cursor-pointer"
+                        : "bg-red-600 hover:bg-red-500 cursor-pointer"
                     }
                 `}
             >
