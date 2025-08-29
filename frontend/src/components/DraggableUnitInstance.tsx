@@ -10,7 +10,7 @@ interface DraggableUnitInstanceProps {
 }
 
 export default function DraggableUnitInstance({ unitInstance, cellSize, onMouseDown }: DraggableUnitInstanceProps) {
-    const [showInfo, setShowInfo] = useState(false);
+    const [showInfo, setShowInfo] = useState<boolean>(false);
 
     const toggleInfo = (e: React.MouseEvent) => {
         e.stopPropagation();

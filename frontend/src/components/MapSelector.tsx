@@ -8,7 +8,7 @@ interface MapSelectorProps {
 }
 
 export default function MapSelector({ onMapChange, initialMap }: MapSelectorProps) {
-    const [open, setOpen] = useState(true);
+    const [open, setOpen] = useState<boolean>(true);
     const [selectedMap, setSelectedMap] = useState<string>('');
 
     useEffect(() => {

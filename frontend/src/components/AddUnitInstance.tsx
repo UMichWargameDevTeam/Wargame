@@ -5,34 +5,36 @@ import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 import { Team, Unit } from '@/lib/Types';
 
 interface AddUnitInstanceProps {
-    join_code: string;
+    joinCode: string;
     socketRef: RefObject<WebSocket | null>;
     socketReady: boolean;
     units: Unit[];
     teams: Team[];
 }
 
-export default function AddUnitInstance({ join_code, socketRef, socketReady, units, teams }: AddUnitInstanceProps) {
-    const authedFetch = useAuthedFetch()
+export default function AddUnitInstance({ joinCode, socketRef, socketReady, units, teams }: AddUnitInstanceProps) {
+    const authedFetch = useAuthedFetch();
     
     const [unitName, setUnitName] = useState<string>('');
     const [teamName, setTeamName] = useState<string>('');
     const [row, setRow] = useState<string>('');
     const [column, setColumn] = useState<string>('');
+    const [creatingUnitInstance, setCreatingUnitInstance] = useState<boolean>(false);
 
-    const handleAddUnitInstance = async (join_code: string, teamName: string, unitName: string, row: string, column: string) => {
+    const handleAddUnitInstance = async (joinCode: string, teamName: string, unitName: string, row: string, column: string) => {
         if (!socketReady) return;
     
         try {
+            setCreatingUnitInstance(true);
             const res = await authedFetch(`/api/unit-instances/create/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
-                    join_code,
+                    join_code: joinCode,
                     team_name: teamName,
                     unit_name: unitName,
-                    row,
-                    column
+                    row: row,
+                    column: column,
                 })
             });
             const data = await res.json();
@@ -43,16 +45,23 @@ export default function AddUnitInstance({ join_code, socketRef, socketReady, uni
             if (socketRef.current?.readyState === WebSocket.OPEN) {
                 socketRef.current.send(JSON.stringify({
                     channel: "units",
-                    action: "unit_create",
+                    action: "create",
                     data: data
                 }));
             }
+
+            setUnitName('');
+            setTeamName('');
+            setRow('');
+            setColumn('');
 
         } catch (err: unknown) {
             console.error(err);
             if (err instanceof Error) {
                 alert(err.message);
             }
+        } finally {
+            setCreatingUnitInstance(false);
         }
     };
 
@@ -108,10 +117,16 @@ export default function AddUnitInstance({ join_code, socketRef, socketReady, uni
             </div>
 
             <button
-                onClick={() => handleAddUnitInstance(join_code, teamName, unitName, row, column)}
-                className="bg-blue-600 px-2 py-1 rounded hover:bg-blue-500"
+                onClick={() => handleAddUnitInstance(joinCode, teamName, unitName, row, column)}
+                disabled={creatingUnitInstance}
+                className={`px-2 py-1 rounded transition
+                    ${creatingUnitInstance
+                        ? "bg-gray-500 cursor-not-allowed"
+                        : "bg-blue-600 hover:bg-blue-500 cursor-pointer"
+                    }
+                `}
             >
-                Add
+                {creatingUnitInstance ? "Adding..." : "Add"}
             </button>
         </div>
     )

@@ -9,7 +9,7 @@ interface UserInstanceDisplayProps {
 
 export default function UnitInstanceDisplay({ selectedUnitInstances, setSelectedUnitInstances }: UserInstanceDisplayProps) {
     
-    const [open, setOpen] = useState(true);
+    const [open, setOpen] = useState<boolean>(true);
 
     const toggleUnitInstance = (domain: string) => {
         setSelectedUnitInstances((prev) => {

@@ -17,8 +17,8 @@ export default function Timer({ socketRef, socketReady }: TimerProps) {
             const msg = JSON.parse(event.data);
             if (msg.channel === "timer") {
                 switch (msg.action) {
-                    case "timer_update":
-                        setTimer(msg.data.remaining)
+                    case "update":
+                        setTimer(msg.data.remaining);
                         break;
                 }
             }
