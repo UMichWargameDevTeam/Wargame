@@ -66,14 +66,17 @@ export default function AddUnitInstance({ joinCode, socketRef, socketReady, unit
     };
 
     return (
-        <div className="bg-neutral-700 rounded-lg mb-4 p-4">
-            <h3 className="text-lg font-semibold">Add Unit</h3>
+    <div className="bg-neutral-700 rounded-2xl shadow-md p-6 mb-6">
+        <h3 className="text-xl font-semibold mb-4 text-white">Add Unit</h3>
 
+        {/* Unit + Team Selectors */}
+        <div className="grid grid-cols-2 gap-4 mb-4">
             <div>
+                <label className="block text-sm text-gray-300 mb-1">Unit</label>
                 <select
                     value={unitName}
                     onChange={e => setUnitName(e.target.value)}
-                    className="p-1 rounded bg-neutral-800 mr-2"
+                    className="w-full p-2 rounded-lg bg-neutral-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                     <option value="">Select Unit</option>
                     {units.map(u => (
@@ -83,12 +86,13 @@ export default function AddUnitInstance({ joinCode, socketRef, socketReady, unit
                     ))}
                 </select>
             </div>
-            
+
             <div>
+                <label className="block text-sm text-gray-300 mb-1">Team</label>
                 <select
                     value={teamName}
                     onChange={e => setTeamName(e.target.value)}
-                    className="p-1 rounded bg-neutral-800 mr-2"
+                    className="w-full p-2 rounded-lg bg-neutral-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                     <option value="">Select Team</option>
                     {teams.map(t => (
@@ -98,36 +102,45 @@ export default function AddUnitInstance({ joinCode, socketRef, socketReady, unit
                     ))}
                 </select>
             </div>
-            
-            <div className='flex space-x-2'>
+        </div>
+
+        {/* Row + Column Inputs */}
+        <div className="grid grid-cols-2 gap-4 mb-4">
+            <div>
+                <label className="block text-sm text-gray-300 mb-1">Row</label>
                 <input
                     type="number"
                     placeholder="Row"
                     value={row}
                     onChange={e => setRow(e.target.value)}
-                    className="w-1/2 p-1 rounded bg-neutral-800 mr-2"
+                    className="w-full p-2 rounded-lg bg-neutral-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
+            </div>
+            <div>
+                <label className="block text-sm text-gray-300 mb-1">Column</label>
                 <input
                     type="number"
                     placeholder="Column"
                     value={column}
                     onChange={e => setColumn(e.target.value)}
-                    className="w-1/2 p-1 rounded bg-neutral-800 mr-2"
+                    className="w-full p-2 rounded-lg bg-neutral-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
                 />
             </div>
-
-            <button
-                onClick={() => handleAddUnitInstance(joinCode, teamName, unitName, row, column)}
-                disabled={creatingUnitInstance}
-                className={`px-2 py-1 rounded transition
-                    ${creatingUnitInstance
-                        ? "bg-gray-500 cursor-not-allowed"
-                        : "bg-blue-600 hover:bg-blue-500 cursor-pointer"
-                    }
-                `}
-            >
-                {creatingUnitInstance ? "Adding..." : "Add"}
-            </button>
         </div>
-    )
+
+        {/* Add Button */}
+        <button
+            onClick={() => handleAddUnitInstance(joinCode, teamName, unitName, row, column)}
+            disabled={creatingUnitInstance}
+            className={`w-full py-2 rounded-lg font-medium transition 
+                ${creatingUnitInstance
+                    ? "bg-gray-600 cursor-not-allowed text-gray-300"
+                    : "bg-blue-600 hover:bg-blue-500 text-white"
+                }`}
+        >
+            {creatingUnitInstance ? "Adding..." : "Add Unit"}
+        </button>
+    </div>
+);
+
 }
