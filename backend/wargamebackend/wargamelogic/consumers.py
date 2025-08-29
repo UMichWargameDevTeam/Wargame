@@ -3,11 +3,23 @@ import asyncio
 from django.core.cache import cache
 from channels.layers import get_channel_layer
 from channels.generic.websocket import AsyncWebsocketConsumer
+from redis.exceptions import WatchError
 
+# You don't need to understand this code to be able to use the WebSocket.
+# This code can get complicated due to handling potential concurrency issues.
+# What you need to know is that any message sent over the WebSocket should be an object
+# Containing "channel", "action", and "data" properties.
+# You can set "channel" and "action" to whatever strings you want; you just need to make sure
+# That what you're sending matches what the recipient is expecting.
+# Typically, I set "channel" to the type of the entity that is being acted on (for example, "users"),
+# Then set "action" to the action being done to that entity.
+# "data" is an object that can contain whatever kind of data you want,
+# Though typically it matches the shape of a record in one of the database's tables,
+# Or an array of such records.
 
-def get_redis_client():
-    return cache.client.get_client(write=True)
-
+# You should only need to add to this code if you want 
+# your message to be sent to a specific user in your game rather than everyone in your game.
+# That can be done by creating a handler function for your specific channel and action.
 
 class GameConsumer(AsyncWebsocketConsumer):
     # A user must be logged-in to connect to the WebSocket.
@@ -27,8 +39,9 @@ class GameConsumer(AsyncWebsocketConsumer):
         await self.channel_layer.group_add(self.game_group, self.channel_name)
         await self.channel_layer.group_add(self.user_group, self.channel_name)
 
-        print(f"{user.username} connected.")
+        print(f"{user.username} connected to game '{self.join_code}'.")
         await self.accept()
+
 
     async def disconnect(self, close_code):
         user = self.scope["user"]
@@ -38,12 +51,9 @@ class GameConsumer(AsyncWebsocketConsumer):
         redis_client = get_redis_client()
         role_key = f"game_{self.join_code}_role_instances"
 
-        # Remove role instance and broadcast leave
-        role_instance_json = redis_client.hget(role_key, user.id)
+        role_instance_json = await redis_execute(redis_delete_hfield_atomic, redis_client, role_key, user.id)
         if role_instance_json:
             role_instance = json.loads(role_instance_json)
-            redis_client.hdel(role_key, user.id)
-
             await self.channel_layer.group_send(
                 self.game_group,
                 {
@@ -54,11 +64,9 @@ class GameConsumer(AsyncWebsocketConsumer):
                 }
             )
 
-        # Remove from channel groups
         await self.channel_layer.group_discard(self.game_group, self.channel_name)
         await self.channel_layer.group_discard(self.user_group, self.channel_name)
-
-        print(f"{user.username} disconnected.")
+        print(f"{user.username} disconnected from game '{self.join_code}'.")
     
     # when sending a message over a websocket in the browser,
     # it gets sent to this function to handle it, which then sends the message
@@ -82,11 +90,15 @@ class GameConsumer(AsyncWebsocketConsumer):
         handler = getattr(self, handler_name, None)
 
         if handler:
-            target_group = await handler(data)
+            try:
+                target_group = await handler(data)
+            except Exception as e:
+                print(f"Error in handler {handler_name}: {e}")
+                target_group = None
         else:
             target_group = self.game_group
 
-        if target_group:  # only send if target_group is valid
+        if target_group:
             await self.channel_layer.group_send(
                 target_group,
                 {
@@ -126,21 +138,22 @@ class GameConsumer(AsyncWebsocketConsumer):
     # By default, messages are simply broadcast to everyone in the game,
     # But with a handler you can make it send a message to only a specific user,
     # and perform side-effects.
-
+    # These should return the group that the message should be sent to,
+    # Whether the group containing all the users in this game, 
+    # The group containing just a specific user in the game,
+    # Or if you raise an exception it won't be sent to anybody.
     async def handle_users_join(self, data):
         user = self.scope["user"]
         if data.get("user", {}).get("username") != user.username:
-            print(f"{user.username} tried joining as {data.get('user', {}).get('username')}")
-            return self.user_group
+            raise Exception(f"{user.username} tried joining as {data.get('user', {}).get('username')} in game '{self.join_code}'.")
 
         redis_client = get_redis_client()
         role_key = f"game_{self.join_code}_role_instances"
 
-        # Send existing role instances to the new user
-        role_instances = {
+        role_instances = await redis_execute(lambda: {
             int(uid): json.loads(val)
             for uid, val in redis_client.hgetall(role_key).items()
-        }
+        })
         await self.send(
             text_data=json.dumps({
                 "channel": "users",
@@ -149,25 +162,15 @@ class GameConsumer(AsyncWebsocketConsumer):
             })
         )
 
-        # Check if user already joined
-        if redis_client.hexists(role_key, user.id):
-            print(f"{user.username} tried joining {self.join_code}, a game they had already joined.")
-            await self.send(text_data=json.dumps({
-                "channel": "users",
-                "action": "error",
-                "data": {"message": "Already joined"}
-            }))
-            return None
+        added = await redis_execute(lambda: redis_client.hsetnx(role_key, user.id, json.dumps(data)))
+        if not added:
+            raise Exception(f"{user.username} tried joining {self.join_code} but they had already joined.")
 
-        # Store this user's role instance
-        redis_client.hset(role_key, user.id, json.dumps(data))
-
-        # If this is the first user, start the timer
-        if redis_client.hlen(role_key) == 1:
-            asyncio.create_task(start_timer(self.join_code, user.username))
+        # the start_timer function ensures only the first user starts the timer.
+        asyncio.create_task(start_timer(self.join_code, user.username))
 
         return self.game_group
-    
+
     async def handle_role_instances_delete(self, data):
         recipient_id = data.get("id")
         if not recipient_id:
@@ -187,21 +190,20 @@ class GameConsumer(AsyncWebsocketConsumer):
 # game timer     #
 # -------------- #
 async def start_timer(join_code, username):
-    # I'm pretty sure this only works under the assumption that we are using one channel
     channel_layer = get_channel_layer()
     timer_key = f"game_{join_code}_timer"
     game_group = f"game_{join_code}"
     redis_client = get_redis_client()
 
-    if redis_client.exists(timer_key):
-        print(f"{username} tried starting {join_code}'s timer but there was already a key for it in the cache")
+    remaining = 600
+
+    # Atomically set timer key only if it doesn't already exist, else return
+    started = await redis_execute(lambda: redis_client.set(timer_key, 1, nx=True, ex=remaining + 15))
+    if not started:
         return
-    
+
     print(f"{username} started {join_code}'s timer.")
 
-    redis_client.set(timer_key, 1)
-
-    remaining = 600
     while remaining > 0:
         await channel_layer.group_send(
             game_group,
@@ -215,4 +217,35 @@ async def start_timer(join_code, username):
         await asyncio.sleep(1)
         remaining -= 1
 
-    redis_client.set(timer_key, 0)
+    await redis_execute(lambda: redis_client.delete(timer_key))
+    print(f"Timer for game '{join_code}' finished.")
+
+
+# ---------------- #
+# Redis helpers    #
+# ---------------- #
+def get_redis_client():
+    """Get the synchronous Redis client."""
+    return cache.client.get_client(write=True)
+
+async def redis_execute(func, *args, **kwargs):
+    """Run synchronous Redis function in async thread."""
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, lambda: func(*args, **kwargs))
+
+def redis_delete_hfield_atomic(redis_client, key, field):
+    """Atomically delete a hash field if it exists and return its value."""
+    while True:
+        try:
+            pipe = redis_client.pipeline()
+            pipe.watch(key)
+            val = pipe.hget(key, field)
+            if val is None:
+                pipe.unwatch()
+                return None
+            pipe.multi()
+            pipe.hdel(key, field)
+            pipe.execute()
+            return val
+        except WatchError:
+            continue
