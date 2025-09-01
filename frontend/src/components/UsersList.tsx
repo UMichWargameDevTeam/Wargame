@@ -27,6 +27,11 @@ export default function UsersList({ socketRef, socketReady, roleInstance }: User
                 switch (msg.action) {
                     case "list":
                         setRoleInstances(() => msg.data);
+                        cachedSocket.send(JSON.stringify({
+                            channel: "users",
+                            action: "join",
+                            data: roleInstance
+                        }));
                         break;
                     case "join":
                         setRoleInstances(prev => [...prev, msg.data]);
@@ -43,7 +48,7 @@ export default function UsersList({ socketRef, socketReady, roleInstance }: User
         return () => {
             cachedSocket.removeEventListener("message", handleUsersMessage);
         };
-    }, [socketRef, socketReady]);
+    }, [socketRef, socketReady, roleInstance]);
 
     const handleDeleteRoleInstance = async (roleId: number) => {
         if (!socketReady || !socketRef.current) return;

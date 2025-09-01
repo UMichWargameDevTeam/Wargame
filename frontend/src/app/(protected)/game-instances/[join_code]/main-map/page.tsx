@@ -133,7 +133,7 @@ export default function MainMapPage() {
             }
         };
 
-        const connectToWebsocket = (roleInstanceData: RoleInstance) => {
+        const connectToWebsocket = () => {
             if (socketRef.current) return;
 
             const token = localStorage.getItem("accessToken");
@@ -146,8 +146,8 @@ export default function MainMapPage() {
                 socketRef.current?.addEventListener("message", handleRoleInstancesMessage);
                 socketRef.current?.send(JSON.stringify({
                     channel: "users",
-                    action: "join",
-                    data: roleInstanceData
+                    action: "list",
+                    data: {}
                 }));
             }
         }
@@ -182,7 +182,7 @@ export default function MainMapPage() {
             const roleInstanceData = await validateAccess();
             if (!roleInstanceData) return;
             fetchData();
-            connectToWebsocket(roleInstanceData);
+            connectToWebsocket();
         })();
 
         return () => {
