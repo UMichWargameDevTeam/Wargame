@@ -17,6 +17,7 @@ import GamemasterMenu from '@/components/GamemasterMenu';
 import SendResourcePoints from '@/components/SendResourcePoints';
 import Timer from '@/components/Timer';
 import UsersList from '@/components/UsersList';
+import Chat from '@/components/chat/Chat';
 import { Team, Unit, RoleInstance, UnitInstance } from '@/lib/Types'
 
 
@@ -249,6 +250,11 @@ export default function MainMapPage() {
                             socketReady={socketReady}
                             roleInstance={roleInstance}
                         />
+                        <Chat
+                            socketRef={socketRef}
+                            socketReady={socketReady}
+                            roleInstance={roleInstance}
+                        />
                         <MapSelector
                             initialMap={mapSrc}
                             onMapChange={(path) => {
@@ -266,6 +272,11 @@ export default function MainMapPage() {
                 {roleInstance?.role.is_chief_of_staff && (
                     <>
                         <UsersList
+                            socketRef={socketRef}
+                            socketReady={socketReady}
+                            roleInstance={roleInstance}
+                        />
+                        <Chat
                             socketRef={socketRef}
                             socketReady={socketReady}
                             roleInstance={roleInstance}
@@ -290,6 +301,11 @@ export default function MainMapPage() {
                             socketReady={socketReady}
                             roleInstance={roleInstance}
                         />
+                        <Chat
+                            socketRef={socketRef}
+                            socketReady={socketReady}
+                            roleInstance={roleInstance}
+                        />
                         <JTFMenu />
                         <SendResourcePoints />
                     </>
@@ -298,6 +314,11 @@ export default function MainMapPage() {
                 {roleInstance?.role.name == "Gamemaster" && (
                     <>
                         <UsersList
+                            socketRef={socketRef}
+                            socketReady={socketReady}
+                            roleInstance={roleInstance}
+                        />
+                        <Chat
                             socketRef={socketRef}
                             socketReady={socketReady}
                             roleInstance={roleInstance}

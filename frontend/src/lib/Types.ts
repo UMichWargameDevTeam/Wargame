@@ -99,3 +99,11 @@ export interface UnitInstance {
     health: number;
     supply_count: number;
 }
+
+export interface Message {
+    id: string;
+    role_instance: RoleInstance;
+    channel: string;
+    text: string;
+    timestamp: number;
+}
