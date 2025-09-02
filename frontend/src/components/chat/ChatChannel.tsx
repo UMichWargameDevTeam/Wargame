@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, RefObject } from 'react';
+import { useState, useEffect, useRef, RefObject } from 'react';
 import ChatMessage from './ChatMessage';
 import { Message, RoleInstance } from '@/lib/Types';
 
@@ -10,16 +10,40 @@ interface ChatChannelProps {
     roleInstance: RoleInstance
     channel: string;
     messages: Message[];
+    onBack: () => void;
 }
 
-export default function ChatChannel({ socketRef, socketReady, roleInstance, channel, messages }: ChatChannelProps) {
+export default function ChatChannel({ socketRef, socketReady, roleInstance, channel, messages, onBack }: ChatChannelProps) {
 
     const [input, setInput] = useState("");
     const [sendingMessage, setSendingMessage] = useState<boolean>(false);
-    // TODO: handle message sending over socket here
+    const containerRef = useRef<HTMLDivElement | null>(null);
+
+    // make channel messages scroll to bottom if current scroll is near bottom when a message is sent
+    useEffect(() => {
+        if (!containerRef.current) return;
+        const container = containerRef.current;
+        const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+
+        if (isAtBottom) {
+            requestAnimationFrame(() => {
+                container.scrollTop = container.scrollHeight;
+            });
+        }
+    }, [messages]);
+
+    // when opening a new channel, set scroll to the bottom of the channel
+    useEffect(() => {
+        if (!containerRef.current) return;
+        const container = containerRef.current;
+
+        requestAnimationFrame(() => {
+            container.scrollTop = container.scrollHeight;
+        });
+    }, [channel]);
 
     const handleSendMessage = () => {
-        if (!socketReady) return;
+        if (!socketReady || !input.trim()) return;
     
         try {
             setSendingMessage(true);
@@ -53,34 +77,54 @@ export default function ChatChannel({ socketRef, socketReady, roleInstance, chan
 
     return (
         <>
-            <h4 className="text-lg font-semibold">{channel}</h4>
-            {messages.map((message) => (
-                <ChatMessage
-                    key={message.id}
-                    roleInstance={roleInstance}
-                    message={message}
-                />
-            ))}
-            <span>
-                <input
-                    type="text"
-                    placeholder="Send message..."
-                    value={input}
-                    onChange={e => setInput(e.target.value)}
-                    className="w-full p-2 rounded-lg bg-neutral-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-            </span>
-            <button
-                onClick={() => handleSendMessage()}
-                disabled={sendingMessage}
-                className={`w-full py-2 rounded-lg font-medium transition 
-                    ${sendingMessage
-                        ? "bg-gray-600 cursor-not-allowed text-gray-300"
-                        : "bg-blue-600 hover:bg-blue-500 text-white"
-                    }`}
+            <div className="flex items-center gap-2 mb-2">
+                <button
+                    onClick={onBack}
+                    className="text-sm text-blue-400 hover:underline"
+                >
+                    {"< Back"}
+                </button>
+                <h4 className="text-lg font-semibold">{channel}</h4>
+            </div>
+
+            <div ref={containerRef} className="overflow-y-auto">
+                {messages.map((message) => (
+                    <ChatMessage
+                        key={message.id}
+                        roleInstance={roleInstance}
+                        message={message}
+                    />
+                ))}
+            </div>
+
+            <form
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    handleSendMessage();
+                }}
             >
-                {sendingMessage ? "Sending..." : "Send"}
-            </button>
+                <div className="flex gap-2">
+                    <input
+                        type="text"
+                        placeholder="Send message..."
+                        value={input}
+                        onChange={e => setInput(e.target.value)}
+                        className="flex-1 p-2 rounded-lg bg-neutral-700 text-white"
+                    />
+                    <button
+                        type="submit"
+                        disabled={sendingMessage}
+                        className={`px-4 py-2 rounded-lg font-medium transition 
+                            ${sendingMessage
+                                ? "bg-gray-600 cursor-not-allowed text-gray-300"
+                                : "bg-green-600 hover:bg-green-500 text-white"
+                            }
+                        `}
+                    >
+                        {sendingMessage ? "Sending..." : "Send"}
+                    </button>
+                </div>
+            </form>
         </>
     );
 }

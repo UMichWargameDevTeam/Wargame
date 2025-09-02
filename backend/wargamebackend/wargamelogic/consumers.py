@@ -217,18 +217,28 @@ async def start_timer(join_code, username):
 
     print(f"{username} started {join_code}'s timer.")
 
-    while remaining > 0:
-        await channel_layer.group_send(
-            game_group,
-            {
-                "type": "handle.message",
-                "channel": "timer",
-                "action": "update",
-                "data": {"remaining": remaining},
-            },
-        )
-        await asyncio.sleep(1)
-        remaining -= 1
+    await channel_layer.group_send(
+        game_group,
+        {
+            "type": "handle.message",
+            "channel": "timer",
+            "action": "update",
+            "data": {"remaining": remaining},
+        },
+    )
+
+    # while remaining > 0:
+    #     await channel_layer.group_send(
+    #         game_group,
+    #         {
+    #             "type": "handle.message",
+    #             "channel": "timer",
+    #             "action": "update",
+    #             "data": {"remaining": remaining},
+    #         },
+    #     )
+    #     await asyncio.sleep(1)
+    #     remaining -= 1
 
     redis_client.delete(timer_key)
     print(f"Timer for game '{join_code}' finished.")

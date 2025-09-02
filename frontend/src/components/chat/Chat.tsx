@@ -18,6 +18,7 @@ export default function Chat({ socketRef, socketReady, roleInstance }: ChatProps
     const [messages, setMessages] = useState<Record<string, Message[]>>(
         () => Object.fromEntries(channels.map(ch => [ch, []]))
     );
+    const [activeChannel, setActiveChannel] = useState<string | null>(null);
 
     // WebSocket setup
     useEffect(() => {
@@ -59,7 +60,6 @@ export default function Chat({ socketRef, socketReady, roleInstance }: ChatProps
         };
     }, [socketRef, socketReady]);
 
-
     return (
         <div className="bg-neutral-700 rounded-lg mb-4 p-4">
             <div className="flex justify-between items-center mb-2">
@@ -73,17 +73,29 @@ export default function Chat({ socketRef, socketReady, roleInstance }: ChatProps
             </div>
 
             {open && (
-                <div className="space-y-2">
-                    {Object.entries(messages).map(([channel, messages]) => (
+                <div className="flex flex-col max-h-[80vh]">
+                    {activeChannel ? (
                         <ChatChannel
                             socketRef={socketRef}
                             socketReady={socketReady}
-                            key={channel}
                             roleInstance={roleInstance}
-                            channel={channel}
-                            messages={messages}
+                            channel={activeChannel}
+                            messages={messages[activeChannel] || []}
+                            onBack={() => setActiveChannel(null)}
                         />
-                    ))}
+                    ) : (
+                        <ul className="space-y-2">
+                            {channels.map(channel => (
+                                <li
+                                    key={channel}
+                                    className="cursor-pointer bg-neutral-600 hover:bg-neutral-500 rounded px-3 py-2"
+                                    onClick={() => setActiveChannel(channel)}
+                                >
+                                    {channel}
+                                </li>
+                            ))}
+                        </ul>
+                    )}
                 </div>
             )}
         </div>

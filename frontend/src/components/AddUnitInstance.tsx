@@ -135,7 +135,7 @@ export default function AddUnitInstance({ joinCode, socketRef, socketReady, unit
             className={`w-full py-2 rounded-lg font-medium transition 
                 ${creatingUnitInstance
                     ? "bg-gray-600 cursor-not-allowed text-gray-300"
-                    : "bg-blue-600 hover:bg-blue-500 text-white"
+                    : "bg-green-600 hover:bg-green-500 text-white"
                 }`}
         >
             {creatingUnitInstance ? "Adding..." : "Add Unit"}
