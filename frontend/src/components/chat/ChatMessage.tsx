@@ -35,7 +35,7 @@ export default function ChatMessage({ roleInstance, message }: ChatMessageProps)
                 </span>
             </div>
             <div
-                className={`max-w-xs px-3 py-2 rounded-lg
+                className={`max-w-xs px-3 py-2 rounded-lg break-words whitespace-pre-wrap
                     ${isOwnMessage
                         ? "bg-blue-600 text-white rounded-br-none self-end"
                         : "bg-neutral-600 text-white rounded-bl-none self-start"

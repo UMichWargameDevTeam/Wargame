@@ -8,7 +8,6 @@ interface UserInstanceDisplayProps {
 }
 
 export default function UnitInstanceDisplay({ selectedUnitInstances, setSelectedUnitInstances }: UserInstanceDisplayProps) {
-    
     const [open, setOpen] = useState<boolean>(true);
 
     const toggleUnitInstance = (domain: string) => {
@@ -27,7 +26,7 @@ export default function UnitInstanceDisplay({ selectedUnitInstances, setSelected
                     onClick={() => setOpen(!open)}
                     className="text-sm bg-neutral-600 px-2 py-1 rounded hover:bg-neutral-500"
                 >
-                    {open ? '+' : '-'}
+                    {open ? '-' : '+'}
                 </button>
             </div>
 

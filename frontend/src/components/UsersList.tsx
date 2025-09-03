@@ -7,10 +7,11 @@ import { RoleInstance } from '@/lib/Types'
 interface UsersListProps {
     socketRef: RefObject<WebSocket | null>;
     socketReady: boolean;
+    setUserJoined: React.Dispatch<React.SetStateAction<boolean>>;
     roleInstance: RoleInstance | null;
 }
 
-export default function UsersList({ socketRef, socketReady, roleInstance }: UsersListProps) {
+export default function UsersList({ socketRef, socketReady, setUserJoined, roleInstance }: UsersListProps) {
     const authedFetch = useAuthedFetch();
     
     const [roleInstances, setRoleInstances] = useState<RoleInstance[]>([]);
@@ -35,6 +36,9 @@ export default function UsersList({ socketRef, socketReady, roleInstance }: User
                         break;
                     case "join":
                         setRoleInstances(prev => [...prev, msg.data]);
+                        if (msg.data.user.id == roleInstance?.user.id) {
+                            setUserJoined(true);
+                        }
                         break;
                     case "leave":
                         setRoleInstances(prev => prev.filter(r => r.id !== msg.data.id));

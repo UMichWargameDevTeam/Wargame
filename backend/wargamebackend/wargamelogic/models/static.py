@@ -21,6 +21,7 @@ class Role(models.Model):
         ("Army", "Army"),
         ("Air Force", "Air Force"),
         ("Navy", "Navy"),
+        ("Marines", "Marines")
     ]
 
     name = models.CharField(max_length=100, unique=True)

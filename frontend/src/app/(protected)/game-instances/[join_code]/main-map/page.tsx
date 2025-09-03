@@ -37,6 +37,7 @@ export default function MainMapPage() {
 
     const socketRef = useRef<WebSocket | null>(null);
     const [socketReady, setSocketReady] = useState<boolean>(false);
+    const [userJoined, setUserJoined] = useState<boolean>(false);
 
     const [teams, setTeams] = useState<Team[]>([]);
     const [units, setUnits] = useState<Unit[]>([]);
@@ -248,11 +249,13 @@ export default function MainMapPage() {
                         <UsersList
                             socketRef={socketRef}
                             socketReady={socketReady}
+                            setUserJoined={setUserJoined}
                             roleInstance={roleInstance}
                         />
                         <Chat
                             socketRef={socketRef}
                             socketReady={socketReady}
+                            userJoined={userJoined}
                             roleInstance={roleInstance}
                         />
                         <MapSelector
@@ -274,11 +277,13 @@ export default function MainMapPage() {
                         <UsersList
                             socketRef={socketRef}
                             socketReady={socketReady}
+                            setUserJoined={setUserJoined}
                             roleInstance={roleInstance}
                         />
                         <Chat
                             socketRef={socketRef}
                             socketReady={socketReady}
+                            userJoined={userJoined}
                             roleInstance={roleInstance}
                         />
                         <AvailableUnitInstances
@@ -299,11 +304,13 @@ export default function MainMapPage() {
                         <UsersList
                             socketRef={socketRef}
                             socketReady={socketReady}
+                            setUserJoined={setUserJoined}
                             roleInstance={roleInstance}
                         />
                         <Chat
                             socketRef={socketRef}
                             socketReady={socketReady}
+                            userJoined={userJoined}
                             roleInstance={roleInstance}
                         />
                         <JTFMenu />
@@ -316,11 +323,13 @@ export default function MainMapPage() {
                         <UsersList
                             socketRef={socketRef}
                             socketReady={socketReady}
+                            setUserJoined={setUserJoined}
                             roleInstance={roleInstance}
                         />
                         <Chat
                             socketRef={socketRef}
                             socketReady={socketReady}
+                            userJoined={userJoined}
                             roleInstance={roleInstance}
                         />
                         <MapSelector

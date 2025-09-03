@@ -2,7 +2,24 @@ import json
 import asyncio
 from django.core.cache import cache
 from channels.layers import get_channel_layer
+from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
+from django.contrib.auth.models import User
+from wargamelogic.models.static import Team, Role
+from wargamelogic.models.dynamic import RoleInstance
+
+roles_cache = None
+teams_cache = None
+
+@database_sync_to_async
+def load_data():
+    global roles_cache
+    global teams_cache
+    if roles_cache is None:
+        roles_cache = list(Role.objects.select_related("branch").all())
+    if teams_cache is None:
+        teams_cache = list(Team.objects.all())
+    return roles_cache
 
 # You don't need to understand this code to be able to use the WebSocket.
 # What you need to know is that any message sent over the WebSocket should be an object
@@ -77,7 +94,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         """
         text_data JSON format:
         {
-            "channel": "messages" | "points" | "timer" | "units" | "users" | ...,
+            "channel": "chat" | "points" | "timer" | "units" | "users" | ...,
             "action": "send" | "start" | "move" | ...,
             "data": {...}
         }
@@ -96,11 +113,8 @@ class GameConsumer(AsyncWebsocketConsumer):
         handler = getattr(self, handler_name, None)
 
         if handler:
-            try:
-                target_group, send_data = await handler(data)
-            except Exception as e:
-                print(f"Error in handler {handler_name}: {e}")
-                target_group = None
+            target_group = None
+            target_group, send_data = await handler(data)
 
         if target_group:
             await self.channel_layer.group_send(
@@ -147,6 +161,9 @@ class GameConsumer(AsyncWebsocketConsumer):
     # The group containing just a specific user in the game,
     # Or if you raise an exception it won't be sent to anybody.
     async def handle_users_list(self, data):
+        """
+        data: {}
+        """
         redis_client = get_redis_client()
         role_key = f"game_{self.join_code}_role_instances"
 
@@ -158,6 +175,9 @@ class GameConsumer(AsyncWebsocketConsumer):
         return self.user_group, list(role_instances.values())
 
     async def handle_users_join(self, data):
+        """
+        data: RoleInstance
+        """
         user = self.scope["user"]
         if data.get("user", {}).get("username") != user.username:
             raise Exception(f"{user.username} tried joining as {data.get('user', {}).get('username')} in game '{self.join_code}'.")
@@ -167,6 +187,11 @@ class GameConsumer(AsyncWebsocketConsumer):
 
         if redis_client.hexists(role_key, user.id):
             raise Exception(f"{user.username} tried joining game '{self.join_code}', a game they had already joined.")
+        
+        roles, teams = await load_data()
+        self.channel_groups = get_user_channel_groups(self.join_code, data, roles, teams)
+        for group in self.channel_groups:
+            await self.channel_layer.group_add(group, self.channel_name)
 
         redis_client.hset(role_key, user.id, json.dumps(data))
 
@@ -176,19 +201,33 @@ class GameConsumer(AsyncWebsocketConsumer):
         return self.game_group, data
 
     async def handle_role_instances_delete(self, data):
+        """
+        data: RoleInstance
+        """
         recipient_id = data.get("id")
         if not recipient_id:
-            user = self.scope["user"]
+            user= self.scope["user"]
             raise Exception(f"{user.username} did not provide the id of the user whose role they're deleting.")
         target_group = f"game_{self.join_code}_user_{recipient_id}"
         return target_group, data
 
-    async def handle_messages_send(self, data):
-        recipient_id = data.get("id")
-        if not recipient_id:
-            user = self.scope["user"]
-            raise Exception(f"{user.username} did not provide the id of the user to whom they're sending a message.")
-        target_group = f"game_{self.join_code}_user_{recipient_id}"
+    async def handle_chat_list(self, data):
+        """
+        data: {}
+        """
+        # TODO
+        return self.user_group, data
+
+    async def handle_chat_send(self, data):
+        """
+        data: Message
+        """
+        sender_role = data["role_instance"]["role"]["name"].replace(" ", "") + "s"
+        recipient_role = data["channel"].replace(" ", "")   # frontend already appends "s"
+
+        a, b = sorted([sender_role, recipient_role])
+        target_group = f"game_{self.join_code}_channel_{a}_{b}"
+
         return target_group, data
 
 # ---------------- #
@@ -198,9 +237,9 @@ def get_redis_client():
     """Get the synchronous Redis client."""
     return cache.client.get_client(write=True)
 
-# -------------- #
-# game timer     #
-# -------------- #
+# -------------------- #
+# helper functions     #
+# -------------------- #
 async def start_timer(join_code, username):
     # I'm pretty sure this only works under the assumption that we are using one channel
     channel_layer = get_channel_layer()
@@ -217,16 +256,6 @@ async def start_timer(join_code, username):
 
     print(f"{username} started {join_code}'s timer.")
 
-    await channel_layer.group_send(
-        game_group,
-        {
-            "type": "handle.message",
-            "channel": "timer",
-            "action": "update",
-            "data": {"remaining": remaining},
-        },
-    )
-
     # while remaining > 0:
     #     await channel_layer.group_send(
     #         game_group,
@@ -242,3 +271,43 @@ async def start_timer(join_code, username):
 
     redis_client.delete(timer_key)
     print(f"Timer for game '{join_code}' finished.")
+
+
+def get_user_channel_groups(join_code, role_instance, roles):
+    groups = []
+    role_name = role_instance["role"]["name"]
+
+    if role_name == "Gamemaster":
+        groups = [r.name for r in roles]
+    
+    if role_name == "Combatant Commander":
+        groups = [role_name, "Gamemaster", "Ambassador"] + [r.name for r in roles if r.is_chief_of_staff]
+    
+    if role_name == "Ambassador":
+        groups = [role_name, "Gamemaster", "Combatant Commander"] + [r.name for r in roles if r.is_chief_of_staff]
+    
+    if role_instance["role"]["is_chief_of_staff"]:
+        groups = [role_name, "Gamemaster", "Combatant Commander"] + [r.name for r in roles if (r.is_commander and r.branch.name == role_instance["role"]["branch"]["name"])]
+    
+    if role_instance["role"]["is_commander"]:
+        groups = (
+            ["Gamemaster"] +
+            [r.name for r in roles if (r.is_chief_of_staff and r.branch.name == role_instance["role"]["branch"]["name"])] +
+            [r.name for r in roles if (r.is_commander and r.branch.name == role_instance["role"]["branch"]["name"])] +
+            [r.name for r in roles if (r.is_vice_commander and r.branch.name == role_instance["role"]["branch"]["name"])]
+        )
+    
+    if role_instance["role"]["is_vice_commander"]:
+        groups = (
+            ["Gamemaster"] +
+            [r.name for r in roles if (r.is_commander and r.branch.name == role_instance["role"]["branch"]["name"])] +
+            [r.name for r in roles if (r.is_vice_commander and r.branch.name == role_instance["role"]["branch"]["name"])]
+        )
+    
+    groups = [
+        f"game_{join_code}_channel_{a.replace(" ", "")}s_{b.replace(" ", "")}s"
+        for g in groups
+        for a, b in [sorted([role_name, g])]
+    ]
+
+    return groups

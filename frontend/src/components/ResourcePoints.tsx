@@ -42,7 +42,7 @@ export default function ResourcePoints({ joinCode, roleInstance }: ResourcePoint
                     onClick={() => setOpen(!open)}
                     className="text-sm bg-neutral-600 px-2 py-1 rounded hover:bg-neutral-500"
                 >
-                    {open ? '+' : '-'}
+                    {open ? '-' : '+'}
                 </button>
             </div>
             {open && (

@@ -14,6 +14,7 @@ interface AddUnitInstanceProps {
 
 export default function AddUnitInstance({ joinCode, socketRef, socketReady, units, teams }: AddUnitInstanceProps) {
     const authedFetch = useAuthedFetch();
+    const [open, setOpen] = useState<boolean>(true);
     
     const [unitName, setUnitName] = useState<string>('');
     const [teamName, setTeamName] = useState<string>('');
@@ -66,80 +67,97 @@ export default function AddUnitInstance({ joinCode, socketRef, socketReady, unit
     };
 
     return (
-    <div className="bg-neutral-700 rounded-2xl shadow-md p-6 mb-6">
-        <h3 className="text-xl font-semibold mb-4 text-white">Add Unit</h3>
-
-        {/* Unit + Team Selectors */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
-            <div>
-                <label className="block text-sm text-gray-300 mb-1">Unit</label>
-                <select
-                    value={unitName}
-                    onChange={e => setUnitName(e.target.value)}
-                    className="w-full p-2 rounded-lg bg-neutral-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                    <option value="">Select Unit</option>
-                    {units.map(u => (
-                        <option key={u.id} value={u.name}>
-                            {u.name}
-                        </option>
-                    ))}
-                </select>
-            </div>
-
-            <div>
-                <label className="block text-sm text-gray-300 mb-1">Team</label>
-                <select
-                    value={teamName}
-                    onChange={e => setTeamName(e.target.value)}
-                    className="w-full p-2 rounded-lg bg-neutral-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                    <option value="">Select Team</option>
-                    {teams.map(t => (
-                        <option key={t.id} value={t.name}>
-                            {t.name}
-                        </option>
-                    ))}
-                </select>
-            </div>
+    <div className="bg-neutral-700 rounded-lg mb-4 p-4">
+        <div className="flex justify-between items-center mb-2">
+            <h3 className="text-lg font-semibold">Add Unit</h3>
+            <button
+                onClick={() => setOpen(!open)}
+                className="text-sm bg-neutral-600 px-2 py-1 rounded hover:bg-neutral-500"
+            >
+                {open ? '-' : '+'}
+            </button>
         </div>
 
-        {/* Row + Column Inputs */}
-        <div className="grid grid-cols-2 gap-4 mb-4">
-            <div>
-                <label className="block text-sm text-gray-300 mb-1">Row</label>
-                <input
-                    type="number"
-                    placeholder="Row"
-                    value={row}
-                    onChange={e => setRow(e.target.value)}
-                    className="w-full p-2 rounded-lg bg-neutral-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-            </div>
-            <div>
-                <label className="block text-sm text-gray-300 mb-1">Column</label>
-                <input
-                    type="number"
-                    placeholder="Column"
-                    value={column}
-                    onChange={e => setColumn(e.target.value)}
-                    className="w-full p-2 rounded-lg bg-neutral-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
-                />
-            </div>
-        </div>
+        {open && (
+            <form
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    handleAddUnitInstance(joinCode, teamName, unitName, row, column);
+                }}
+            >
+                {/* Unit + Team Selectors */}
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label className="block text-sm text-gray-300 mb-1">Unit</label>
+                        <select
+                            value={unitName}
+                            onChange={e => setUnitName(e.target.value)}
+                            className="w-full p-2 rounded-lg bg-neutral-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            <option value="">Select Unit</option>
+                            {units.map(u => (
+                                <option key={u.id} value={u.name}>
+                                    {u.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
 
-        {/* Add Button */}
-        <button
-            onClick={() => handleAddUnitInstance(joinCode, teamName, unitName, row, column)}
-            disabled={creatingUnitInstance}
-            className={`w-full py-2 rounded-lg font-medium transition 
-                ${creatingUnitInstance
-                    ? "bg-gray-600 cursor-not-allowed text-gray-300"
-                    : "bg-green-600 hover:bg-green-500 text-white"
-                }`}
-        >
-            {creatingUnitInstance ? "Adding..." : "Add Unit"}
-        </button>
+                    <div>
+                        <label className="block text-sm text-gray-300 mb-1">Team</label>
+                        <select
+                            value={teamName}
+                            onChange={e => setTeamName(e.target.value)}
+                            className="w-full p-2 rounded-lg bg-neutral-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        >
+                            <option value="">Select Team</option>
+                            {teams.map(t => (
+                                <option key={t.id} value={t.name}>
+                                    {t.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                </div>
+
+                {/* Row + Column Inputs */}
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                    <div>
+                        <label className="block text-sm text-gray-300 mb-1">Row</label>
+                        <input
+                            type="number"
+                            placeholder="Row"
+                            value={row}
+                            onChange={e => setRow(e.target.value)}
+                            className="w-full p-2 rounded-lg bg-neutral-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm text-gray-300 mb-1">Column</label>
+                        <input
+                            type="number"
+                            placeholder="Column"
+                            value={column}
+                            onChange={e => setColumn(e.target.value)}
+                            className="w-full p-2 rounded-lg bg-neutral-700 text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        />
+                    </div>
+                </div>
+
+                {/* Add Button */}
+                <button
+                    type="submit"
+                    disabled={creatingUnitInstance}
+                    className={`w-full py-2 rounded-lg font-medium transition 
+                        ${creatingUnitInstance
+                            ? "bg-gray-600 cursor-not-allowed text-gray-300"
+                            : "bg-green-600 hover:bg-green-500 text-white"
+                        }`}
+                >
+                    {creatingUnitInstance ? "Adding..." : "Add Unit"}
+                </button>
+            </form>
+        )}
     </div>
 );
 

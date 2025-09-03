@@ -1,23 +1,24 @@
 'use client';
 
 import { useEffect, useState, RefObject } from 'react';
+import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 import ChatChannel from './ChatChannel';
-import { Message, RoleInstance } from '@/lib/Types';
+import { Message, Role, RoleInstance } from '@/lib/Types';
+import { getSessionStorageOrFetch } from '@/lib/utils';
 
 interface ChatProps {
     socketRef: RefObject<WebSocket | null>;
     socketReady: boolean;
+    userJoined: boolean;
     roleInstance: RoleInstance
 }
 
-export default function Chat({ socketRef, socketReady, roleInstance }: ChatProps) {
-    const [open, setOpen] = useState<boolean>(true);
+export default function Chat({ socketRef, socketReady, userJoined, roleInstance }: ChatProps) {
+    const authedFetch = useAuthedFetch();
 
-    // TODO: determine channels based on roleInstance
-    const channels = ["Combatant Commanders", "Air Force Operations Commander", "Air Force Logistics Commander"];
-    const [messages, setMessages] = useState<Record<string, Message[]>>(
-        () => Object.fromEntries(channels.map(ch => [ch, []]))
-    );
+    const [open, setOpen] = useState<boolean>(true);
+    const [userChannels, setUserChannels] = useState<string[]>([]);
+    const [messages, setMessages] = useState<Record<string, Message[]>>({});
     const [activeChannel, setActiveChannel] = useState<string | null>(null);
 
     // WebSocket setup
@@ -30,24 +31,15 @@ export default function Chat({ socketRef, socketReady, roleInstance }: ChatProps
             if (msg.channel === "chat") {
                 switch (msg.action) {
                     case "list": 
-                        {
-                            const chatChannel = msg.data.channel;
-                            const chatMessages = msg.data.messages;
-                            setMessages(prev => ({
-                                ...prev,
-                                [chatChannel]: chatMessages
-                            }));
-                        }
+                        // TODO
                         break;
                     case "send":
-                        {
-                            const chatChannel = msg.data.channel;
-                            const chatMessage = msg.data;
-                            setMessages(prev => ({
-                                ...prev,
-                                [chatChannel]: [...(prev[chatChannel] || []), chatMessage]
-                            }));
-                        }
+                        const chatChannel = determineDestinationChannel(roleInstance, msg.data);
+                        const chatMessage = msg.data;
+                        setMessages(prev => ({
+                            ...prev,
+                            [chatChannel]: [...(prev[chatChannel] || []), chatMessage]
+                        }));
                         break;
                 }
             }
@@ -58,7 +50,124 @@ export default function Chat({ socketRef, socketReady, roleInstance }: ChatProps
         return () => {
             cachedSocket.removeEventListener("message", handleChatMessage);
         };
-    }, [socketRef, socketReady]);
+    }, [socketRef, socketReady, roleInstance]);
+
+    // get list of roles (the channels) this user can message
+    useEffect(() => {
+        async function fetchRoles() {
+            if (!socketReady || !socketRef.current || !userJoined || !roleInstance) return;
+
+            try {
+                const data = await getSessionStorageOrFetch<Role[]>("roles", async () => {
+                    const res = await authedFetch("/api/roles/");
+                    if (!res.ok) throw new Error(`Role fetch failed with ${res.status}`);
+                    return res.json();
+                });
+
+                const channels = getUserChannels(roleInstance, data);
+                setUserChannels(channels);
+                setMessages(Object.fromEntries(channels.map(ch => [ch, []])));
+
+                if (socketRef.current?.readyState === WebSocket.OPEN) {
+                    socketRef.current.send(JSON.stringify({
+                        channel: "chat",
+                        action: "list",
+                        data: {}
+                    }));
+                }
+            } catch (err: unknown) {
+                console.error(err);
+                if (err instanceof Error) {
+                    alert(err.message);
+                }
+            }
+        }
+
+        fetchRoles();
+    }, [socketRef, socketReady, userJoined, roleInstance]);
+
+    function getUserChannels(roleInstance: RoleInstance, roles: Role[]): string[] {
+        let channels: string[] = [];
+        const r = roleInstance.role;
+
+        if (r.name === "Gamemaster") {
+            channels = roles.map(role => role.name);
+        }
+
+        if (r.name === "Combatant Commander") {
+            channels = [
+                r.name,
+                "Gamemaster",
+                "Ambassador",
+                ...roles.filter(role => role.is_chief_of_staff).map(role => role.name)
+            ];
+        }
+
+        if (r.name === "Ambassador") {
+            channels = [
+                r.name,
+                "Gamemaster",
+                "Combatant Commander",
+                ...roles.filter(role => role.is_chief_of_staff).map(role => role.name)
+            ];
+        }
+
+        if (r.is_chief_of_staff) {
+            channels = [
+                r.name,
+                "Gamemaster",
+                "Combatant Commander",
+                ...roles
+                    .filter(role => role.is_commander && role.branch === r.branch)
+                    .map(role => role.name)
+            ];
+        }
+
+        if (r.is_commander) {
+            channels = [
+                "Gamemaster",
+                ...roles
+                    .filter(role => role.is_chief_of_staff && role.branch === r.branch)
+                    .map(role => role.name),
+                ...roles
+                    .filter(role => role.is_commander && role.branch === r.branch)
+                    .map(role => role.name),
+                ...roles
+                    .filter(role => role.is_vice_commander && role.branch === r.branch)
+                    .map(role => role.name),
+            ];
+        }
+
+        if (r.is_vice_commander) {
+            channels = [
+                "Gamemaster",
+                ...roles
+                    .filter(role => role.is_commander && role.branch === r.branch)
+                    .map(role => role.name),
+                ...roles
+                    .filter(role => role.is_vice_commander && role.branch === r.branch)
+                    .map(role => role.name),
+            ];
+        }
+
+        return channels.map(channel => channel + "s");
+    }
+
+    function determineDestinationChannel(roleInstance: RoleInstance, message: Message): string {
+        const sender_role = message.role_instance.role.name + "s";
+        const destination_role = message.channel;
+        const recipient_role = roleInstance.role.name + "s";
+
+        if (recipient_role == destination_role) {
+            return sender_role;
+        }
+
+        if (recipient_role == sender_role) {
+            return destination_role;
+        }
+
+        throw Error("The user who received this message is neither the sender nor recipient");
+    }
 
     return (
         <div className="bg-neutral-700 rounded-lg mb-4 p-4">
@@ -68,7 +177,7 @@ export default function Chat({ socketRef, socketReady, roleInstance }: ChatProps
                     onClick={() => setOpen(!open)}
                     className="text-sm bg-neutral-600 px-2 py-1 rounded hover:bg-neutral-500"
                 >
-                    {open ? '+' : '-'}
+                    {open ? '-' : '+'}
                 </button>
             </div>
 
@@ -84,17 +193,20 @@ export default function Chat({ socketRef, socketReady, roleInstance }: ChatProps
                             onBack={() => setActiveChannel(null)}
                         />
                     ) : (
-                        <ul className="space-y-2">
-                            {channels.map(channel => (
-                                <li
-                                    key={channel}
-                                    className="cursor-pointer bg-neutral-600 hover:bg-neutral-500 rounded px-3 py-2"
-                                    onClick={() => setActiveChannel(channel)}
-                                >
-                                    {channel}
-                                </li>
-                            ))}
-                        </ul>
+                        <div className="overflow-y-auto">
+                            <h4 className="text-lg font-semibold">Select a channel...</h4>
+                            <ul className="space-y-2">
+                                {userChannels.map(channel => (
+                                    <li
+                                        key={channel}
+                                        className="cursor-pointer bg-neutral-600 hover:bg-neutral-500 rounded px-3 py-2"
+                                        onClick={() => setActiveChannel(channel)}
+                                    >
+                                        {channel}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
                     )}
                 </div>
             )}

@@ -18,6 +18,9 @@ export default function ChatChannel({ socketRef, socketReady, roleInstance, chan
     const [input, setInput] = useState("");
     const [sendingMessage, setSendingMessage] = useState<boolean>(false);
     const containerRef = useRef<HTMLDivElement | null>(null);
+    const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+    const maxLength = 400;
 
     // make channel messages scroll to bottom if current scroll is near bottom when a message is sent
     useEffect(() => {
@@ -62,7 +65,10 @@ export default function ChatChannel({ socketRef, socketReady, roleInstance, chan
                 }));
             }
 
-            setInput('');
+            setInput("");
+            if (textareaRef.current) {
+                textareaRef.current.style.height = "auto";
+            }
 
         } catch (err: unknown) {
             console.error(err);
@@ -104,18 +110,23 @@ export default function ChatChannel({ socketRef, socketReady, roleInstance, chan
                 }}
             >
                 <div className="flex gap-2">
-                    <input
-                        type="text"
+                    <textarea
+                        ref={textareaRef}
                         placeholder="Send message..."
                         value={input}
-                        onChange={e => setInput(e.target.value)}
-                        className="flex-1 p-2 rounded-lg bg-neutral-700 text-white"
+                        onChange={e => {
+                            setInput(e.target.value);
+                            e.target.style.height = "auto";
+                            e.target.style.height = `${e.target.scrollHeight}px`;
+                        }}
+                        rows={1}
+                        className="flex-1 p-2 rounded-lg bg-neutral-700 text-white resize-none overflow-hidden"
                     />
                     <button
                         type="submit"
-                        disabled={sendingMessage}
+                        disabled={sendingMessage || input.length > maxLength}
                         className={`px-4 py-2 rounded-lg font-medium transition 
-                            ${sendingMessage
+                            ${sendingMessage || input.length > maxLength
                                 ? "bg-gray-600 cursor-not-allowed text-gray-300"
                                 : "bg-green-600 hover:bg-green-500 text-white"
                             }
