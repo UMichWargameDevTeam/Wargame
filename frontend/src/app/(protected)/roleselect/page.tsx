@@ -58,6 +58,7 @@ export default function RoleSelectPage() {
             setSessionRoleInstance(roleInstance);
             setJoinCode(roleInstance.team_instance.game_instance.join_code);
             setSelectedTeam(roleInstance.team_instance.team.name);
+            setSelectedBranch(roleInstance.role.branch?.name || null);
             setSelectedRole(roleInstance.role.name);
         }
 

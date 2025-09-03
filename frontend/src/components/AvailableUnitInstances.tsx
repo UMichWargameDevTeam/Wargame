@@ -21,7 +21,7 @@ export default function AvailableUnitInstances({ socketRef, socketReady, roleIns
 
     const handleDeleteUnitInstance = async (unitId: number) => {
         if (!socketReady) return;
-        if (!confirm("Are you sure you want to delete this Unit Instance?")) return;
+        if (!confirm("Are you sure you want to delete this unit?")) return;
 
         try {
             setDeletingUnitInstance(unitId);
@@ -31,7 +31,7 @@ export default function AvailableUnitInstances({ socketRef, socketReady, roleIns
             
             if (!res.ok) {
                 const data = await res.json();
-                throw new Error(data.error || data.detail || 'Failed to delete unit instance.');
+                throw new Error(data.error || data.detail || 'Failed to delete unit.');
             }
 
             if (socketRef.current?.readyState === WebSocket.OPEN) {
@@ -62,11 +62,14 @@ export default function AvailableUnitInstances({ socketRef, socketReady, roleIns
                     onClick={() => setOpen(!open)}
                     className="text-sm bg-neutral-600 px-2 py-1 rounded hover:bg-neutral-500"
                 >
-                    {open ? '+' : '-'}
+                    {open ? '-' : '+'}
                 </button>
             </div>
             {open && (
                 <div className="space-y-2">
+                    {unitInstances.length == 0 && (
+                        <p>There are no units on the board.</p>
+                    )}
                     {unitInstances.map(unitInstance => (
                         <div
                             key={unitInstance.id}

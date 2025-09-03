@@ -7,10 +7,11 @@ import { RoleInstance } from '@/lib/Types'
 interface UsersListProps {
     socketRef: RefObject<WebSocket | null>;
     socketReady: boolean;
+    setUserJoined: React.Dispatch<React.SetStateAction<boolean>>;
     roleInstance: RoleInstance | null;
 }
 
-export default function UsersList({ socketRef, socketReady, roleInstance }: UsersListProps) {
+export default function UsersList({ socketRef, socketReady, setUserJoined, roleInstance }: UsersListProps) {
     const authedFetch = useAuthedFetch();
     
     const [roleInstances, setRoleInstances] = useState<RoleInstance[]>([]);
@@ -35,6 +36,9 @@ export default function UsersList({ socketRef, socketReady, roleInstance }: User
                         break;
                     case "join":
                         setRoleInstances(prev => [...prev, msg.data]);
+                        if (msg.data.user.id == roleInstance?.user.id) {
+                            setUserJoined(true);
+                        }
                         break;
                     case "leave":
                         setRoleInstances(prev => prev.filter(r => r.id !== msg.data.id));
@@ -48,11 +52,11 @@ export default function UsersList({ socketRef, socketReady, roleInstance }: User
         return () => {
             cachedSocket.removeEventListener("message", handleUsersMessage);
         };
-    }, [socketRef, socketReady, roleInstance]);
+    }, [socketRef, socketReady, roleInstance, setUserJoined]);
 
     const handleDeleteRoleInstance = async (roleId: number) => {
         if (!socketReady || !socketRef.current) return;
-        if (!confirm("Are you sure you want to delete this Role Instance?")) return;
+        if (!confirm("Are you sure you want to delete this user's role?")) return;
 
         try {
             setDeletingRoleInstance(roleId);
@@ -62,7 +66,7 @@ export default function UsersList({ socketRef, socketReady, roleInstance }: User
 
             if (!res.ok) {
                 const data = await res.json();
-                throw new Error(data.error || data.detail || 'Failed to delete role instance.');
+                throw new Error(data.error || data.detail || "Failed to delete this user's role.");
             }
 
             const roleUserId = roleInstances.find(ri => ri.id === roleId)?.user.id;

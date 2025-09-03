@@ -65,11 +65,11 @@ class GetEndpointTests(TestCase):
     def test_get_units(self):
         self.client.force_authenticate(user=self.user)
         unit_name = quote("B-2 Spirit")
-        response = self.client.get(f'/api/units/{unit_name}/')
+        response = self.client.get(f"/api/units/{unit_name}/")
         self.assertEqual(response.status_code, 200)
     
     def test_get_unit_instances_by_team_and_branch(self):
-        url = f'/api/game-instances/{self.game_instance.join_code}/team-instances/{self.team.name}/branch/{self.unit.branches.all()[0].name}/unit-instances/'
+        url = f"/api/game-instances/{self.game_instance.join_code}/team-instances/{self.team.name}/branch/{self.unit.branches.all()[0].name}/unit-instances/"
         response = self.client.get(url)
         self.assertEqual(response.status_code, 200)
 

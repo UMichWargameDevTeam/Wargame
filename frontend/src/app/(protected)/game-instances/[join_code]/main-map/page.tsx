@@ -17,6 +17,7 @@ import GamemasterMenu from '@/components/GamemasterMenu';
 import SendResourcePoints from '@/components/SendResourcePoints';
 import Timer from '@/components/Timer';
 import UsersList from '@/components/UsersList';
+import Chat from '@/components/chat/Chat';
 import { Team, Unit, RoleInstance, UnitInstance } from '@/lib/Types'
 
 
@@ -36,6 +37,7 @@ export default function MainMapPage() {
 
     const socketRef = useRef<WebSocket | null>(null);
     const [socketReady, setSocketReady] = useState<boolean>(false);
+    const [userJoined, setUserJoined] = useState<boolean>(false);
 
     const [teams, setTeams] = useState<Team[]>([]);
     const [units, setUnits] = useState<Unit[]>([]);
@@ -247,7 +249,14 @@ export default function MainMapPage() {
                         <UsersList
                             socketRef={socketRef}
                             socketReady={socketReady}
+                            setUserJoined={setUserJoined}
                             roleInstance={roleInstance}
+                        />
+                        <Chat
+                            socketRef={socketRef}
+                            socketReady={socketReady}
+                            userJoined={userJoined}
+                            viewerRoleInstance={roleInstance}
                         />
                         <MapSelector
                             initialMap={mapSrc}
@@ -268,7 +277,14 @@ export default function MainMapPage() {
                         <UsersList
                             socketRef={socketRef}
                             socketReady={socketReady}
+                            setUserJoined={setUserJoined}
                             roleInstance={roleInstance}
+                        />
+                        <Chat
+                            socketRef={socketRef}
+                            socketReady={socketReady}
+                            userJoined={userJoined}
+                            viewerRoleInstance={roleInstance}
                         />
                         <AvailableUnitInstances
                             socketRef={socketRef}
@@ -282,13 +298,37 @@ export default function MainMapPage() {
                         />
                     </>
                 )}
+                {/* Menu for Ambassador */}
+                {roleInstance?.role.name == "Ambassador" && (
+                    <>
+                        <UsersList
+                            socketRef={socketRef}
+                            socketReady={socketReady}
+                            setUserJoined={setUserJoined}
+                            roleInstance={roleInstance}
+                        />
+                        <Chat
+                            socketRef={socketRef}
+                            socketReady={socketReady}
+                            userJoined={userJoined}
+                            viewerRoleInstance={roleInstance}
+                        />
+                    </>
+                )}
                 {/* Menu for Combatant Commander */}
                 {roleInstance?.role.name == "Combatant Commander" && (
                     <>
                         <UsersList
                             socketRef={socketRef}
                             socketReady={socketReady}
+                            setUserJoined={setUserJoined}
                             roleInstance={roleInstance}
+                        />
+                        <Chat
+                            socketRef={socketRef}
+                            socketReady={socketReady}
+                            userJoined={userJoined}
+                            viewerRoleInstance={roleInstance}
                         />
                         <JTFMenu />
                         <SendResourcePoints />
@@ -300,7 +340,14 @@ export default function MainMapPage() {
                         <UsersList
                             socketRef={socketRef}
                             socketReady={socketReady}
+                            setUserJoined={setUserJoined}
                             roleInstance={roleInstance}
+                        />
+                        <Chat
+                            socketRef={socketRef}
+                            socketReady={socketReady}
+                            userJoined={userJoined}
+                            viewerRoleInstance={roleInstance}
                         />
                         <MapSelector
                             initialMap={mapSrc}
