@@ -3,7 +3,7 @@
 import { useEffect, useState, RefObject } from 'react';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 import ChatChannel from './ChatChannel';
-import { Message, Role, RoleInstance } from '@/lib/Types';
+import { Team, Role, RoleInstance, Message } from '@/lib/Types';
 import { getSessionStorageOrFetch } from '@/lib/utils';
 
 interface ChatProps {
@@ -17,6 +17,10 @@ export default function Chat({ socketRef, socketReady, userJoined, roleInstance 
     const authedFetch = useAuthedFetch();
 
     const [open, setOpen] = useState<boolean>(true);
+
+    const [teams, setTeams] = useState<Team[] | null>(null);
+    const [roles, setRoles] = useState<Role[] | null>(null);
+
     const [userChannels, setUserChannels] = useState<string[]>([]);
     const [messages, setMessages] = useState<Record<string, Message[]>>({});
     const [activeChannel, setActiveChannel] = useState<string | null>(null);
@@ -34,9 +38,14 @@ export default function Chat({ socketRef, socketReady, userJoined, roleInstance 
                     case "list": 
                         // TODO
                         break;
+
                     case "send":
-                        const chatChannel = determineDestinationChannel(roleInstance, msg.data);
+                        if (!teams || !roles) return;
+
+                        const chatChannel = determineDestinationChannel(teams, roles, roleInstance, msg.data);
+                        console.log(chatChannel);
                         const chatMessage = msg.data;
+
                         setMessages(prev => ({
                             ...prev,
                             [chatChannel]: [...(prev[chatChannel] || []), chatMessage]
@@ -64,13 +73,21 @@ export default function Chat({ socketRef, socketReady, userJoined, roleInstance 
             if (!socketReady || !socketRef.current || !userJoined || !roleInstance) return;
 
             try {
-                const data = await getSessionStorageOrFetch<Role[]>("roles", async () => {
+                const roleData = await getSessionStorageOrFetch<Role[]>("roles", async () => {
                     const res = await authedFetch("/api/roles/");
                     if (!res.ok) throw new Error(`Role fetch failed with ${res.status}`);
                     return res.json();
                 });
+                setRoles(roleData);
 
-                const channels = getUserChannels(roleInstance, data);
+                const teamData = await getSessionStorageOrFetch<Team[]>("teams", async () => {
+                    const res = await authedFetch("/api/teams/");
+                    if (!res.ok) throw new Error(`Team fetch failed with ${res.status}`);
+                    return res.json();
+                });
+                setTeams(teamData);
+
+                const channels = getUserChannels(teamData, roleData, roleInstance);
                 setUserChannels(channels);
                 setMessages(Object.fromEntries(channels.map(ch => [ch, []])));
 
@@ -78,7 +95,7 @@ export default function Chat({ socketRef, socketReady, userJoined, roleInstance 
                     socketRef.current.send(JSON.stringify({
                         channel: "chat",
                         action: "list",
-                        data: {}
+                        roleData: {}
                     }));
                 }
             } catch (err: unknown) {
@@ -92,12 +109,21 @@ export default function Chat({ socketRef, socketReady, userJoined, roleInstance 
         fetchRoles();
     }, [socketRef, socketReady, userJoined, roleInstance]);
 
-    function getUserChannels(roleInstance: RoleInstance, roles: Role[]): string[] {
+    function getUserChannels(teams: Team[], roles: Role[], roleInstance: RoleInstance): string[] {
         let channels: string[] = [];
         const r = roleInstance.role;
 
         if (r.name === "Gamemaster") {
-            channels = roles.map(role => role.name);
+            channels = [
+                "Gamemaster",
+                ...teams.flatMap(team =>
+                    team.name === "Gamemasters"
+                        ? []
+                        : roles
+                            .filter(role => role.name !== "Gamemaster")
+                            .map(role => `${team.name} ${role.name}`)
+                ),
+            ];
         }
 
         if (r.name === "Combatant Commander") {
@@ -111,10 +137,12 @@ export default function Chat({ socketRef, socketReady, userJoined, roleInstance 
 
         if (r.name === "Ambassador") {
             channels = [
-                r.name,
                 "Gamemaster",
                 "Combatant Commander",
-                ...roles.filter(role => role.is_chief_of_staff).map(role => role.name)
+                ...roles.filter(role => role.is_chief_of_staff).map(role => role.name),
+                ...teams
+                    .filter(team => team.name !== "Gamemasters")
+                    .map(team => `${team.name} Ambassador`),
             ];
         }
 
@@ -156,23 +184,30 @@ export default function Chat({ socketRef, socketReady, userJoined, roleInstance 
             ];
         }
 
-        return channels;
+        return channels.sort();
     }
 
-    function determineDestinationChannel(roleInstance: RoleInstance, message: Message): string {
-        const sender_role = message.role_instance.role.name;
-        const destination_role = message.channel;
-        const recipient_role = roleInstance.role.name;
+    function determineDestinationChannel(teams: Team[], roles: Role[],  roleInstance: RoleInstance, message: Message): string {
+        const senderRole = message.role_instance.role.name;
+        const senderTeam = message.role_instance.team_instance.team.name;
+        const recipientRole = roleInstance.role.name;
+        const recipientTeam = roleInstance.team_instance.team.name;
 
-        if (recipient_role == destination_role) {
-            return sender_role;
+        if (senderRole === recipientRole && senderTeam == recipientTeam) {
+            return message.channel;
         }
 
-        if (recipient_role == sender_role) {
-            return destination_role;
+        if (senderRole === "Gamemaster") {
+            return "Gamemaster";
         }
 
-        throw Error("The user who received this message is neither the sender nor recipient");
+        const teamRoleChannel = `${senderTeam} ${senderRole}`;
+        const recipientChannels = getUserChannels(teams, roles, roleInstance);
+        if (recipientChannels.includes(teamRoleChannel)) {
+            return teamRoleChannel;
+        }
+
+        return senderRole;
     }
 
     return (
