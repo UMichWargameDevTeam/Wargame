@@ -56,7 +56,7 @@ export default function UsersList({ socketRef, socketReady, setUserJoined, roleI
 
     const handleDeleteRoleInstance = async (roleId: number) => {
         if (!socketReady || !socketRef.current) return;
-        if (!confirm("Are you sure you want to delete this Role Instance?")) return;
+        if (!confirm("Are you sure you want to delete this user's role?")) return;
 
         try {
             setDeletingRoleInstance(roleId);
@@ -66,7 +66,7 @@ export default function UsersList({ socketRef, socketReady, setUserJoined, roleI
 
             if (!res.ok) {
                 const data = await res.json();
-                throw new Error(data.error || data.detail || 'Failed to delete role instance.');
+                throw new Error(data.error || data.detail || "Failed to delete this user's role.");
             }
 
             const roleUserId = roleInstances.find(ri => ri.id === roleId)?.user.id;

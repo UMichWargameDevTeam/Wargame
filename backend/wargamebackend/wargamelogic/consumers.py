@@ -8,18 +8,18 @@ from django.contrib.auth.models import User
 from wargamelogic.models.static import Team, Role
 from wargamelogic.models.dynamic import RoleInstance
 
-roles_cache = None
 teams_cache = None
+roles_cache = None
 
 @database_sync_to_async
 def load_data():
-    global roles_cache
     global teams_cache
-    if roles_cache is None:
-        roles_cache = list(Role.objects.select_related("branch").all())
+    global roles_cache
     if teams_cache is None:
         teams_cache = list(Team.objects.all())
-    return roles_cache
+    if roles_cache is None:
+        roles_cache = list(Role.objects.select_related("branch").all())
+    return teams_cache, roles_cache
 
 # You don't need to understand this code to be able to use the WebSocket.
 # What you need to know is that any message sent over the WebSocket should be an object
@@ -188,8 +188,8 @@ class GameConsumer(AsyncWebsocketConsumer):
         if redis_client.hexists(role_key, user.id):
             raise Exception(f"{user.username} tried joining game '{self.join_code}', a game they had already joined.")
         
-        roles, teams = await load_data()
-        self.channel_groups = get_user_channel_groups(self.join_code, data, roles, teams)
+        teams, roles = await load_data()
+        self.channel_groups = get_user_channel_groups(self.join_code, teams, roles, data)
         for group in self.channel_groups:
             await self.channel_layer.group_add(group, self.channel_name)
 
@@ -222,8 +222,8 @@ class GameConsumer(AsyncWebsocketConsumer):
         """
         data: Message
         """
-        sender_role = data["role_instance"]["role"]["name"].replace(" ", "") + "s"
-        recipient_role = data["channel"].replace(" ", "")   # frontend already appends "s"
+        sender_role = data["role_instance"]["role"]["name"].replace(" ", "")
+        recipient_role = data["channel"].replace(" ", "")
 
         a, b = sorted([sender_role, recipient_role])
         target_group = f"game_{self.join_code}_channel_{a}_{b}"
@@ -273,7 +273,7 @@ async def start_timer(join_code, username):
     print(f"Timer for game '{join_code}' finished.")
 
 
-def get_user_channel_groups(join_code, role_instance, roles):
+def get_user_channel_groups(join_code, teams, roles, role_instance):
     groups = []
     role_name = role_instance["role"]["name"]
 
@@ -305,7 +305,7 @@ def get_user_channel_groups(join_code, role_instance, roles):
         )
     
     groups = [
-        f"game_{join_code}_channel_{a.replace(" ", "")}s_{b.replace(" ", "")}s"
+        f"game_{join_code}_channel_{a.replace(" ", "")}_{b.replace(" ", "")}"
         for g in groups
         for a, b in [sorted([role_name, g])]
     ]

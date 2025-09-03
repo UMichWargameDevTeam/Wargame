@@ -19,7 +19,7 @@ export default function GamemasterMenu({ joinCode, socketRef, socketReady, roleI
 
     const handleDeleteGame = async () => {
         if (!socketReady || !socketRef.current) return;
-        if (!confirm("Are you sure you want to delete this Game Instance?")) return;
+        if (!confirm("Are you sure you want to delete this game?")) return;
 
         try {
             setDeletingGame(true);
@@ -29,7 +29,7 @@ export default function GamemasterMenu({ joinCode, socketRef, socketReady, roleI
 
             if (!res.ok) {
                 const data = await res.json();
-                throw new Error(data.error || data.detail || "Failed to delete game.");
+                throw new Error(data.error || data.detail || "Failed to delete this game.");
             }
 
             if (socketRef.current?.readyState === WebSocket.OPEN) {

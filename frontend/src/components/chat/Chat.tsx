@@ -20,6 +20,7 @@ export default function Chat({ socketRef, socketReady, userJoined, roleInstance 
     const [userChannels, setUserChannels] = useState<string[]>([]);
     const [messages, setMessages] = useState<Record<string, Message[]>>({});
     const [activeChannel, setActiveChannel] = useState<string | null>(null);
+    const [unreadChannels, setUnreadChannels] = useState<string[]>([]);
 
     // WebSocket setup
     useEffect(() => {
@@ -40,6 +41,11 @@ export default function Chat({ socketRef, socketReady, userJoined, roleInstance 
                             ...prev,
                             [chatChannel]: [...(prev[chatChannel] || []), chatMessage]
                         }));
+                        if (chatChannel !== activeChannel) {
+                            setUnreadChannels(prev =>
+                                prev.includes(msg.channel) ? prev : [...prev, chatChannel]
+                            );
+                        }
                         break;
                 }
             }
@@ -50,7 +56,7 @@ export default function Chat({ socketRef, socketReady, userJoined, roleInstance 
         return () => {
             cachedSocket.removeEventListener("message", handleChatMessage);
         };
-    }, [socketRef, socketReady, roleInstance]);
+    }, [socketRef, socketReady, roleInstance, activeChannel]);
 
     // get list of roles (the channels) this user can message
     useEffect(() => {
@@ -150,13 +156,13 @@ export default function Chat({ socketRef, socketReady, userJoined, roleInstance 
             ];
         }
 
-        return channels.map(channel => channel + "s");
+        return channels;
     }
 
     function determineDestinationChannel(roleInstance: RoleInstance, message: Message): string {
-        const sender_role = message.role_instance.role.name + "s";
+        const sender_role = message.role_instance.role.name;
         const destination_role = message.channel;
-        const recipient_role = roleInstance.role.name + "s";
+        const recipient_role = roleInstance.role.name;
 
         if (recipient_role == destination_role) {
             return sender_role;
@@ -200,9 +206,20 @@ export default function Chat({ socketRef, socketReady, userJoined, roleInstance 
                                     <li
                                         key={channel}
                                         className="cursor-pointer bg-neutral-600 hover:bg-neutral-500 rounded px-3 py-2"
-                                        onClick={() => setActiveChannel(channel)}
+                                        onClick={() => {
+                                            setActiveChannel(channel);
+                                            setUnreadChannels(prev => prev.filter(c => c !== channel));
+                                        }}
                                     >
-                                        {channel}
+                                        {unreadChannels.includes(channel) ? (
+                                            <div className="font-semibold">
+                                                <span className="text-red-400">! </span> # {channel}
+                                            </div>
+                                        ) : (
+                                            <>
+                                                # {channel}
+                                            </>
+                                        )}
                                     </li>
                                 ))}
                             </ul>

@@ -17,18 +17,30 @@ export default function ChatChannel({ socketRef, socketReady, roleInstance, chan
 
     const [input, setInput] = useState("");
     const [sendingMessage, setSendingMessage] = useState<boolean>(false);
-    const containerRef = useRef<HTMLDivElement | null>(null);
+    const messagesDivRef = useRef<HTMLDivElement | null>(null);
+    const wasAtBottomRef = useRef(true);
     const textareaRef = useRef<HTMLTextAreaElement | null>(null);
 
     const maxLength = 400;
 
-    // make channel messages scroll to bottom if current scroll is near bottom when a message is sent
     useEffect(() => {
-        if (!containerRef.current) return;
-        const container = containerRef.current;
-        const isAtBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+        if (!messagesDivRef.current) return;
+        const container = messagesDivRef.current;
 
-        if (isAtBottom) {
+        const handleScroll = () => {
+            wasAtBottomRef.current = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+        };
+
+        container.addEventListener('scroll', handleScroll);
+        return () => container.removeEventListener('scroll', handleScroll);
+    }, []);
+
+    // auto-scroll to bottom if scroll was already near bottom when new message is sent
+    useEffect(() => {
+        if (!messagesDivRef.current) return;
+        const container = messagesDivRef.current;
+
+        if (wasAtBottomRef.current) {
             requestAnimationFrame(() => {
                 container.scrollTop = container.scrollHeight;
             });
@@ -37,13 +49,36 @@ export default function ChatChannel({ socketRef, socketReady, roleInstance, chan
 
     // when opening a new channel, set scroll to the bottom of the channel
     useEffect(() => {
-        if (!containerRef.current) return;
-        const container = containerRef.current;
+        if (!messagesDivRef.current) return;
+        const container = messagesDivRef.current;
 
         requestAnimationFrame(() => {
             container.scrollTop = container.scrollHeight;
         });
     }, [channel]);
+
+    const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+        const textarea = e.target;
+        const value = textarea.value;
+
+        const container = messagesDivRef.current;
+        const isAtBottom = container
+            ? container.scrollHeight - container.scrollTop - container.clientHeight < 2
+            : true;
+
+        if (value.length <= maxLength) {
+            setInput(value);
+            textarea.style.height = "auto";
+            textarea.style.height = `${textarea.scrollHeight}px`;
+        } else {
+            setInput(value.slice(0, maxLength));
+        }
+
+        if (container && isAtBottom) {
+            container.scrollTop = container.scrollHeight;
+        }
+    };
+
 
     const handleSendMessage = () => {
         if (!socketReady || !input.trim()) return;
@@ -90,15 +125,19 @@ export default function ChatChannel({ socketRef, socketReady, roleInstance, chan
                 >
                     {"< Back"}
                 </button>
-                <h4 className="text-lg font-semibold">{channel}</h4>
+                <h4 className="text-lg font-semibold"># {channel}</h4>
             </div>
 
-            <div ref={containerRef} className="overflow-y-auto">
-                {messages.map((message) => (
+            <div ref={messagesDivRef} className="overflow-y-auto">
+                {messages.length == 0 && (
+                    <p className="text-sm text-gray-400">Be the first to send a message in this channel...</p>
+                )}
+                {messages.map((message, index) => (
                     <ChatMessage
                         key={message.id}
                         roleInstance={roleInstance}
                         message={message}
+                        previousSender={index > 0 ? messages[index - 1].role_instance.user.id : null}
                     />
                 ))}
             </div>
@@ -109,15 +148,17 @@ export default function ChatChannel({ socketRef, socketReady, roleInstance, chan
                     handleSendMessage();
                 }}
             >
-                <div className="flex gap-2">
+                <div className="flex gap-2 mt-3">
                     <textarea
                         ref={textareaRef}
                         placeholder="Send message..."
                         value={input}
-                        onChange={e => {
-                            setInput(e.target.value);
-                            e.target.style.height = "auto";
-                            e.target.style.height = `${e.target.scrollHeight}px`;
+                        onChange={handleInputChange}
+                        onKeyDown={(e) => {
+                            if (e.key === "Enter" && !e.shiftKey) {
+                                e.preventDefault();
+                                handleSendMessage();
+                            }
                         }}
                         rows={1}
                         className="flex-1 p-2 rounded-lg bg-neutral-700 text-white resize-none overflow-hidden"
