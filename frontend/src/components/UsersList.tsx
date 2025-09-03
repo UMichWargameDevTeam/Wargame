@@ -52,7 +52,7 @@ export default function UsersList({ socketRef, socketReady, setUserJoined, roleI
         return () => {
             cachedSocket.removeEventListener("message", handleUsersMessage);
         };
-    }, [socketRef, socketReady, roleInstance]);
+    }, [socketRef, socketReady, roleInstance, setUserJoined]);
 
     const handleDeleteRoleInstance = async (roleId: number) => {
         if (!socketReady || !socketRef.current) return;

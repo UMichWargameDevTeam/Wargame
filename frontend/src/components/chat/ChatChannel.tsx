@@ -7,21 +7,27 @@ import { Message, RoleInstance } from '@/lib/Types';
 interface ChatChannelProps {
     socketRef: RefObject<WebSocket | null>;
     socketReady: boolean;
-    roleInstance: RoleInstance
-    channel: string;
+    viewerRoleInstance: RoleInstance;
+    destinationTeamName: string;
+    destinationRoleName: string;
     messages: Message[];
     onBack: () => void;
 }
 
-export default function ChatChannel({ socketRef, socketReady, roleInstance, channel, messages, onBack }: ChatChannelProps) {
+export default function ChatChannel({ socketRef, socketReady, viewerRoleInstance, destinationTeamName, destinationRoleName, messages, onBack }: ChatChannelProps) {
+    const MAX_MESSAGE_LENGTH = 400;
+    const SEND_DEBOUNCE_MS = 2000;
 
     const [input, setInput] = useState("");
     const [sendingMessage, setSendingMessage] = useState<boolean>(false);
+
     const messagesDivRef = useRef<HTMLDivElement | null>(null);
     const wasAtBottomRef = useRef(true);
     const textareaRef = useRef<HTMLTextAreaElement | null>(null);
+    const lastSendTimeRef = useRef<number>(0);
 
-    const maxLength = 400;
+    const channelKey = `${destinationTeamName} ${destinationRoleName}`;
+    const channelDisplayName = destinationRoleName === "Gamemaster" ? destinationRoleName : channelKey;
 
     useEffect(() => {
         if (!messagesDivRef.current) return;
@@ -55,7 +61,7 @@ export default function ChatChannel({ socketRef, socketReady, roleInstance, chan
         requestAnimationFrame(() => {
             container.scrollTop = container.scrollHeight;
         });
-    }, [channel]);
+    }, [destinationTeamName, destinationRoleName]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const textarea = e.target;
@@ -66,12 +72,12 @@ export default function ChatChannel({ socketRef, socketReady, roleInstance, chan
             ? container.scrollHeight - container.scrollTop - container.clientHeight < 2
             : true;
 
-        if (value.length <= maxLength) {
+        if (value.length <= MAX_MESSAGE_LENGTH) {
             setInput(value);
             textarea.style.height = "auto";
             textarea.style.height = `${textarea.scrollHeight}px`;
         } else {
-            setInput(value.slice(0, maxLength));
+            setInput(value.slice(0, MAX_MESSAGE_LENGTH));
         }
 
         if (container && isAtBottom) {
@@ -79,9 +85,14 @@ export default function ChatChannel({ socketRef, socketReady, roleInstance, chan
         }
     };
 
-
     const handleSendMessage = () => {
         if (!socketReady || !input.trim()) return;
+
+        const now = Date.now();
+        if (now - lastSendTimeRef.current < SEND_DEBOUNCE_MS) {
+            return;
+        }
+        lastSendTimeRef.current = now;
     
         try {
             setSendingMessage(true);
@@ -92,8 +103,9 @@ export default function ChatChannel({ socketRef, socketReady, roleInstance, chan
                     action: "send",
                     data: {
                         id: crypto.randomUUID(),
-                        role_instance: roleInstance,
-                        channel: channel,
+                        sender_role_instance: viewerRoleInstance,
+                        destination_team_name: destinationTeamName,
+                        destination_role_name: destinationRoleName,
                         text: input,
                         timestamp: Date.now(),
                     }
@@ -125,7 +137,7 @@ export default function ChatChannel({ socketRef, socketReady, roleInstance, chan
                 >
                     {"< Back"}
                 </button>
-                <h4 className="text-lg font-semibold"># {channel}</h4>
+                <h4 className="text-lg font-semibold"># {channelDisplayName}</h4>
             </div>
 
             <div ref={messagesDivRef} className="overflow-y-auto">
@@ -135,9 +147,10 @@ export default function ChatChannel({ socketRef, socketReady, roleInstance, chan
                 {messages.map((message, index) => (
                     <ChatMessage
                         key={message.id}
-                        roleInstance={roleInstance}
+                        destinationTeamName={destinationTeamName}
+                        viewerRoleInstance={viewerRoleInstance}
                         message={message}
-                        previousSender={index > 0 ? messages[index - 1].role_instance.user.id : null}
+                        previousMessage={index > 0 ? messages[index - 1] : null}
                     />
                 ))}
             </div>
@@ -165,9 +178,9 @@ export default function ChatChannel({ socketRef, socketReady, roleInstance, chan
                     />
                     <button
                         type="submit"
-                        disabled={sendingMessage || input.length > maxLength}
+                        disabled={sendingMessage || input.length > MAX_MESSAGE_LENGTH}
                         className={`px-4 py-2 rounded-lg font-medium transition 
-                            ${sendingMessage || input.length > maxLength
+                            ${sendingMessage || input.length > MAX_MESSAGE_LENGTH
                                 ? "bg-gray-600 cursor-not-allowed text-gray-300"
                                 : "bg-green-600 hover:bg-green-500 text-white"
                             }

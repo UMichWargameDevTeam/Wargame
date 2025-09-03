@@ -102,8 +102,9 @@ export interface UnitInstance {
 
 export interface Message {
     id: string;
-    role_instance: RoleInstance;
-    channel: string;
+    sender_role_instance: RoleInstance;
+    destination_team_name: string;
+    destination_role_name: string;
     text: string;
     timestamp: number;
 }

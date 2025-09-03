@@ -256,7 +256,7 @@ export default function MainMapPage() {
                             socketRef={socketRef}
                             socketReady={socketReady}
                             userJoined={userJoined}
-                            roleInstance={roleInstance}
+                            viewerRoleInstance={roleInstance}
                         />
                         <MapSelector
                             initialMap={mapSrc}
@@ -284,7 +284,7 @@ export default function MainMapPage() {
                             socketRef={socketRef}
                             socketReady={socketReady}
                             userJoined={userJoined}
-                            roleInstance={roleInstance}
+                            viewerRoleInstance={roleInstance}
                         />
                         <AvailableUnitInstances
                             socketRef={socketRef}
@@ -295,6 +295,23 @@ export default function MainMapPage() {
                         <ResourcePoints 
                             joinCode={joinCode}
                             roleInstance={roleInstance}
+                        />
+                    </>
+                )}
+                {/* Menu for Ambassador */}
+                {roleInstance?.role.name == "Ambassador" && (
+                    <>
+                        <UsersList
+                            socketRef={socketRef}
+                            socketReady={socketReady}
+                            setUserJoined={setUserJoined}
+                            roleInstance={roleInstance}
+                        />
+                        <Chat
+                            socketRef={socketRef}
+                            socketReady={socketReady}
+                            userJoined={userJoined}
+                            viewerRoleInstance={roleInstance}
                         />
                     </>
                 )}
@@ -311,7 +328,7 @@ export default function MainMapPage() {
                             socketRef={socketRef}
                             socketReady={socketReady}
                             userJoined={userJoined}
-                            roleInstance={roleInstance}
+                            viewerRoleInstance={roleInstance}
                         />
                         <JTFMenu />
                         <SendResourcePoints />
@@ -330,7 +347,7 @@ export default function MainMapPage() {
                             socketRef={socketRef}
                             socketReady={socketReady}
                             userJoined={userJoined}
-                            roleInstance={roleInstance}
+                            viewerRoleInstance={roleInstance}
                         />
                         <MapSelector
                             initialMap={mapSrc}
