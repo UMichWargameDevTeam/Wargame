@@ -50,7 +50,7 @@ export default function JTFMenu() {
                     <button
                         key={branch.name}
                         onClick={() => setActiveTab(branch.name)}
-                        className={`px-4 py-2 rounded ${activeTab === branch.name ? 'bg-blue-600 text-white' : 'bg-neutral-700 text-gray-300'} hover:bg-blue-500`}
+                        className={`px-4 py-2 rounded ${activeTab === branch.name ? 'bg-blue-600 text-white' : 'bg-neutral-700 text-gray-300'} cursor-pointer hover:bg-blue-500`}
                     >
                         {branch.name}
                     </button>

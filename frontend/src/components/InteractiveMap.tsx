@@ -342,7 +342,7 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
         >
             <button
                 onClick={() => { setShowGrid(!showGrid); draw(); }}
-                className="absolute top-2 left-2 z-50 bg-neutral-700 text-white px-3 py-1 rounded"
+                className="absolute top-2 left-2 z-50 bg-neutral-700 text-white px-3 py-1 rounded cursor-pointer hover:bg-neutral-600"
             >Toggle Grid</button>
 
             <canvas

@@ -144,7 +144,7 @@ export default function ChatChannel({
             <div className="flex items-center gap-2 mb-2">
                 <button
                     onClick={() => setActiveChannel(null)}
-                    className="text-sm text-blue-400 hover:underline whitespace-nowrap"
+                    className="text-sm text-blue-400 cursor-pointer hover:underline whitespace-nowrap"
                 >
                     {unreadChannels.some(c => !arraysEqual(c, channel)) && <span className="text-red-400">! </span>}
                     {"< Back"}
@@ -197,7 +197,7 @@ export default function ChatChannel({
                         className={`px-4 py-2 rounded-lg font-medium transition 
                             ${sendingMessage || input.length > MAX_MESSAGE_LENGTH
                                 ? "bg-gray-600 cursor-not-allowed text-gray-300"
-                                : "bg-green-600 hover:bg-green-500 text-white"
+                                : "bg-green-600 cursor-pointer hover:bg-green-500 text-white"
                             }
                         `}
                     >

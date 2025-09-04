@@ -60,7 +60,7 @@ export default function AvailableUnitInstances({ socketRef, socketReady, roleIns
                 <h3 className="text-lg font-semibold">Available Units</h3>
                 <button
                     onClick={() => setOpen(!open)}
-                    className="text-sm bg-neutral-600 px-2 py-1 rounded hover:bg-neutral-500"
+                    className="text-sm bg-neutral-600 px-2 py-1 rounded cursor-pointer hover:bg-neutral-500"
                 >
                     {open ? '-' : '+'}
                 </button>
@@ -89,7 +89,7 @@ export default function AvailableUnitInstances({ socketRef, socketReady, roleIns
                                     className={`px-2 py-1 rounded text-sm 
                                         ${deletingUnitInstance === unitInstance.id
                                             ? "bg-gray-400 cursor-not-allowed"
-                                            : "bg-red-600 hover:bg-red-500"
+                                            : "bg-red-600 cursor-pointer hover:bg-red-500"
                                         }
                                     `}
                                 >
