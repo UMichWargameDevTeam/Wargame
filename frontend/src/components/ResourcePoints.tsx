@@ -40,7 +40,7 @@ export default function ResourcePoints({ joinCode, roleInstance }: ResourcePoint
                 <h3 className="text-lg font-semibold">Resource Points</h3>
                 <button
                     onClick={() => setOpen(!open)}
-                    className="text-sm bg-neutral-600 px-2 py-1 rounded hover:bg-neutral-500"
+                    className="text-sm bg-neutral-600 px-2 py-1 rounded cursor-pointer hover:bg-neutral-500"
                 >
                     {open ? '-' : '+'}
                 </button>

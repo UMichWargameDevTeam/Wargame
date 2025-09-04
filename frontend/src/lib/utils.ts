@@ -12,3 +12,8 @@ export async function getSessionStorageOrFetch<T>(key: string, fetcher: () => Pr
     sessionStorage.setItem(key, JSON.stringify(data));
     return data;
 }
+
+export function arraysEqual<T>(a: T[], b: T[]): boolean {
+    if (a.length !== b.length) return false;
+    return a.every((value, index) => value === b[index]);
+}

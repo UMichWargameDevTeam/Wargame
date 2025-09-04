@@ -201,7 +201,7 @@ export default function RoleSelectPage() {
                                 className={`px-4 py-2 rounded transition
                                     ${(!isValidJoinCode(createCode) || creatingGame)
                                         ? "bg-gray-500 cursor-not-allowed"
-                                        : "bg-purple-700 hover:bg-purple-600 cursor-pointer"
+                                        : "bg-purple-700 cursor-pointer hover:bg-purple-600"
                                     }
                                 `}
                             >
@@ -330,7 +330,7 @@ export default function RoleSelectPage() {
                                 className={`flex-1 px-4 py-2 rounded transition
                                     ${(!isValidJoinCode(joinCode) || joiningGame)
                                         ? "bg-gray-500 cursor-not-allowed"
-                                        : "bg-blue-600 hover:bg-blue-700 cursor-pointer"
+                                        : "bg-blue-600 cursor-pointer hover:bg-blue-700"
                                     }
                                 `}
                             >
@@ -351,7 +351,7 @@ export default function RoleSelectPage() {
                 className={`absolute bottom-6 left-6 text-sm px-4 py-2 rounded transition
                     ${loggingOut
                         ? "bg-gray-500 cursor-not-allowed"
-                        : "bg-red-600 hover:bg-red-500 cursor-pointer"
+                        : "bg-red-600 cursor-pointer hover:bg-red-500"
                     }
                 `}
             >

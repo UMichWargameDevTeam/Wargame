@@ -72,7 +72,7 @@ export default function AddUnitInstance({ joinCode, socketRef, socketReady, unit
             <h3 className="text-lg font-semibold">Add Unit</h3>
             <button
                 onClick={() => setOpen(!open)}
-                className="text-sm bg-neutral-600 px-2 py-1 rounded hover:bg-neutral-500"
+                className="text-sm bg-neutral-600 px-2 py-1 rounded cursor-pointer hover:bg-neutral-500"
             >
                 {open ? '-' : '+'}
             </button>
@@ -151,7 +151,7 @@ export default function AddUnitInstance({ joinCode, socketRef, socketReady, unit
                     className={`w-full py-2 rounded-lg font-medium transition 
                         ${creatingUnitInstance
                             ? "bg-gray-600 cursor-not-allowed text-gray-300"
-                            : "bg-green-600 hover:bg-green-500 text-white"
+                            : "bg-green-600 cursor-pointer hover:bg-green-500 text-white"
                         }`}
                 >
                     {creatingUnitInstance ? "Adding..." : "Add Unit"}

@@ -1,20 +1,27 @@
 'use client';
 
-import { useState, useEffect, useRef, RefObject } from 'react';
+import React, { useState, useEffect, useRef, RefObject } from 'react';
 import ChatMessage from './ChatMessage';
 import { Message, RoleInstance } from '@/lib/Types';
+import { arraysEqual } from '@/lib/utils';
 
 interface ChatChannelProps {
     socketRef: RefObject<WebSocket | null>;
     socketReady: boolean;
     viewerRoleInstance: RoleInstance;
-    destinationTeamName: string;
-    destinationRoleName: string;
+    unreadChannels: [string, string][];
+    setUnreadChannels: React.Dispatch<React.SetStateAction<[string, string][]>>;
+    channel: [string, string];
+    setActiveChannel: React.Dispatch<React.SetStateAction<[string, string] | null>>;
+    wasAtBottomRef: RefObject<boolean>;
     messages: Message[];
-    onBack: () => void;
 }
 
-export default function ChatChannel({ socketRef, socketReady, viewerRoleInstance, destinationTeamName, destinationRoleName, messages, onBack }: ChatChannelProps) {
+export default function ChatChannel({ 
+    socketRef, socketReady, viewerRoleInstance, 
+    unreadChannels, setUnreadChannels, channel, setActiveChannel, wasAtBottomRef, 
+    messages
+}: ChatChannelProps) {
     const MAX_MESSAGE_LENGTH = 400;
     const SEND_DEBOUNCE_MS = 2000;
 
@@ -22,24 +29,28 @@ export default function ChatChannel({ socketRef, socketReady, viewerRoleInstance
     const [sendingMessage, setSendingMessage] = useState<boolean>(false);
 
     const messagesDivRef = useRef<HTMLDivElement | null>(null);
-    const wasAtBottomRef = useRef(true);
     const textareaRef = useRef<HTMLTextAreaElement | null>(null);
     const lastSendTimeRef = useRef<number>(0);
 
+    const [destinationTeamName, destinationRoleName] = channel;
     const channelKey = `${destinationTeamName} ${destinationRoleName}`;
     const channelDisplayName = destinationRoleName === "Gamemaster" ? destinationRoleName : channelKey;
 
+    // attach an event listener to the messages div that updates wasAtBottomRef.current dynamically
     useEffect(() => {
         if (!messagesDivRef.current) return;
         const container = messagesDivRef.current;
 
         const handleScroll = () => {
             wasAtBottomRef.current = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+            if (wasAtBottomRef.current) {
+                setUnreadChannels(prev => prev.filter(c => !arraysEqual(c, channel)));
+            }
         };
 
         container.addEventListener('scroll', handleScroll);
         return () => container.removeEventListener('scroll', handleScroll);
-    }, []);
+    }, [channel, setUnreadChannels, wasAtBottomRef]);
 
     // auto-scroll to bottom if scroll was already near bottom when new message is sent
     useEffect(() => {
@@ -51,7 +62,7 @@ export default function ChatChannel({ socketRef, socketReady, viewerRoleInstance
                 container.scrollTop = container.scrollHeight;
             });
         }
-    }, [messages]);
+    }, [messages, wasAtBottomRef]);
 
     // when opening a new channel, set scroll to the bottom of the channel
     useEffect(() => {
@@ -61,7 +72,7 @@ export default function ChatChannel({ socketRef, socketReady, viewerRoleInstance
         requestAnimationFrame(() => {
             container.scrollTop = container.scrollHeight;
         });
-    }, [destinationTeamName, destinationRoleName]);
+    }, [channel]);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
         const textarea = e.target;
@@ -132,12 +143,16 @@ export default function ChatChannel({ socketRef, socketReady, viewerRoleInstance
         <>
             <div className="flex items-center gap-2 mb-2">
                 <button
-                    onClick={onBack}
-                    className="text-sm text-blue-400 hover:underline"
+                    onClick={() => setActiveChannel(null)}
+                    className="text-sm text-blue-400 cursor-pointer hover:underline whitespace-nowrap"
                 >
+                    {unreadChannels.some(c => !arraysEqual(c, channel)) && <span className="text-red-400">! </span>}
                     {"< Back"}
                 </button>
-                <h4 className="text-lg font-semibold"># {channelDisplayName}</h4>
+                <h4 className="text-lg font-semibold">
+                    {unreadChannels.some(c => arraysEqual(c, channel)) && <span className="text-red-400">! </span> }
+                    # {channelDisplayName}
+                </h4>
             </div>
 
             <div ref={messagesDivRef} className="overflow-y-auto">
@@ -182,7 +197,7 @@ export default function ChatChannel({ socketRef, socketReady, viewerRoleInstance
                         className={`px-4 py-2 rounded-lg font-medium transition 
                             ${sendingMessage || input.length > MAX_MESSAGE_LENGTH
                                 ? "bg-gray-600 cursor-not-allowed text-gray-300"
-                                : "bg-green-600 hover:bg-green-500 text-white"
+                                : "bg-green-600 cursor-pointer hover:bg-green-500 text-white"
                             }
                         `}
                     >

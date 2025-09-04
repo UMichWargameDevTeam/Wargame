@@ -155,7 +155,7 @@ export default function MainMapPage() {
         }
 
         const handleGamesMessage = (event: MessageEvent) => {
-            const msg  = JSON.parse(event.data);
+            const msg = JSON.parse(event.data);
             if (msg.channel === "games") {
                 switch (msg.action) {
                     case "delete":
@@ -168,7 +168,7 @@ export default function MainMapPage() {
         }
 
         const handleRoleInstancesMessage = (event: MessageEvent) => {
-            const msg  = JSON.parse(event.data);
+            const msg = JSON.parse(event.data);
             if (msg.channel === "role_instances") {
                 switch (msg.action) {
                     case "delete":

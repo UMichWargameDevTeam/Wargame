@@ -25,7 +25,7 @@ export default function MapSelector({ onMapChange, initialMap }: MapSelectorProp
         <div className="bg-neutral-700 rounded-lg mb-4 p-4">
             <div className="flex justify-between items-center mb-2">
                 <h3 className="text-lg font-semibold">Map Settings</h3>
-                <button onClick={() => setOpen(!open)} className="text-sm bg-neutral-600 px-2 py-1 rounded hover:bg-neutral-500">
+                <button onClick={() => setOpen(!open)} className="text-sm bg-neutral-600 px-2 py-1 rounded cursor-pointer hover:bg-neutral-500">
                     {open ? '-' : '+'}
                 </button>
             </div>

@@ -60,7 +60,7 @@ export default function GamemasterMenu({ joinCode, socketRef, socketReady, roleI
                     className={`px-3 py-2 rounded transition
                         ${deletingGame
                             ? "bg-gray-500 cursor-not-allowed"
-                            : "bg-red-600 hover:bg-red-500 cursor-pointer"
+                            : "bg-red-600 cursor-pointer hover:bg-red-500"
                         }
                     `}
                 >

@@ -144,7 +144,7 @@ export default function UsersList({ socketRef, socketReady, setUserJoined, roleI
                                                                 className={`px-2 py-0.5 rounded text-xs transition
                                                                     ${deletingRoleInstance === ri.id
                                                                         ? "bg-gray-500 cursor-not-allowed"
-                                                                        : "bg-red-600 hover:bg-red-500 cursor-pointer"
+                                                                        : "bg-red-600 cursor-pointer hover:bg-red-500"
                                                                     }
                                                                 `}
                                                             >

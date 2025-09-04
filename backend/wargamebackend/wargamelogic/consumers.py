@@ -83,6 +83,9 @@ class GameConsumer(AsyncWebsocketConsumer):
 
         await self.channel_layer.group_discard(self.game_group, self.channel_name)
         await self.channel_layer.group_discard(self.user_group, self.channel_name)
+        for channel in getattr(self, "channel_groups", []):
+            await self.channel_layer.group_discard(channel, self.channel_name)
+
         print(f"{user.username} disconnected from game '{self.join_code}'.")
     
     # when sending a message over a websocket in the browser,
