@@ -151,6 +151,11 @@ export default function MainMapPage() {
                     action: "list",
                     data: {}
                 }));
+                socketRef.current?.send(JSON.stringify({
+                    channel: "timer",
+                    action: "get_finish_time",
+                    data: {}
+                }));
             }
         }
 

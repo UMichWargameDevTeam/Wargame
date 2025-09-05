@@ -1,12 +1,9 @@
 import json
-import asyncio
+import time
 from django.core.cache import cache
-from channels.layers import get_channel_layer
 from channels.db import database_sync_to_async
 from channels.generic.websocket import AsyncWebsocketConsumer
-from django.contrib.auth.models import User
 from wargamelogic.models.static import Team, Role
-from wargamelogic.models.dynamic import RoleInstance
 
 teams_cache = None
 roles_cache = None
@@ -106,8 +103,6 @@ class GameConsumer(AsyncWebsocketConsumer):
         channel = event.get("channel", "default")
         action = event.get("action", "unknown")
         data = event.get("data", {})
-        data["sender_id"] = self.scope["user"].id
-
 
         target_group = self.game_group
         send_data = data
@@ -177,6 +172,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 
         return self.user_group, list(role_instances.values())
 
+
     async def handle_users_join(self, data):
         """
         data: RoleInstance
@@ -198,10 +194,27 @@ class GameConsumer(AsyncWebsocketConsumer):
 
         redis_client.hset(role_key, user.id, json.dumps(data))
 
-        if redis_client.hlen(role_key) == 1:
-            asyncio.create_task(start_timer(self.join_code, user.username))
-
         return self.game_group, data
+
+
+    async def handle_timer_get_finish_time(self, data):
+        target_group = self.user_group
+
+        timer_key = f"game_{self.join_code}_timer"
+        redis_client = get_redis_client()
+
+        if not redis_client.exists(timer_key):
+            target_group = self.game_group
+
+            expires_at = int(time.time()) + 600
+            redis_client.set(timer_key, expires_at)
+
+            username = self.scope["user"].username
+            print(f"{username} started {self.join_code}'s timer (ends at {expires_at}).")
+
+        data["finish_time"] = int(redis_client.get(timer_key))
+        return target_group, data
+
 
     async def handle_role_instances_delete(self, data):
         """
@@ -214,12 +227,6 @@ class GameConsumer(AsyncWebsocketConsumer):
         target_group = f"game_{self.join_code}_user_{recipient_id}"
         return target_group, data
 
-    async def handle_chat_list(self, data):
-        """
-        data: {}
-        """
-        # TODO
-        return self.user_group, data
 
     async def handle_chat_send(self, data):
         """
@@ -252,39 +259,6 @@ def get_redis_client():
 # -------------------- #
 # helper functions     #
 # -------------------- #
-async def start_timer(join_code, username):
-    # I'm pretty sure this only works under the assumption that we are using one channel
-    channel_layer = get_channel_layer()
-    timer_key = f"game_{join_code}_timer"
-    game_group = f"game_{join_code}"
-    redis_client = get_redis_client()
-
-    # potential race condition here that I'm ignoring for now.
-    if redis_client.exists(timer_key):
-        print(f"{username} tried starting {join_code}'s timer but there was already a key for it in the cache")
-        return
-
-    remaining = 600
-
-    print(f"{username} started {join_code}'s timer.")
-
-    # while remaining > 0:
-    #     await channel_layer.group_send(
-    #         game_group,
-    #         {
-    #             "type": "handle.message",
-    #             "channel": "timer",
-    #             "action": "update",
-    #             "data": {"remaining": remaining},
-    #         },
-    #     )
-    #     await asyncio.sleep(1)
-    #     remaining -= 1
-
-    redis_client.delete(timer_key)
-    print(f"Timer for game '{join_code}' finished.")
-
-
 def get_user_channel_groups(join_code, teams, roles, role_instance):
     role_name = role_instance["role"]["name"]
     user_team_name = role_instance["team_instance"]["team"]["name"]
