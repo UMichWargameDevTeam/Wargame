@@ -39,8 +39,8 @@ export default function UnitAttackDisplay({
     setError(null);
 
     try {
-      const res = await authedFetch('/api/use_attack/', {
-        method: 'POST',
+      const res = await authedFetch(`/api/unit-instances/${attackerId}/attacks/${attackName}/use/`, {
+        method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           attacker_id: attackerId,

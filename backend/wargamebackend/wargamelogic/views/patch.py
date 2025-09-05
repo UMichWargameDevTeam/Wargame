@@ -57,7 +57,7 @@ def move_unit_instance(request, pk, row, column):
         "role.is_logistics": lambda request, kwargs: get_object_and_related_with_cache_or_404(request, UnitInstance, pk=kwargs["pk"]).unit.is_logistic,
     }
 ])
-def use_attack(request):
+def use_attack(request, pk, attack_name):
     attacker_id = request.data.get("attacker_id")
     target_id = request.data.get("target_id")
     attack_name = request.data.get("attack_name")
@@ -86,9 +86,9 @@ def use_attack(request):
 
     attack = get_object_or_404(Attack, unit=attacker_instance.unit, name=attack_name)
 
-    atk = GameAttack.from_model(attack)
-    target = GameUnit.from_model(target_instance)
-    attacker = GameUnit.from_model(attacker_instance)
+    atk = GameAttack.from_models(attack)
+    target = GameUnit.from_models(target_instance, target_instance.unit)
+    attacker = GameUnit.from_models(attacker_instance, attacker_instance.unit)
 
     success, message = conduct_attack(attacker, target, atk)
     if not success:
