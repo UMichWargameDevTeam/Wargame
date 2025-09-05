@@ -6,7 +6,6 @@ import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 import { WS_URL, getSessionStorageOrFetch } from '@/lib/utils';
 import MapSelector from '@/components/MapSelector';
 import UnitInstanceDisplay from '@/components/UnitInstanceDisplay';
-import FooterControls from '@/components/FooterControls';
 import AvailableUnitInstances from '@/components/AvailableUnitInstances';
 import AddUnitInstance from '@/components/AddUnitInstance';
 import ResourcePoints from '@/components/ResourcePoints';
@@ -15,10 +14,11 @@ import InteractiveMap from '@/components/InteractiveMap';
 import JTFMenu from '@/components/JTFMenu';
 import GamemasterMenu from '@/components/GamemasterMenu';
 import SendResourcePoints from '@/components/SendResourcePoints';
+import UnitAttackDisplay from '@/components/UnitAttackDisplay';
 import Timer from '@/components/Timer';
 import UsersList from '@/components/UsersList';
 import Chat from '@/components/chat/Chat';
-import { Team, Unit, RoleInstance, UnitInstance } from '@/lib/Types'
+import { Team, Unit, RoleInstance, UnitInstance, Attack } from '@/lib/Types'
 
 
 export default function MainMapPage() {
@@ -41,7 +41,7 @@ export default function MainMapPage() {
 
     const [teams, setTeams] = useState<Team[]>([]);
     const [units, setUnits] = useState<Unit[]>([]);
-    // const [attacks, setAttacks] = useState<Attack[]>([]);
+    const [attacks, setAttacks] = useState<Attack[]>([]);
     // const [abilities, setAbilities] = useState<Ability[]>([]);
 
     const [roleInstance, setRoleInstance] = useState<RoleInstance | null>(null);
@@ -49,6 +49,7 @@ export default function MainMapPage() {
 
     const [validationError, setValidationError] = useState<string | null>(null);
 
+    const [showAttack, setShowAttack] = useState(false);
     useEffect(() => {
         let ws: WebSocket | null = null;
 
@@ -109,7 +110,7 @@ export default function MainMapPage() {
                 })
                     .then(data => setUnits(data));
 
-                /*
+
                 // Attacks
                 getSessionStorageOrFetch<Attack[]>('attacks', async () => {
                     const res = await authedFetch("/api/attacks/");
@@ -117,15 +118,15 @@ export default function MainMapPage() {
                     return res.json();
                 })
                     .then(data => setAttacks(data));
-                
+
                 // Abilities
-                getSessionStorageOrFetch<Ability[]>('abilities', async () => {
-                    const res = await authedFetch("/api/abilities/");
-                    if (!res.ok) throw new Error(`Ability fetch failed with ${res.status}`);
-                    return res.json();
-                })
-                    .then(data => setAbilities(data));
-                */
+                // getSessionStorageOrFetch<Ability[]>('abilities', async () => {
+                //     const res = await authedFetch("/api/abilities/");
+                //     if (!res.ok) throw new Error(`Ability fetch failed with ${res.status}`);
+                //     return res.json();
+                // })
+                //     .then(data => setAbilities(data));
+
 
             } catch (err: unknown) {
                 console.error(err);
@@ -166,7 +167,7 @@ export default function MainMapPage() {
                     case "delete":
                         alert("This game was deleted.");
                         sessionStorage.clear();
-                        window.location.href = "/roleselect"; 
+                        window.location.href = "/roleselect";
                         break;
                 }
             }
@@ -179,7 +180,7 @@ export default function MainMapPage() {
                     case "delete":
                         alert("Your role in this game was deleted.");
                         sessionStorage.clear();
-                        window.location.href = "/roleselect"; 
+                        window.location.href = "/roleselect";
                         break;
                 }
             }
@@ -200,9 +201,9 @@ export default function MainMapPage() {
     }, [authedFetch, joinCode]);
 
     if (validationError) {
-        return ( 
+        return (
             <div className="flex items-center justify-center h-screen text-white bg-neutral-900">
-                <h1 className="text-xl font-bold">{validationError}</h1> 
+                <h1 className="text-xl font-bold">{validationError}</h1>
             </div>
         );
     }
@@ -218,7 +219,7 @@ export default function MainMapPage() {
                             <CommandersIntent roleInstance={roleInstance} />
                         </div>
                         <div className="flex-shrink-0">
-                            <Timer 
+                            <Timer
                                 socketRef={socketRef}
                                 socketReady={socketReady}
                             />
@@ -231,17 +232,48 @@ export default function MainMapPage() {
                         socketReady={socketReady}
                         mapSrc={mapSrc}
                         unitInstances={unitInstances}
-                        setUnitInstances={setUnitInstances} 
+                        setUnitInstances={setUnitInstances}
                         selectedUnitInstances={selectedUnitInstances}
                     />
                 </div>
 
-                {/* Footer for Ops/Logs */}
+
+                {/* Map controls bottom-left */}
                 {(roleInstance?.role.is_operations || roleInstance?.role.is_logistics) && (
-                    <>
-                        <FooterControls />
-                    </>
+                    <div className="fixed bottom-8 left-4 z-50 flex flex-col items-start bg-neutral-800 rounded p-2 gap-0">
+                        {/* Buttons container */}
+                        <div className="flex space-x-2 items-center">
+                            <button className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded text-sm">
+                                Request
+                            </button>
+                            <button className="bg-green-600 hover:bg-green-500 text-white px-6 py-2 rounded text-sm">
+                                Move
+                            </button>
+
+                            <button
+                                onClick={() => setShowAttack((prev) => !prev)}
+                                className="bg-red-600 hover:bg-red-500 text-white px-6 py-2 rounded text-sm ml-2"
+                            >
+                                Attack
+                            </button>
+                        </div>
+
+                        {/* Attack popup menu */}
+                        {showAttack && (
+                            <div className="absolute bottom-full left-0 mb-0 rounded shadow-lg min-w-[550px]">
+                                <UnitAttackDisplay
+                                    open={showAttack}
+                                    onClose={() => setShowAttack(false)}
+                                    roleInstance={roleInstance}
+                                    unitInstances={unitInstances}
+                                    attacks={attacks}
+                                    onAttackSuccess={(data) => console.log(data)}
+                                />
+                            </div>
+                        )}
+                    </div>
                 )}
+
             </div>
 
             {/* Sidebar */}
@@ -295,9 +327,9 @@ export default function MainMapPage() {
                             socketRef={socketRef}
                             socketReady={socketReady}
                             roleInstance={roleInstance}
-                            unitInstances={unitInstances} 
+                            unitInstances={unitInstances}
                         />
-                        <ResourcePoints 
+                        <ResourcePoints
                             joinCode={joinCode}
                             roleInstance={roleInstance}
                         />
