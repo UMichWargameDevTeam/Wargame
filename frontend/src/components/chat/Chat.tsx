@@ -34,10 +34,6 @@ export default function Chat({ socketRef, socketReady, userJoined, viewerRoleIns
             const msg = JSON.parse(event.data);
             if (msg.channel === "chat") {
                 switch (msg.action) {
-                    case "list": 
-                        // TODO
-                        break;
-
                     case "send":
                         const receivedMessage: Message = msg.data;
                         const viewerIsSender = receivedMessage.sender_role_instance.user.id === viewerRoleInstance.user.id;
@@ -90,13 +86,6 @@ export default function Chat({ socketRef, socketReady, userJoined, viewerRoleIns
                 setviewerChannels(channels);
                 setMessages(Object.fromEntries(channels.map(ch => [ch, []])));
 
-                if (socketRef.current?.readyState === WebSocket.OPEN) {
-                    socketRef.current.send(JSON.stringify({
-                        channel: "chat",
-                        action: "list",
-                        roleData: {}
-                    }));
-                }
             } catch (err: unknown) {
                 console.error(err);
                 if (err instanceof Error) {
