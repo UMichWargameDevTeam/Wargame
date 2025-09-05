@@ -17,8 +17,8 @@ from wargamelogic.check_roles import (
     require_any_role_instance, get_object_and_related_with_cache_or_404, get_user_role_instances
 )
 
-from gamelogic.objects import *
-from gamelogic.attack import *
+from ..gamelogic.objects import *
+from ..gamelogic.attack import *
 
 @api_view(['PATCH'])
 @permission_classes([IsAuthenticated])

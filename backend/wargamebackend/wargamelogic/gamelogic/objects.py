@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from models import *
+from ..models import *
 
 ATTACK_TYPES = [
         ("Light", "Light"),

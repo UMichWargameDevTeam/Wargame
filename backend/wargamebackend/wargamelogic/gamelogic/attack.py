@@ -1,5 +1,6 @@
 import math
-from objects import *
+from .objects import *
+
 
 RANGE_2_TILES_MULTIPLIER = .25
 
