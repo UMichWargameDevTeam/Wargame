@@ -43,14 +43,14 @@ export default function MainMapPage() {
     const [teams, setTeams] = useState<Team[]>([]);
     const [units, setUnits] = useState<Unit[]>([]);
     const [attacks, setAttacks] = useState<Attack[]>([]);
-     const [abilities, setAbilities] = useState<Ability[]>([]);
+    const [abilities, setAbilities] = useState<Ability[]>([]);
 
     const [roleInstance, setRoleInstance] = useState<RoleInstance | null>(null);
     const [unitInstances, setUnitInstances] = useState<UnitInstance[]>([]);
 
     const [validationError, setValidationError] = useState<string | null>(null);
 
-    const [attackModalOpen, setAttackModalOpen] = useState(false);
+    const [showAttack, setShowAttack] = useState(false);
 
     useEffect(() => {
         let ws: WebSocket | null = null;
@@ -120,7 +120,7 @@ export default function MainMapPage() {
                     return res.json();
                 })
                     .then(data => setAttacks(data));
-                
+
                 // Abilities
                 getSessionStorageOrFetch<Ability[]>('abilities', async () => {
                     const res = await authedFetch("/api/abilities/");
@@ -128,7 +128,7 @@ export default function MainMapPage() {
                     return res.json();
                 })
                     .then(data => setAbilities(data));
-                
+
 
             } catch (err: unknown) {
                 console.error(err);
@@ -169,7 +169,7 @@ export default function MainMapPage() {
                     case "delete":
                         alert("This game was deleted.");
                         sessionStorage.clear();
-                        window.location.href = "/roleselect"; 
+                        window.location.href = "/roleselect";
                         break;
                 }
             }
@@ -182,7 +182,7 @@ export default function MainMapPage() {
                     case "delete":
                         alert("Your role in this game was deleted.");
                         sessionStorage.clear();
-                        window.location.href = "/roleselect"; 
+                        window.location.href = "/roleselect";
                         break;
                 }
             }
@@ -203,9 +203,9 @@ export default function MainMapPage() {
     }, [authedFetch, joinCode]);
 
     if (validationError) {
-        return ( 
+        return (
             <div className="flex items-center justify-center h-screen text-white bg-neutral-900">
-                <h1 className="text-xl font-bold">{validationError}</h1> 
+                <h1 className="text-xl font-bold">{validationError}</h1>
             </div>
         );
     }
@@ -241,27 +241,32 @@ export default function MainMapPage() {
 
                 {/* Footer for Ops/Logs */}
                 {(roleInstance?.role.is_operations || roleInstance?.role.is_logistics) && (
-                    <>
-                        <FooterControls />
-                        <UnitAttackDisplay
-                            open={attackModalOpen}
-                            onClose={() => setAttackModalOpen(false)}
-                            roleInstance={roleInstance!}
-                            unitInstances={unitInstances}
-                            attacks={attacks}
-                            onAttackSuccess={(data) => {
-                                console.log('Attack success:', data);
-                                // refresh unitInstances or state updates here
-                            }}
-                        />
-
-                        <button
-                            onClick={() => setAttackModalOpen(true)}
-                            className="mt-4 px-4 py-2 rounded bg-red-600 hover:bg-red-500"
-                        >
-                            Attack
+                    <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 flex space-x-2 z-50">
+                        <button className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded text-sm">
+                            Request
                         </button>
-                    </>
+                        <button className="bg-green-600 hover:bg-green-500 text-white px-6 py-2 rounded text-sm">
+                            Move
+                        </button>
+
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowAttack((prev) => !prev)}
+                                className="bg-red-600 hover:bg-red-500 text-white px-6 py-2 rounded text-sm"
+                            >
+                                Attack
+                            </button>
+
+                            <UnitAttackDisplay
+                                open={showAttack}
+                                onClose={() => setShowAttack(false)}
+                                roleInstance={roleInstance}
+                                unitInstances={unitInstances}
+                                attacks={attacks}
+                                onAttackSuccess={(data) => console.log(data)}
+                            />
+                        </div>
+                    </div>
                 )}
             </div>
 
@@ -318,7 +323,7 @@ export default function MainMapPage() {
                             roleInstance={roleInstance}
                             unitInstances={unitInstances}
                         />
-                        <ResourcePoints 
+                        <ResourcePoints
                             joinCode={joinCode}
                             roleInstance={roleInstance}
                         />
