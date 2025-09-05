@@ -18,40 +18,38 @@ const BASE_CELL_SIZE = 80;
 const MIN_ZOOM = 0.5;
 const MAX_ZOOM = 5;
 
+// NEW: use the finest cell size as a canonical world-grid cell (80 / 4 = 20)
+const MAX_GRID_LEVEL = 2;
+const FINE_CELL_SIZE = BASE_CELL_SIZE / (2 ** MAX_GRID_LEVEL);
 
 export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitInstances, setUnitInstances, selectedUnitInstances }: InteractiveMapProps) {
-    const authedFetch = useAuthedFetch()
+    const authedFetch = useAuthedFetch();
     
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const imageRef = useRef<HTMLImageElement | null>(null);
 
-    const [zoom, setZoom] = useState(1);
+    const [zoom, setZoom] = useState<number>(1);
     const [offset, setOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-    const [dragging, setDragging] = useState(false);
+
+    const [dragging, setDragging] = useState<boolean>(false); // panning
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
-    const [elementDragId, setElementDragId] = useState<number>(0);
-    const [showGrid, setShowGrid] = useState(true);
+    const [elementDragId, setElementDragId] = useState<number>(0); // id of unit being dragged (toggle)
+    const [showGrid, setShowGrid] = useState<boolean>(true);
 
     useEffect(() => {
         const savedZoom = sessionStorage.getItem('map_zoom');
-        if (savedZoom) {
-            setZoom(Number(savedZoom));
-        }
-
+        if (savedZoom) setZoom(Number(savedZoom));
         const savedOffset = sessionStorage.getItem('map_offset');
-        if (savedOffset) {
-            setOffset(JSON.parse(savedOffset));
-        }
+        if (savedOffset) setOffset(JSON.parse(savedOffset));
     }, []);
 
-    // Save state to sessionStorage
     useEffect(() => {
         sessionStorage.setItem('map_zoom', zoom.toString());
         sessionStorage.setItem('map_offset', JSON.stringify(offset));
     }, [zoom, offset]);
 
-    // WebSocket setup
+    // WebSocket: keep your existing message handler
     useEffect(() => {
         if (!socketReady || !socketRef.current) return;
         const cachedSocket = socketRef.current;
@@ -60,16 +58,17 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
             const msg  = JSON.parse(event.data);
             if (msg.channel === "units") {
                 switch (msg.action) {
-                    case "unit_attack":
+
+                    case "attack":
                         // TODO
                         break;
-                    case "unit_create":
+                    case "create":
                         setUnitInstances(prev => [...prev, msg.data]);
                         break;
-                    case "unit_delete":
+                    case "delete":
                         setUnitInstances(prev => prev.filter(u => u.id !== msg.data.id));
                         break;
-                    case "unit_move":
+                    case "move":
                         setUnitInstances(prev =>
                             prev.map(unitInstance =>
                                 unitInstance.id === msg.data.id ? msg.data : unitInstance
@@ -78,13 +77,10 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
                         break;
                 }
             }
-        }
+        };
 
         cachedSocket.addEventListener("message", handleUnitsMessage);
-
-        return () => {
-            cachedSocket.removeEventListener("message", handleUnitsMessage);
-        };
+        return () => cachedSocket.removeEventListener("message", handleUnitsMessage);
     }, [socketRef, socketReady, setUnitInstances]);
 
     function getLabelPart(row: number, col: number, useLowercase = false) {
@@ -93,7 +89,7 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
         return `${letter}${number}`;
     }
 
-
+    // DRAW (unchanged except for axis label fixes if needed)...
     const draw = useCallback(() => {
         const canvas = canvasRef.current;
         const ctx = canvas?.getContext('2d');
@@ -106,7 +102,6 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
 
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Draw map image
         if (imageRef.current) {
             ctx.save();
             ctx.translate(offset.x, offset.y);
@@ -115,7 +110,6 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
             ctx.restore();
         }
 
-        // Draw grid
         if (showGrid) {
             ctx.save();
             ctx.translate(offset.x, offset.y);
@@ -124,12 +118,10 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
             const imgW = imageRef.current?.width || 0;
             const imgH = imageRef.current?.height || 0;
 
-            // Determine grid level based on zoom
-            // Larger zoom = smaller cells
             let level = 0;
-            if (zoom >= 2) level = 2;       // medium grid
-            else if (zoom >= 1) level = 1;  // coarse grid
-            else level = 0;                 // very coarse
+            if (zoom >= 2) level = 2;
+            else if (zoom >= 1) level = 1;
+            else level = 0;
 
             const cellSize = BASE_CELL_SIZE / Math.pow(2, level);
 
@@ -138,14 +130,12 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
             ctx.font = `${10 / zoom}px sans-serif`;
             ctx.fillStyle = 'white';
 
-            // Vertical lines
             for (let x = 0; x <= imgW; x += cellSize) {
                 ctx.beginPath();
                 ctx.moveTo(x, 0);
                 ctx.lineTo(x, imgH);
                 ctx.stroke();
             }
-            // Horizontal lines
             for (let y = 0; y <= imgH; y += cellSize) {
                 ctx.beginPath();
                 ctx.moveTo(0, y);
@@ -161,31 +151,20 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
                     let label = "";
 
                     if (level === 0) {
-                        // Top-level
                         label = getLabelPart(row, col, false);
-                    }
-                    else if (level === 1) {
-                        // Parent tile coordinates at level 0
+                    } else if (level === 1) {
                         const parentRow = Math.floor(row / 2);
                         const parentCol = Math.floor(col / 2);
-
                         label = getLabelPart(parentRow, parentCol, false) +
                             getLabelPart(row % 2, col % 2, false);
-                    }
-                    else if (level === 2) {
-                        // Grandparent at level 0
+                    } else if (level === 2) {
                         const grandParentRow = Math.floor(row / 4);
                         const grandParentCol = Math.floor(col / 4);
                         const grandParentLabel = getLabelPart(grandParentRow, grandParentCol, false);
-
-                        // Parent at level 1
                         const parentRow = Math.floor(row / 2) % 2;
                         const parentCol = Math.floor(col / 2) % 2;
                         const parentLabel = getLabelPart(parentRow, parentCol, false);
-
-                        // Child (this level)
                         const childLabel = getLabelPart(row % 2, col % 2, true);
-
                         label = grandParentLabel + parentLabel + childLabel;
                     }
 
@@ -193,17 +172,53 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
                 }
             }
 
+             // Axis labels (top + left edges)
+            ctx.fillStyle = 'white';
+            ctx.textAlign = 'left';
+            ctx.textBaseline = 'top';
+
+            let groupSize = 1;
+            if (level === 0) groupSize = 4;
+            else if (level === 1) groupSize = 2;
+            else if (level === 2) groupSize = 1;
+
+            const fontSize = 14 / zoom;
+            ctx.font = `${fontSize}px sans-serif`;
+
+            // Top edge (columns)
+            for (let col = 0; col < cols * groupSize; col += groupSize) {
+                const start = col;
+                const end = Math.min(col + groupSize, cols * groupSize) - 1;
+                const label = level === 2 ? `${start}` : `${start}-${end}`;
+
+                // Anchor at the first tile in the group
+                const x = col * 20 + 8;
+                ctx.textAlign = 'left';
+                ctx.textBaseline = 'bottom';
+                ctx.fillText(label, x, -2);
+            }
+
+            // Left edge (rows)
+            for (let row = 0; row < rows * groupSize; row += groupSize) {
+                const start = row;
+                const end = Math.min(row + groupSize, rows * groupSize) - 1;
+                const label = level === 2 ? `${start}` : `${start}-${end}`;
+
+                // Anchor at the first tile in the group
+                const y = row * 20 + 8;
+                ctx.textAlign = 'right';
+                ctx.textBaseline = 'top';
+                ctx.fillText(label, -4, y);
+            }
+
             ctx.restore();
         }
     }, [offset, zoom, showGrid]);
 
-
-    // Redraw on changes
     useEffect(() => {
         draw();
     }, [draw]);
 
-    // Load map image once
     useEffect(() => {
         const img = new Image();
         img.src = mapSrc;
@@ -213,7 +228,7 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
         };
     }, [mapSrc, draw]);
 
-    // Zoom
+    // Zoom (unchanged)
     const handleWheel = (e: React.WheelEvent) => {
         const delta = -e.deltaY * 0.001;
         const newZoom = Math.min(Math.max(zoom + delta, MIN_ZOOM), MAX_ZOOM);
@@ -233,9 +248,9 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
         setZoom(newZoom);
     };
 
-    // Panning
+    // Panning (unchanged)
     const handleMouseDown = (e: React.MouseEvent) => {
-        if (elementDragId) return;
+        if (elementDragId) return; // don't pan while a unit is active
         setDragging(true);
         setDragStart({ x: e.clientX - offset.x, y: e.clientY - offset.y });
     };
@@ -251,8 +266,10 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
             if (rect) {
                 const mouseX = (e.clientX - rect.left - offset.x) / zoom;
                 const mouseY = (e.clientY - rect.top - offset.y) / zoom;
-                const newCol = Math.floor(mouseX / BASE_CELL_SIZE);
-                const newRow = Math.floor(mouseY / BASE_CELL_SIZE);
+
+                // snap to finest grid and clamp to >= 0
+                const newCol = Math.max(0, Math.floor(mouseX / FINE_CELL_SIZE));
+                const newRow = Math.max(0, Math.floor(mouseY / FINE_CELL_SIZE));
 
                 setUnitInstances(prev =>
                     prev.map(unitInstance =>
@@ -265,50 +282,68 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
         }
     };
 
-    const handleMouseUp = async () => {
+    // Keep handleMouseUp only for panning end (do NOT commit unit move here anymore).
+    const handleMouseUp = () => {
         setDragging(false);
-        if (!elementDragId) return;
+    };
 
-        const unitInstance = unitInstances.find(a => a.id === elementDragId);
-        if (!unitInstance) return;
+    // Toggle drag on a unit (click to start; click again to stop & commit)
+    const toggleElementDrag = async (id: number) => {
+        if (elementDragId === id) {
+            // stop dragging immediately so UI un-sticks
+            setElementDragId(0);
+            setDragging(false);
 
-        try {
-            const res = await authedFetch(`/api/unit-instances/${unitInstance.id}/move/tiles/${unitInstance.tile.row}/${unitInstance.tile.column}/`, {
-                method: "PATCH",
-                headers: { "Content-Type": "application/json" }
-            });
-            const data = await res.json();
+            const unitInstance = unitInstances.find(a => a.id === id);
+            if (!unitInstance) return;
 
-            if (!res.ok) {
-                throw new Error(data.error || data.detail || "Failed to move unit instance.");
+            try {
+                const res = await authedFetch(
+                    `/api/unit-instances/${unitInstance.id}/move/tiles/${unitInstance.tile.row}/${unitInstance.tile.column}/`,
+                    { method: "PATCH", headers: { "Content-Type": "application/json" } }
+                );
+                const data = await res.json();
+                if (!res.ok) {
+                    throw new Error(data.error || data.detail || "Failed to move unit instance.");
+                }
+
+                if (socketRef.current?.readyState === WebSocket.OPEN) {
+                    socketRef.current.send(JSON.stringify({
+                        channel: "units",
+                        action: "move",
+                        data: data
+                    }));
+                }
+            } catch (err: unknown) {
+                console.error(err);
+                if (err instanceof Error) {
+                  alert(err.message);
+                }
             }
-
-            if (socketRef.current?.readyState === WebSocket.OPEN) {
-                socketRef.current.send(JSON.stringify({
-                    channel: "units",
-                    action: "unit_move",
-                    data: data
-                }));
-            }
-            
-        } catch (err: unknown) {
-            console.error(err);
-            if (err instanceof Error) {
-                alert(err.message);
-            }
+        } else {
+            // start dragging this unit (will move on mousemove)
+            setElementDragId(id);
         }
+    };
 
-        setElementDragId(0);
+    // Background click should also stop & commit if a unit is active
+    const handleBackgroundClick = (e: React.MouseEvent) => {
+        // only act if user clicked the container itself (not a child)
+        if (elementDragId && e.target === containerRef.current) {
+            toggleElementDrag(elementDragId);
+        }
     };
 
     return (
-        <div className="relative w-full h-full overflow-hidden" ref={containerRef}>
+        <div
+            className="relative w-full h-full overflow-hidden"
+            ref={containerRef}
+            onClick={handleBackgroundClick}
+        >
             <button
                 onClick={() => { setShowGrid(!showGrid); draw(); }}
-                className="absolute top-2 left-2 z-50 bg-neutral-700 text-white px-3 py-1 rounded"
-            >
-                Toggle Grid
-            </button>
+                className="absolute top-2 left-2 z-50 bg-neutral-700 text-white px-3 py-1 rounded cursor-pointer hover:bg-neutral-600"
+            >Toggle Grid</button>
 
             <canvas
                 ref={canvasRef}
@@ -321,15 +356,17 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
 
             {/* UnitInstances rendered above canvas */}
             {unitInstances
-                .filter(unitInstance => selectedUnitInstances[unitInstance.unit.domain] == true) // only show if domain is selected
+                .filter(unitInstance => selectedUnitInstances[unitInstance.unit.domain] === true)
                 .map(unitInstance => (
-                <DraggableUnitInstance
-                    key={unitInstance.id}
-                    unitInstance={unitInstance}
-                    cellSize={BASE_CELL_SIZE}
-                    onMouseDown={() => setElementDragId(unitInstance.id)}
-                />
-            ))}
+                    <DraggableUnitInstance
+                        key={unitInstance.id}
+                        unitInstance={unitInstance}
+                        cellSize={FINE_CELL_SIZE}
+                        zoom={zoom}
+                        offset={offset}
+                        onToggleDrag={toggleElementDrag}
+                    />
+                ))}
         </div>
     );
 }

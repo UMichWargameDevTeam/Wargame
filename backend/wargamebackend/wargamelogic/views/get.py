@@ -28,12 +28,12 @@ def validate_map_access(request, join_code):
     try:
         game_instance = GameInstance.objects.get(join_code=join_code)
     except GameInstance.DoesNotExist:
-        return Response({"error": f"There is no game with join code '{join_code}'"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"error": f"There is no game with Join Code '{join_code}'"}, status=status.HTTP_404_NOT_FOUND)
 
     try:
         role_instance = RoleInstance.objects.get(team_instance__game_instance=game_instance, user=request.user)
     except RoleInstance.DoesNotExist:
-        return Response({"error": f"You do not have a role in the game with join code '{join_code}'"}, status=status.HTTP_403_FORBIDDEN)
+        return Response({"error": f"You do not have a role in the game '{join_code}'"}, status=status.HTTP_403_FORBIDDEN)
     
     serializer = RoleInstanceSerializer(role_instance)
     return Response(serializer.data, status=status.HTTP_200_OK)

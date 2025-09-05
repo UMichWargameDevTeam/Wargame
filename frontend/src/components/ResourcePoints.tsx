@@ -4,25 +4,23 @@ import { useState, useEffect } from 'react';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 import { RoleInstance } from '@/lib/Types';
 
-export default function ResourcePoints() {
+interface ResourcePointsProps {
+    joinCode: string;
+    roleInstance: RoleInstance;
+}
+
+export default function ResourcePoints({ joinCode, roleInstance }: ResourcePointsProps) {
     const authedFetch = useAuthedFetch();
 
-    const [open, setOpen] = useState(true);
+    const [open, setOpen] = useState<boolean>(true);
     const [resources, setResources] = useState<RoleInstance[]>([]);
 
     useEffect(() => {
         const fetchResources = async () => {
             try {
-                const joinCode = sessionStorage.getItem('join_code');
-                const teamName = sessionStorage.getItem('team_name');
-                if (!joinCode || !teamName) {
-                    console.error("Missing join_code or team_name in sessionStorage");
-                    return;
-                }
+                const teamName = roleInstance.team_instance.team.name;
 
-                const res = await authedFetch(
-                    `/api/game-instances/${joinCode}/team-instances/${teamName}/role-instances/`
-                );
+                const res = await authedFetch(`/api/game-instances/${joinCode}/team-instances/${teamName}/role-instances/`);
                 if (!res.ok) {
                     throw new Error(`Failed to fetch role instances: ${res.status}`);
                 }
@@ -34,7 +32,7 @@ export default function ResourcePoints() {
         };
 
         fetchResources();
-    }, [authedFetch]);
+    }, [authedFetch, joinCode, roleInstance]);
 
     return (
         <div className="bg-neutral-700 rounded-lg mb-4 p-4">
@@ -42,9 +40,9 @@ export default function ResourcePoints() {
                 <h3 className="text-lg font-semibold">Resource Points</h3>
                 <button
                     onClick={() => setOpen(!open)}
-                    className="text-sm bg-neutral-600 px-2 py-1 rounded hover:bg-neutral-500"
+                    className="text-sm bg-neutral-600 px-2 py-1 rounded cursor-pointer hover:bg-neutral-500"
                 >
-                    {open ? '+' : '-'}
+                    {open ? '-' : '+'}
                 </button>
             </div>
             {open && (

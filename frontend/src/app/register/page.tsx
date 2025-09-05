@@ -7,11 +7,11 @@ import {BACKEND_URL } from '@/lib/utils';
 
 export default function RegisterForm() {
     const router = useRouter();
-    const [username, setUsername] = useState("");
-    const [password, setPassword] = useState("");
-    const [showPassword, setShowPassword] = useState(false);
-    const [error, setError] = useState("");
-    const [loading, setLoading] = useState(false);
+    const [username, setUsername] = useState<string>("");
+    const [password, setPassword] = useState<string>("");
+    const [showPassword, setShowPassword] = useState<boolean>(false);
+    const [error, setError] = useState<string>("");
+    const [loading, setLoading] = useState<boolean>(false);
 
     const handleRegister = async (e: React.FormEvent) => {
         e.preventDefault();

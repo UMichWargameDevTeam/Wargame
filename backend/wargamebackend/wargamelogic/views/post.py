@@ -44,7 +44,7 @@ def create_game_instance(request):
             role=gamemaster_role
         ).exists():
             return Response(
-                {"detail": f"GameInstance with join code '{join_code}' already has a Gamemaster."},
+                {"detail": f"Game '{join_code}' already has a Gamemaster."},
                 status=status.HTTP_400_BAD_REQUEST
             )
 
@@ -101,7 +101,7 @@ def create_role_instance(request):
     try:
         game_instance = GameInstance.objects.get(join_code=join_code)
     except GameInstance.DoesNotExist:
-        return Response({"error": f"GameInstance not found with join code '{join_code}'"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"error": f"No game found with Join Code '{join_code}'"}, status=status.HTTP_404_NOT_FOUND)
 
     # Check if user already has a role (select_related reduces hits)
     existing_role_instance = RoleInstance.objects.filter(
@@ -117,12 +117,12 @@ def create_role_instance(request):
     try:
         team = Team.objects.get(name=team_name)
     except Team.DoesNotExist:
-        return Response({"error": f"Team not found: {team_name}"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"error": f"You do not have a role in game '{join_code}', so you must select a team."}, status=status.HTTP_404_NOT_FOUND)
     
     try:
         role = Role.objects.select_related("branch").get(name=role_name)
     except Role.DoesNotExist:
-        return Response({"error": f"Role not found: {role_name}"}, status=status.HTTP_404_NOT_FOUND)
+        return Response({"error": f"You do not have a role in game '{join_code}', so you must select a role."}, status=status.HTTP_404_NOT_FOUND)
 
     try:
         team_instance = TeamInstance.objects.get(game_instance=game_instance, team=team)
@@ -134,7 +134,7 @@ def create_role_instance(request):
         team_instance__game_instance=game_instance,
         role__name="Gamemaster"
     ).exists():
-        return Response({"detail": "This game already has a Gamemaster"}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"detail": "This game already has a Gamemaster."}, status=status.HTTP_400_BAD_REQUEST)
 
     role_instance = RoleInstance.objects.create(
         team_instance=team_instance,

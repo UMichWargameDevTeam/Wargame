@@ -12,30 +12,32 @@ interface AvailableUnitInstancesProps {
 }
 
 export default function AvailableUnitInstances({ socketRef, socketReady, roleInstance, unitInstances }: AvailableUnitInstancesProps) {
-    const authedFetch = useAuthedFetch()
+    const authedFetch = useAuthedFetch();
     
-    const [open, setOpen] = useState(true);
+    const [open, setOpen] = useState<boolean>(true);
+    const [deletingUnitInstance, setDeletingUnitInstance] = useState<number | null>(null);
 
     const isGamemaster = roleInstance.role.name === "Gamemaster";
 
     const handleDeleteUnitInstance = async (unitId: number) => {
         if (!socketReady) return;
-        if (!confirm("Are you sure you want to delete this Unit Instance?")) return;
+        if (!confirm("Are you sure you want to delete this unit?")) return;
 
         try {
+            setDeletingUnitInstance(unitId);
             const res = await authedFetch(`/api/unit-instances/${unitId}/`, {
                 method: 'DELETE'
             });
             
             if (!res.ok) {
                 const data = await res.json();
-                throw new Error(data.error || data.detail || 'Failed to delete unit instance.');
+                throw new Error(data.error || data.detail || 'Failed to delete unit.');
             }
 
             if (socketRef.current?.readyState === WebSocket.OPEN) {
                 socketRef.current.send(JSON.stringify({
                     channel: "units",
-                    action: "unit_delete",
+                    action: "delete",
                     data: {
                         id: unitId
                     }
@@ -47,6 +49,8 @@ export default function AvailableUnitInstances({ socketRef, socketReady, roleIns
             if (err instanceof Error) {
                 alert(err.message);
             }
+        } finally {
+            setDeletingUnitInstance(null);
         }
     };
 
@@ -56,13 +60,16 @@ export default function AvailableUnitInstances({ socketRef, socketReady, roleIns
                 <h3 className="text-lg font-semibold">Available Units</h3>
                 <button
                     onClick={() => setOpen(!open)}
-                    className="text-sm bg-neutral-600 px-2 py-1 rounded hover:bg-neutral-500"
+                    className="text-sm bg-neutral-600 px-2 py-1 rounded cursor-pointer hover:bg-neutral-500"
                 >
-                    {open ? '+' : '-'}
+                    {open ? '-' : '+'}
                 </button>
             </div>
             {open && (
                 <div className="space-y-2">
+                    {unitInstances.length == 0 && (
+                        <p>There are no units on the board.</p>
+                    )}
                     {unitInstances.map(unitInstance => (
                         <div
                             key={unitInstance.id}
@@ -78,9 +85,15 @@ export default function AvailableUnitInstances({ socketRef, socketReady, roleIns
                             {isGamemaster && handleDeleteUnitInstance && (
                                 <button
                                     onClick={() => handleDeleteUnitInstance(unitInstance.id)}
-                                    className="bg-red-600 px-2 py-1 rounded hover:bg-red-500 text-sm"
+                                    disabled={deletingUnitInstance === unitInstance.id}
+                                    className={`px-2 py-1 rounded text-sm 
+                                        ${deletingUnitInstance === unitInstance.id
+                                            ? "bg-gray-400 cursor-not-allowed"
+                                            : "bg-red-600 cursor-pointer hover:bg-red-500"
+                                        }
+                                    `}
                                 >
-                                    Delete
+                                    {deletingUnitInstance === unitInstance.id ? "Deleting..." : "Delete"}
                                 </button>
                             )}
                         </div>
