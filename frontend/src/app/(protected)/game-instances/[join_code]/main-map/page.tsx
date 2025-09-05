@@ -25,7 +25,7 @@ export default function MainMapPage() {
     const params = useParams();
     const authedFetch = useAuthedFetch()
 
-    const join_code = params.join_code as string;const socketRef = useRef<WebSocket | null>(null);
+    const join_code = params.join_code as string; const socketRef = useRef<WebSocket | null>(null);
     const [socketReady, setSocketReady] = useState<boolean>(false);
 
     // const [messages, setMessages] = useState<string[]>([]);
@@ -35,7 +35,7 @@ export default function MainMapPage() {
 
     const [teams, setTeams] = useState<Team[]>([]);
     const [units, setUnits] = useState<Unit[]>([]);
-     const [attacks, setAttacks] = useState<Attack[]>([]);
+    const [attacks, setAttacks] = useState<Attack[]>([]);
     // const [abilities, setAbilities] = useState<Ability[]>([]);
 
     const [roleInstance, setRoleInstance] = useState<RoleInstance | null>(null);
@@ -49,6 +49,8 @@ export default function MainMapPage() {
         Sea: true,
     };
     const [selectedUnitInstances, setSelectedUnitInstances] = useState<Record<string, boolean>>(defaultState);
+
+    const [attackModalOpen, setAttackModalOpen] = useState(false);
 
     useEffect(() => {
         let ws: WebSocket | null = null;
@@ -94,7 +96,7 @@ export default function MainMapPage() {
                 })
                     .then(data => setUnits(data))
 
-                
+
                 // Attacks
                 getSessionStorageOrFetch<Attack[]>('attacks', async () => {
                     const res = await authedFetch("/api/attacks/");
@@ -168,9 +170,9 @@ export default function MainMapPage() {
     // };
 
     if (mapValidationError) {
-        return ( 
+        return (
             <div className="flex items-center justify-center h-screen text-white bg-neutral-900">
-                <h1 className="text-xl font-bold">{mapValidationError}</h1> 
+                <h1 className="text-xl font-bold">{mapValidationError}</h1>
             </div>
         );
     }
@@ -186,7 +188,7 @@ export default function MainMapPage() {
                             <CommandersIntent roleInstance={roleInstance} />
                         </div>
                         <div className="flex-shrink-0">
-                            <Timer 
+                            <Timer
                                 socketRef={socketRef}
                                 socketReady={socketReady}
                             />
@@ -199,7 +201,7 @@ export default function MainMapPage() {
                         socketReady={socketReady}
                         mapSrc={mapSrc}
                         unitInstances={unitInstances}
-                        setUnitInstances={setUnitInstances} 
+                        setUnitInstances={setUnitInstances}
                         selectedUnitInstances={selectedUnitInstances}
                     />
                 </div>
@@ -208,6 +210,24 @@ export default function MainMapPage() {
                 {(roleInstance?.role.is_operations || roleInstance?.role.is_logistics) && (
                     <>
                         <FooterControls />
+                        <UnitAttackDisplay
+                            open={attackModalOpen}
+                            onClose={() => setAttackModalOpen(false)}
+                            roleInstance={roleInstance!}
+                            unitInstances={unitInstances}
+                            attacks={attacks}
+                            onAttackSuccess={(data) => {
+                                console.log('Attack success:', data);
+                                // refresh unitInstances or state updates here
+                            }}
+                        />
+
+                        <button
+                            onClick={() => setAttackModalOpen(true)}
+                            className="mt-4 px-4 py-2 rounded bg-red-600 hover:bg-red-500"
+                        >
+                            Attack
+                        </button>
                     </>
                 )}
             </div>
@@ -249,7 +269,7 @@ export default function MainMapPage() {
                             socketRef={socketRef}
                             socketReady={socketReady}
                             roleInstance={roleInstance}
-                            unitInstances={unitInstances} 
+                            unitInstances={unitInstances}
                         />
                         <ResourcePoints />
                     </>
