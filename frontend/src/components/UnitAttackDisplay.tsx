@@ -10,7 +10,7 @@ interface Props {
   roleInstance: RoleInstance;
   unitInstances: UnitInstance[];
   attacks: Attack[];
-  onAttackSuccess: (data: any) => void;
+  onAttackSuccess: (data: JSON) => void;
 }
 
 export default function UnitAttackDropdown({
@@ -81,8 +81,13 @@ export default function UnitAttackDropdown({
 
       onAttackSuccess(data);
       setSuccessMessage(data.message);
-    } catch (err: any) {
-      setError(err.message);
+    } catch (err: unknown) {
+        if (err instanceof Error) {
+            setError(err.message);
+        }
+        else {
+            setError("Unknown fetch error")
+        }
     } finally {
       setLoading(false);
     }
