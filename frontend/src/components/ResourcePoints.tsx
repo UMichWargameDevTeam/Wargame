@@ -1,63 +1,77 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef, RefObject } from 'react';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 import { RoleInstance } from '@/lib/Types';
 
 interface ResourcePointsProps {
     joinCode: string;
-    roleInstance: RoleInstance;
+    socketRef: RefObject<WebSocket | null>;
+    socketReady: boolean;
+    roleInstance: RoleInstance | null;
+    roleInstances: RoleInstance[];
 }
 
-export default function ResourcePoints({ joinCode, roleInstance }: ResourcePointsProps) {
+
+export default function ResourcePoints({ joinCode, socketRef, socketReady, roleInstance, roleInstances }: ResourcePointsProps) {
     const authedFetch = useAuthedFetch();
 
-    const [open, setOpen] = useState<boolean>(true);
-    const [resources, setResources] = useState<RoleInstance[]>([]);
+    const [sendingPoints, setSendingPoints] = useState<boolean>(false);
 
+    const addedPointsMessageListener = useRef<boolean>(false);
+
+    // WebSocket setup
     useEffect(() => {
-        const fetchResources = async () => {
-            try {
-                const teamName = roleInstance.team_instance.team.name;
+        if (!socketReady || !socketRef.current || addedPointsMessageListener.current) return;
+        addedPointsMessageListener.current = true;
+        const socket = socketRef.current;
 
-                const res = await authedFetch(`/api/game-instances/${joinCode}/team-instances/${teamName}/role-instances/`);
-                if (!res.ok) {
-                    throw new Error(`Failed to fetch role instances: ${res.status}`);
+        const handlePointsMessage = (event: MessageEvent) => {
+            const msg = JSON.parse(event.data);
+            if (msg.channel === "points") {
+                switch (msg.action) {
+                    case "send":
+                        // TODO
+                        break;
                 }
-                const data: RoleInstance[] = await res.json();
-                setResources(data);
-            } catch (err) {
-                console.error("Failed to fetch resources", err);
             }
         };
 
-        fetchResources();
-    }, [authedFetch, joinCode, roleInstance]);
+        socket.addEventListener("message", handlePointsMessage);
+
+        return () => {
+            socket.removeEventListener("message", handlePointsMessage);
+            addedPointsMessageListener.current = false;
+        };
+    }, [socketRef, socketReady]);
+
+    function getViewerValidPointDestinations(): [string, string][] {
+        // TODO
+        return [["", ""]];
+    }
+
+    const handleSendPoints = async (joinCode: string) => {
+        if (!socketReady || !socketRef.current) return;
+        const socket = socketRef.current;
+
+        try {
+            setSendingPoints(true);
+            // TODO
+
+        } catch (err: unknown) {
+            console.error(err);
+            if (err instanceof Error) {
+                alert(err.message);
+            }
+        } finally {
+            setSendingPoints(false);
+        }
+    };
+    
 
     return (
-        <div className="bg-neutral-700 rounded-lg mb-4 p-4">
-            <div className="flex justify-between items-center mb-2">
-                <h3 className="text-lg font-semibold">Resource Points</h3>
-                <button
-                    onClick={() => setOpen(!open)}
-                    className="text-sm bg-neutral-600 px-2 py-1 rounded cursor-pointer hover:bg-neutral-500"
-                >
-                    {open ? '-' : '+'}
-                </button>
-            </div>
-            {open && (
-                <ul className="space-y-2">
-                    {resources.map((entry, index) => (
-                        <li
-                            key={index}
-                            className="flex justify-between bg-neutral-800 p-2 rounded text-sm"
-                        >
-                            <span className="text-gray-300">{entry.role.name}</span>
-                            <span className="text-white font-semibold">{entry.supply_points}</span>
-                        </li>
-                    ))}
-                </ul>
-            )}
-        </div>
+        <>
+            {/* TODO */}
+        </>
     );
-}
+};

@@ -14,7 +14,6 @@ import CommandersIntent from '@/components/CommandersIntent';
 import InteractiveMap from '@/components/InteractiveMap';
 import JTFMenu from '@/components/JTFMenu';
 import GamemasterMenu from '@/components/GamemasterMenu';
-import SendResourcePoints from '@/components/SendResourcePoints';
 import Timer from '@/components/Timer';
 import UsersList from '@/components/UsersList';
 import Chat from '@/components/chat/Chat';
@@ -44,13 +43,15 @@ export default function MainMapPage() {
     // const [attacks, setAttacks] = useState<Attack[]>([]);
     // const [abilities, setAbilities] = useState<Ability[]>([]);
 
+    // data about this user's role
     const [roleInstance, setRoleInstance] = useState<RoleInstance | null>(null);
+    // data about roles of all users in this game
+    const [roleInstances, setRoleInstances] = useState<RoleInstance[]>([]);
     const [unitInstances, setUnitInstances] = useState<UnitInstance[]>([]);
 
     const [validationError, setValidationError] = useState<string | null>(null);
 
     useEffect(() => {
-        let ws: WebSocket | null = null;
 
         const validateAccess = async () => {
             try {
@@ -135,27 +136,16 @@ export default function MainMapPage() {
             }
         };
 
-        const connectToWebsocket = () => {
+        const connectToWebSocket = () => {
             if (socketRef.current) return;
 
             const token = localStorage.getItem("accessToken");
-            ws = new WebSocket(`${WS_URL}/game-instances/${joinCode}/?token=${token}`);
-            socketRef.current = ws;
+            socketRef.current = new WebSocket(`${WS_URL}/game-instances/${joinCode}/?token=${token}`);
 
-            ws.onopen = () => {
+            socketRef.current.onopen = () => {
                 setSocketReady(true);
                 socketRef.current?.addEventListener("message", handleGamesMessage);
                 socketRef.current?.addEventListener("message", handleRoleInstancesMessage);
-                socketRef.current?.send(JSON.stringify({
-                    channel: "users",
-                    action: "list",
-                    data: {}
-                }));
-                socketRef.current?.send(JSON.stringify({
-                    channel: "timer",
-                    action: "get_finish_time",
-                    data: {}
-                }));
             }
         }
 
@@ -189,13 +179,13 @@ export default function MainMapPage() {
             const roleInstanceData = await validateAccess();
             if (!roleInstanceData) return;
             fetchData();
-            connectToWebsocket();
+            connectToWebSocket();
         })();
 
         return () => {
-            ws?.close();
-            socketRef.current = null;
             setSocketReady(false);
+            socketRef.current?.close();
+            socketRef.current = null;
         };
     }, [authedFetch, joinCode]);
 
@@ -254,14 +244,23 @@ export default function MainMapPage() {
                         <UsersList
                             socketRef={socketRef}
                             socketReady={socketReady}
-                            setUserJoined={setUserJoined}
                             roleInstance={roleInstance}
+                            roleInstances={roleInstances}
+                            setRoleInstances={setRoleInstances}
+                            setUserJoined={setUserJoined}
                         />
                         <Chat
                             socketRef={socketRef}
                             socketReady={socketReady}
                             userJoined={userJoined}
                             viewerRoleInstance={roleInstance}
+                        />
+                        <ResourcePoints
+                            joinCode={joinCode}
+                            socketRef={socketRef}
+                            socketReady={socketReady}
+                            roleInstance={roleInstance}
+                            roleInstances={roleInstances}
                         />
                         <MapSelector
                             initialMap={mapSrc}
@@ -274,6 +273,12 @@ export default function MainMapPage() {
                             selectedUnitInstances={selectedUnitInstances}
                             setSelectedUnitInstances={setSelectedUnitInstances}
                         />
+                        <AvailableUnitInstances
+                            socketRef={socketRef}
+                            socketReady={socketReady}
+                            roleInstance={roleInstance}
+                            unitInstances={unitInstances} 
+                        />
                     </>
                 )}
                 {/* Menu for CoS */}
@@ -282,8 +287,10 @@ export default function MainMapPage() {
                         <UsersList
                             socketRef={socketRef}
                             socketReady={socketReady}
-                            setUserJoined={setUserJoined}
                             roleInstance={roleInstance}
+                            roleInstances={roleInstances}
+                            setRoleInstances={setRoleInstances}
+                            setUserJoined={setUserJoined}
                         />
                         <Chat
                             socketRef={socketRef}
@@ -291,15 +298,22 @@ export default function MainMapPage() {
                             userJoined={userJoined}
                             viewerRoleInstance={roleInstance}
                         />
+                        <ResourcePoints
+                            joinCode={joinCode}
+                            socketRef={socketRef}
+                            socketReady={socketReady}
+                            roleInstance={roleInstance}
+                            roleInstances={roleInstances}
+                        />
+                        <UnitInstanceDisplay
+                            selectedUnitInstances={selectedUnitInstances}
+                            setSelectedUnitInstances={setSelectedUnitInstances}
+                        />
                         <AvailableUnitInstances
                             socketRef={socketRef}
                             socketReady={socketReady}
                             roleInstance={roleInstance}
                             unitInstances={unitInstances} 
-                        />
-                        <ResourcePoints 
-                            joinCode={joinCode}
-                            roleInstance={roleInstance}
                         />
                     </>
                 )}
@@ -309,8 +323,10 @@ export default function MainMapPage() {
                         <UsersList
                             socketRef={socketRef}
                             socketReady={socketReady}
-                            setUserJoined={setUserJoined}
                             roleInstance={roleInstance}
+                            roleInstances={roleInstances}
+                            setRoleInstances={setRoleInstances}
+                            setUserJoined={setUserJoined}
                         />
                         <Chat
                             socketRef={socketRef}
@@ -326,8 +342,10 @@ export default function MainMapPage() {
                         <UsersList
                             socketRef={socketRef}
                             socketReady={socketReady}
-                            setUserJoined={setUserJoined}
                             roleInstance={roleInstance}
+                            roleInstances={roleInstances}
+                            setRoleInstances={setRoleInstances}
+                            setUserJoined={setUserJoined}
                         />
                         <Chat
                             socketRef={socketRef}
@@ -335,8 +353,14 @@ export default function MainMapPage() {
                             userJoined={userJoined}
                             viewerRoleInstance={roleInstance}
                         />
+                        <ResourcePoints
+                            joinCode={joinCode}
+                            socketRef={socketRef}
+                            socketReady={socketReady}
+                            roleInstance={roleInstance}
+                            roleInstances={roleInstances}
+                        />
                         <JTFMenu />
-                        <SendResourcePoints />
                     </>
                 )}
                 {/* Menu for Gamemaster */}
@@ -345,14 +369,23 @@ export default function MainMapPage() {
                         <UsersList
                             socketRef={socketRef}
                             socketReady={socketReady}
-                            setUserJoined={setUserJoined}
                             roleInstance={roleInstance}
+                            roleInstances={roleInstances}
+                            setRoleInstances={setRoleInstances}
+                            setUserJoined={setUserJoined}
                         />
                         <Chat
                             socketRef={socketRef}
                             socketReady={socketReady}
                             userJoined={userJoined}
                             viewerRoleInstance={roleInstance}
+                        />
+                        <ResourcePoints
+                            joinCode={joinCode}
+                            socketRef={socketRef}
+                            socketReady={socketReady}
+                            roleInstance={roleInstance}
+                            roleInstances={roleInstances}
                         />
                         <MapSelector
                             initialMap={mapSrc}

@@ -1,4 +1,4 @@
-import { useState, useEffect, RefObject } from "react";
+import { useState, useEffect, useRef, RefObject } from "react";
 
 interface TimerProps {
     socketRef: RefObject<WebSocket | null>;
@@ -11,10 +11,13 @@ export default function Timer({ socketRef, socketReady }: TimerProps) {
     const [finishTime, setFinishTime] = useState<number | null>(null);
     const [timer, setTimer] = useState<number>(defaultTime);
 
+    const addedTimerMessageListener = useRef<boolean>(false);
+
     // WebSocket setup
     useEffect(() => {
-        if (!socketReady || !socketRef.current) return;
-        const cachedSocket = socketRef.current;
+        if (!socketReady || !socketRef.current || addedTimerMessageListener.current) return;
+        addedTimerMessageListener.current = true;
+        const socket = socketRef.current;
 
         const handleTimerMessage = (event: MessageEvent) => {
             const msg = JSON.parse(event.data);
@@ -31,9 +34,18 @@ export default function Timer({ socketRef, socketReady }: TimerProps) {
             }
         };
 
-        cachedSocket.addEventListener("message", handleTimerMessage);
+        socket.addEventListener("message", handleTimerMessage);
+        if (socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({
+                channel: "timer",
+                action: "get_finish_time",
+                data: {}
+            }));
+        }
+
         return () => {
-            cachedSocket.removeEventListener("message", handleTimerMessage);
+            socket.removeEventListener("message", handleTimerMessage);
+            addedTimerMessageListener.current = false;
         };
     }, [socketRef, socketReady]);
 

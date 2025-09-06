@@ -97,7 +97,8 @@ export default function ChatChannel({
     };
 
     const handleSendMessage = () => {
-        if (!socketReady || !input.trim()) return;
+        if (!socketReady || !socketRef.current || !input.trim()) return;
+        const socket = socketRef.current;
 
         const now = Date.now();
         if (now - lastSendTimeRef.current < SEND_DEBOUNCE_MS) {
@@ -108,8 +109,8 @@ export default function ChatChannel({
         try {
             setSendingMessage(true);
 
-            if (socketRef.current?.readyState === WebSocket.OPEN) {
-                socketRef.current.send(JSON.stringify({
+            if (socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({
                     channel: "chat",
                     action: "send",
                     data: {

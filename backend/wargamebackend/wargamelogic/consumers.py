@@ -85,7 +85,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 
         print(f"{user.username} disconnected from game '{self.join_code}'.")
     
-    # when sending a message over a websocket in the browser,
+    # when sending a message over a WebSocket in the browser,
     # it gets sent to this function to handle it, which then sends the message
     # to the correct group.
     # flow: frontend sender's socket.send() -> backend sender's receive() 
@@ -125,7 +125,7 @@ class GameConsumer(AsyncWebsocketConsumer):
                 }
             )
 
-    # when receiving a message over a websocket from a group,
+    # when receiving a message over a WebSocket from a group,
     # it gets handled by this function,
     # which then sends the message to the browser.
     async def handle_message(self, event):

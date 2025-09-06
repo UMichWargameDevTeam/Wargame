@@ -20,8 +20,9 @@ export default function AvailableUnitInstances({ socketRef, socketReady, roleIns
     const isGamemaster = roleInstance.role.name === "Gamemaster";
 
     const handleDeleteUnitInstance = async (unitId: number) => {
-        if (!socketReady) return;
+        if (!socketReady || !socketRef.current) return;
         if (!confirm("Are you sure you want to delete this unit?")) return;
+        const socket = socketRef.current;
 
         try {
             setDeletingUnitInstance(unitId);
@@ -34,8 +35,8 @@ export default function AvailableUnitInstances({ socketRef, socketReady, roleIns
                 throw new Error(data.error || data.detail || 'Failed to delete unit.');
             }
 
-            if (socketRef.current?.readyState === WebSocket.OPEN) {
-                socketRef.current.send(JSON.stringify({
+            if (socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({
                     channel: "units",
                     action: "delete",
                     data: {

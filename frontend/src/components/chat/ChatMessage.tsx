@@ -20,6 +20,7 @@ export default function ChatMessage({ destinationTeamName, viewerRoleInstance, m
     const timestampText = new Date(message.timestamp).toLocaleTimeString([], {
         hour: '2-digit',
         minute: '2-digit',
+        hour12: false,
     });
 
     return (

@@ -23,12 +23,14 @@ export default function Chat({ socketRef, socketReady, userJoined, viewerRoleIns
     const [activeChannel, setActiveChannel] = useState<[string, string] | null>(null);
     const [unreadChannels, setUnreadChannels] = useState<[string, string][]>([]);
 
+    const addedChatMessageListener = useRef<boolean>(false);
     const wasAtBottomRef = useRef<boolean>(true);
 
     // WebSocket setup
     useEffect(() => {
-        if (!socketReady || !socketRef.current) return;
-        const cachedSocket = socketRef.current;
+        if (!socketReady || !socketRef.current || addedChatMessageListener.current) return;
+        addedChatMessageListener.current = true;
+        const socket = socketRef.current;
 
         const handleChatMessage = (event: MessageEvent) => {
             const msg = JSON.parse(event.data);
@@ -57,10 +59,11 @@ export default function Chat({ socketRef, socketReady, userJoined, viewerRoleIns
             }
         };
 
-        cachedSocket.addEventListener("message", handleChatMessage);
+        socket.addEventListener("message", handleChatMessage);
 
         return () => {
-            cachedSocket.removeEventListener("message", handleChatMessage);
+            socket.removeEventListener("message", handleChatMessage);
+            addedChatMessageListener.current = false;
         };
     }, [socketRef, socketReady, viewerRoleInstance, activeChannel]);
 
@@ -228,7 +231,7 @@ export default function Chat({ socketRef, socketReady, userJoined, viewerRoleIns
                         />
                     ) : (
                         <div className="overflow-y-auto">
-                            <h4 className="text-lg font-semibold">Select a channel...</h4>
+                            <h4 className="text-lg font-semibold">Select a role to communicate with...</h4>
                             <ul className="space-y-2">
                                 {viewerChannels.map((destinationChannel) => {
 
