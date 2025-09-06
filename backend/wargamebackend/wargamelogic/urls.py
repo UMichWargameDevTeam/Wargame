@@ -43,6 +43,7 @@ urlpatterns = [
     path('api/game-instances/<str:join_code>/role-instances/', get.get_game_role_instances, name='get_game_role_instances'),
     path('api/game-instances/<str:join_code>/team-instances/<str:team_name>/role-instances/', get.get_game_role_instances_by_team, name='get_role_instance_by_team'),
     path('api/game-instances/<str:join_code>/team-instances/<str:team_name>/role-instances/<str:role_name>/', get.get_game_role_instances_by_team_and_role, name='get_role_instance_by_team_and_role'),
+    path('api/game-instances/<str:join_code>/team-instances/<str:team_name>/role/<str:role_name>/points/', get.get_game_team_instance_role_points, name='get_game_team_instance_role_points'),
     path('api/game-instances/<str:join_code>/unit-instances/', get.get_game_unit_instances, name='get_game_unit_instances'),
     path('api/game-instances/<str:join_code>/team-instances/<str:team_name>/unit-instances/', get.get_game_unit_instances_by_team_name, name='get_game_unit_instances_by_team_name'),
     path('api/game-instances/<str:join_code>/team-instances/<str:team_name>/branch/<str:branch>/unit-instances/', get.get_game_unit_instances_by_team_name_and_branch, name='get.get_game_unit_instances_by_team_name_and_branch'),

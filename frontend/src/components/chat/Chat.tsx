@@ -3,17 +3,16 @@
 import { useEffect, useState, useRef, RefObject } from 'react';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 import ChatChannel from './ChatChannel';
-import { Team, Role, RoleInstance, Message } from '@/lib/Types';
 import { getSessionStorageOrFetch, arraysEqual } from '@/lib/utils';
+import { Team, Role, RoleInstance, Message } from '@/lib/Types';
 
 interface ChatProps {
     socketRef: RefObject<WebSocket | null>;
     socketReady: boolean;
-    userJoined: boolean;
     viewerRoleInstance: RoleInstance
 }
 
-export default function Chat({ socketRef, socketReady, userJoined, viewerRoleInstance }: ChatProps) {
+export default function Chat({ socketRef, socketReady, viewerRoleInstance }: ChatProps) {
     const authedFetch = useAuthedFetch();
 
     const [open, setOpen] = useState<boolean>(true);
@@ -70,7 +69,7 @@ export default function Chat({ socketRef, socketReady, userJoined, viewerRoleIns
     // get list of roles (the channels) this user can message
     useEffect(() => {
         async function fetchRoles() {
-            if (!socketReady || !socketRef.current || !userJoined || !viewerRoleInstance) return;
+            if (!socketReady || !socketRef.current || !viewerRoleInstance) return;
 
             try {
                 const roleData = await getSessionStorageOrFetch<Role[]>("roles", async () => {
@@ -98,7 +97,7 @@ export default function Chat({ socketRef, socketReady, userJoined, viewerRoleIns
         }
 
         fetchRoles();
-    }, [authedFetch, socketRef, socketReady, userJoined, viewerRoleInstance]);
+    }, [authedFetch, socketRef, socketReady, viewerRoleInstance]);
 
     function getViewerChannels(teams: Team[], roles: Role[], viewerRoleInstance: RoleInstance): [string, string][] {
         const r = viewerRoleInstance.role;

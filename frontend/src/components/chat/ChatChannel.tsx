@@ -2,8 +2,8 @@
 
 import React, { useState, useEffect, useRef, RefObject } from 'react';
 import ChatMessage from './ChatMessage';
-import { Message, RoleInstance } from '@/lib/Types';
 import { arraysEqual } from '@/lib/utils';
+import { Message, RoleInstance } from '@/lib/Types';
 
 interface ChatChannelProps {
     socketRef: RefObject<WebSocket | null>;

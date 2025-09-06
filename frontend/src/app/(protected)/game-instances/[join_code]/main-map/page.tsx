@@ -9,7 +9,7 @@ import UnitInstanceDisplay from '@/components/UnitInstanceDisplay';
 import FooterControls from '@/components/FooterControls';
 import AvailableUnitInstances from '@/components/AvailableUnitInstances';
 import AddUnitInstance from '@/components/AddUnitInstance';
-import ResourcePoints from '@/components/ResourcePoints';
+import SupplyPoints from '@/components/SupplyPoints';
 import CommandersIntent from '@/components/CommandersIntent';
 import InteractiveMap from '@/components/InteractiveMap';
 import JTFMenu from '@/components/JTFMenu';
@@ -36,7 +36,6 @@ export default function MainMapPage() {
 
     const socketRef = useRef<WebSocket | null>(null);
     const [socketReady, setSocketReady] = useState<boolean>(false);
-    const [userJoined, setUserJoined] = useState<boolean>(false);
 
     const [teams, setTeams] = useState<Team[]>([]);
     const [units, setUnits] = useState<Unit[]>([]);
@@ -45,6 +44,7 @@ export default function MainMapPage() {
 
     // data about this user's role
     const [roleInstance, setRoleInstance] = useState<RoleInstance | null>(null);
+    const [teamInstanceRolePoints, setTeamInstanceRolePoints] = useState<number>(0);
     // data about roles of all users in this game
     const [roleInstances, setRoleInstances] = useState<RoleInstance[]>([]);
     const [unitInstances, setUnitInstances] = useState<UnitInstance[]>([]);
@@ -73,60 +73,44 @@ export default function MainMapPage() {
             }
         }
 
-        const fetchData = async () => {
+        const fetchData = async (roleInstance: RoleInstance) => {
             try {
                 const storedMap = sessionStorage.getItem('mapSrc');
                 if (storedMap) {
                     setMapSrc(storedMap);
                 }
 
-                const stored = sessionStorage.getItem('unitInstanceDisplay');
-                if (stored) {
-                    const parsed = JSON.parse(stored);
-                    setSelectedUnitInstances((prev) => ({ ...prev, ...parsed }));
-                }
+                const storedUnits = sessionStorage.getItem('unitInstanceDisplay');
+                if (storedUnits) setSelectedUnitInstances(prev => ({ ...prev, ...JSON.parse(storedUnits) }));
 
-                // Unit instances
-                authedFetch(`/api/game-instances/${joinCode}/unit-instances/`)
-                    .then(res => {
-                        if (!res.ok) throw new Error(`UnitInstance fetch failed with ${res.status}`);
+                // fetch data in parallel
+                const [
+                    unitInstancesData,
+                    teamInstanceRolePointsData,
+                    teamsData,
+                    unitsData,
+                ] = 
+                await Promise.all([
+                    authedFetch(`/api/game-instances/${joinCode}/unit-instances/`)
+                        .then(res => res.ok ? res.json() : Promise.reject(`UnitInstance fetch failed with ${res.status}`)),
+                    authedFetch(`/api/game-instances/${joinCode}/team-instances/${roleInstance.team_instance.team.name}/role/${roleInstance.role.name}/points/`)
+                        .then(res => res.ok ? res.json() : Promise.reject(`TeamInstanceRolePoints fetch failed with ${res.status}`)),
+                    getSessionStorageOrFetch<Team[]>('teams', async () => {
+                        const res = await authedFetch("/api/teams/");
+                        if (!res.ok) throw new Error(`Team fetch failed with ${res.status}`);
                         return res.json();
-                    })
-                    .then(data => setUnitInstances(data));
+                    }),
+                    getSessionStorageOrFetch<Unit[]>('units', async () => {
+                        const res = await authedFetch("/api/units/");
+                        if (!res.ok) throw new Error(`Unit fetch failed with ${res.status}`);
+                        return res.json();
+                    }),
+                ]);
 
-                // Teams
-                getSessionStorageOrFetch<Team[]>('teams', async () => {
-                    const res = await authedFetch("/api/teams/");
-                    if (!res.ok) throw new Error(`Team fetch failed with ${res.status}`);
-                    return res.json();
-                })
-                    .then(data => setTeams(data));
-
-                // Units
-                getSessionStorageOrFetch<Unit[]>('units', async () => {
-                    const res = await authedFetch("/api/units/");
-                    if (!res.ok) throw new Error(`Unit fetch failed with ${res.status}`);
-                    return res.json();
-                })
-                    .then(data => setUnits(data));
-
-                /*
-                // Attacks
-                getSessionStorageOrFetch<Attack[]>('attacks', async () => {
-                    const res = await authedFetch("/api/attacks/");
-                    if (!res.ok) throw new Error(`Attack fetch failed with ${res.status}`);
-                    return res.json();
-                })
-                    .then(data => setAttacks(data));
-                
-                // Abilities
-                getSessionStorageOrFetch<Ability[]>('abilities', async () => {
-                    const res = await authedFetch("/api/abilities/");
-                    if (!res.ok) throw new Error(`Ability fetch failed with ${res.status}`);
-                    return res.json();
-                })
-                    .then(data => setAbilities(data));
-                */
+                setUnitInstances(unitInstancesData);
+                setTeamInstanceRolePoints(teamInstanceRolePointsData.supply_points);
+                setTeams(teamsData);
+                setUnits(unitsData);
 
             } catch (err: unknown) {
                 console.error(err);
@@ -178,7 +162,7 @@ export default function MainMapPage() {
         (async () => {
             const roleInstanceData = await validateAccess();
             if (!roleInstanceData) return;
-            fetchData();
+            await fetchData(roleInstanceData);
             connectToWebSocket();
         })();
 
@@ -247,20 +231,20 @@ export default function MainMapPage() {
                             roleInstance={roleInstance}
                             roleInstances={roleInstances}
                             setRoleInstances={setRoleInstances}
-                            setUserJoined={setUserJoined}
                         />
                         <Chat
                             socketRef={socketRef}
                             socketReady={socketReady}
-                            userJoined={userJoined}
                             viewerRoleInstance={roleInstance}
                         />
-                        <ResourcePoints
+                        <SupplyPoints
                             joinCode={joinCode}
                             socketRef={socketRef}
                             socketReady={socketReady}
-                            roleInstance={roleInstance}
+                            viewerRoleInstance={roleInstance}
                             roleInstances={roleInstances}
+                            teamInstanceRolePoints={teamInstanceRolePoints}
+                            setTeamInstanceRolePoints={setTeamInstanceRolePoints}
                         />
                         <MapSelector
                             initialMap={mapSrc}
@@ -290,20 +274,20 @@ export default function MainMapPage() {
                             roleInstance={roleInstance}
                             roleInstances={roleInstances}
                             setRoleInstances={setRoleInstances}
-                            setUserJoined={setUserJoined}
                         />
                         <Chat
                             socketRef={socketRef}
                             socketReady={socketReady}
-                            userJoined={userJoined}
                             viewerRoleInstance={roleInstance}
                         />
-                        <ResourcePoints
+                        <SupplyPoints
                             joinCode={joinCode}
                             socketRef={socketRef}
                             socketReady={socketReady}
-                            roleInstance={roleInstance}
+                            viewerRoleInstance={roleInstance}
                             roleInstances={roleInstances}
+                            teamInstanceRolePoints={teamInstanceRolePoints}
+                            setTeamInstanceRolePoints={setTeamInstanceRolePoints}
                         />
                         <UnitInstanceDisplay
                             selectedUnitInstances={selectedUnitInstances}
@@ -326,12 +310,10 @@ export default function MainMapPage() {
                             roleInstance={roleInstance}
                             roleInstances={roleInstances}
                             setRoleInstances={setRoleInstances}
-                            setUserJoined={setUserJoined}
                         />
                         <Chat
                             socketRef={socketRef}
                             socketReady={socketReady}
-                            userJoined={userJoined}
                             viewerRoleInstance={roleInstance}
                         />
                     </>
@@ -345,20 +327,20 @@ export default function MainMapPage() {
                             roleInstance={roleInstance}
                             roleInstances={roleInstances}
                             setRoleInstances={setRoleInstances}
-                            setUserJoined={setUserJoined}
                         />
                         <Chat
                             socketRef={socketRef}
                             socketReady={socketReady}
-                            userJoined={userJoined}
                             viewerRoleInstance={roleInstance}
                         />
-                        <ResourcePoints
+                        <SupplyPoints
                             joinCode={joinCode}
                             socketRef={socketRef}
                             socketReady={socketReady}
-                            roleInstance={roleInstance}
+                            viewerRoleInstance={roleInstance}
                             roleInstances={roleInstances}
+                            teamInstanceRolePoints={teamInstanceRolePoints}
+                            setTeamInstanceRolePoints={setTeamInstanceRolePoints}
                         />
                         <JTFMenu />
                     </>
@@ -372,20 +354,20 @@ export default function MainMapPage() {
                             roleInstance={roleInstance}
                             roleInstances={roleInstances}
                             setRoleInstances={setRoleInstances}
-                            setUserJoined={setUserJoined}
                         />
                         <Chat
                             socketRef={socketRef}
                             socketReady={socketReady}
-                            userJoined={userJoined}
                             viewerRoleInstance={roleInstance}
                         />
-                        <ResourcePoints
+                        <SupplyPoints
                             joinCode={joinCode}
                             socketRef={socketRef}
                             socketReady={socketReady}
-                            roleInstance={roleInstance}
+                            viewerRoleInstance={roleInstance}
                             roleInstances={roleInstances}
+                            teamInstanceRolePoints={teamInstanceRolePoints}
+                            setTeamInstanceRolePoints={setTeamInstanceRolePoints}
                         />
                         <MapSelector
                             initialMap={mapSrc}

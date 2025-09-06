@@ -10,10 +10,9 @@ interface UsersListProps {
     roleInstance: RoleInstance | null;
     roleInstances: RoleInstance[];
     setRoleInstances: React.Dispatch<React.SetStateAction<RoleInstance[]>>;
-    setUserJoined: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
-export default function UsersList({ socketRef, socketReady, roleInstance, roleInstances, setRoleInstances, setUserJoined }: UsersListProps) {
+export default function UsersList({ socketRef, socketReady, roleInstance, roleInstances, setRoleInstances }: UsersListProps) {
     const authedFetch = useAuthedFetch();
     
     const [deletingRoleInstance, setDeletingRoleInstance] = useState<number | null>(null);
@@ -38,15 +37,10 @@ export default function UsersList({ socketRef, socketReady, roleInstance, roleIn
                                 action: "join",
                                 data: roleInstance
                             }));
-                        } else {
-                            setUserJoined(true);
                         }
                         break;
                     case "join":
                         setRoleInstances(prev => [...prev, msg.data]);
-                        if (msg.data.user.id == roleInstance.user.id) {
-                            setUserJoined(true);
-                        }
                         break;
                     case "leave":
                         setRoleInstances(prev => prev.filter(r => r.id !== msg.data.id));
@@ -68,7 +62,7 @@ export default function UsersList({ socketRef, socketReady, roleInstance, roleIn
             socket.removeEventListener("message", handleUsersMessage);
             addedUsersMessageListener.current = false;
         };
-    }, [socketRef, socketReady, roleInstance, setRoleInstances, setUserJoined]);
+    }, [socketRef, socketReady, roleInstance, setRoleInstances]);
 
     const handleDeleteRoleInstance = async (roleId: number) => {
         if (!socketReady || !socketRef.current) return;

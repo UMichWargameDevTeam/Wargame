@@ -2,7 +2,7 @@
 
 import { useState, RefObject } from 'react';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
-import { RoleInstance, UnitInstance } from "@/lib/Types"
+import { RoleInstance, UnitInstance } from '@/lib/Types';
 
 interface AvailableUnitInstancesProps {
     socketRef: RefObject<WebSocket | null>;

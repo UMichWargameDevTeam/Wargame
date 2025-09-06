@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef, RefObject, useCallback } from 'react';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 import DraggableUnitInstance from './DraggableUnitInstance';
-import { UnitInstance } from "@/lib/Types";
+import { UnitInstance } from '@/lib/Types';
 
 interface InteractiveMapProps {
     socketRef: RefObject<WebSocket | null>;
