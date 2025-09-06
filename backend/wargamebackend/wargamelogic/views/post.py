@@ -3,12 +3,11 @@ from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
-from wargamelogic.consumers import get_redis_client
 from wargamelogic.models.static import (
     Team, Role, Unit, Tile
 )
 from wargamelogic.models.dynamic import (
-    GameInstance, TeamInstance, RoleInstance, UnitInstance
+    GameInstance, TeamInstance, RoleInstance, TeamInstanceRolePoints, UnitInstance
 )
 from wargamelogic.serializers import (
     RoleInstanceSerializer, UnitInstanceSerializer
@@ -52,7 +51,6 @@ def create_game_instance(request):
             team_instance=gamemaster_team_instance,
             role=gamemaster_role,
             user=request.user,
-            supply_points=100000
         )
         serializer = RoleInstanceSerializer(role_instance)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -61,24 +59,41 @@ def create_game_instance(request):
         # Case 2: Create a new game
         game_instance = GameInstance.objects.create(join_code=join_code)
 
-        # bulk create team instances
-        teams = list(Team.objects.all())
+        teams = list(Team.objects.exclude(pk=gamemaster_team.pk))
+
         team_instances = [
-            TeamInstance(game_instance=game_instance, team=team)
+            TeamInstance(game_instance=game_instance, team=team) 
             for team in teams
         ]
         TeamInstance.objects.bulk_create(team_instances)
 
-        gamemaster_team_instance = TeamInstance.objects.get(
+        team_instances = list(
+            TeamInstance.objects.filter(game_instance=game_instance).select_related("team")
+        )
+
+        roles = list(Role.objects.exclude(pk=gamemaster_role.pk))
+
+        team_instance_role_points_objects = [
+            TeamInstanceRolePoints(team_instance=ti, role=role)
+            for ti in team_instances
+            for role in roles
+        ]
+        TeamInstanceRolePoints.objects.bulk_create(team_instance_role_points_objects)
+
+        gamemaster_team_instance = TeamInstance.objects.create(
             game_instance=game_instance,
             team=gamemaster_team,
+        )
+        TeamInstanceRolePoints.objects.create(
+            team_instance=gamemaster_team_instance,
+            role=gamemaster_role,
+            supply_points=1000000,
         )
 
         role_instance = RoleInstance.objects.create(
             team_instance=gamemaster_team_instance,
             role=gamemaster_role,
-            user=request.user,
-            supply_points=100000
+            user=request.user
         )
         serializer = RoleInstanceSerializer(role_instance)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
@@ -185,14 +200,15 @@ def create_unit_instance(request):
 
     if not is_gamemaster:
         try:
-            role_instance = RoleInstance.objects.get(team_instance=team_instance, user=request.user)
+            role_instance = RoleInstance.objects.select_related("role").get(team_instance=team_instance, user=request.user)
         except RoleInstance.DoesNotExist:
             return Response({"detail": "You are not part of this team."}, status=status.HTTP_403_FORBIDDEN)
 
-        if role_instance.supply_points < unit.cost:
-            return Response({"detail": "Not enough supply points to purchase this unit."}, status=status.HTTP_400_BAD_REQUEST)
+        team_instance_role_points = TeamInstanceRolePoints.objects.get(team_instance=team_instance, role=role_instance.role)
+        if team_instance_role_points.supply_points < unit.cost:
+            return Response({"detail": f"Unit costs {unit.cost} supply points, but you only have {team_instance_role_points.supply_points}."}, status=status.HTTP_400_BAD_REQUEST)
 
-        role_instance.supply_points -= unit.cost
+        team_instance_role_points.supply_points -= unit.cost
         role_instance.save()
 
     unit_instance = UnitInstance.objects.create(
@@ -200,7 +216,7 @@ def create_unit_instance(request):
         unit=unit,
         tile=tile,
         health=unit.max_health,
-        supply_count=unit.max_supply_space,
+        supply_points=unit.max_supply_points,
     )
 
     serializer = UnitInstanceSerializer(unit_instance)

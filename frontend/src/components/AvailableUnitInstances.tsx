@@ -81,7 +81,7 @@ export default function AvailableUnitInstances({ socketRef, socketReady, roleIns
                                 <div><strong>Unit:</strong> {unitInstance.unit.name}</div>
                                 <div><strong>Row:</strong> {unitInstance.tile.row}, <strong>Column:</strong> {unitInstance.tile.column}</div>
                                 <div><strong>Health:</strong> {unitInstance.health}</div>
-                                <div><strong>Supply Count:</strong> {unitInstance.supply_count}</div>
+                                <div><strong>Supply Count:</strong> {unitInstance.supply_points}</div>
                             </div>
                             {isGamemaster && handleDeleteUnitInstance && (
                                 <button

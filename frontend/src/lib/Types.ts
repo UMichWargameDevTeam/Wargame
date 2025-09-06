@@ -35,7 +35,7 @@ export interface Unit {
     type: string;
     speed: number;
     max_health: number;
-    max_supply_space: number;
+    max_supply_points: number;
     defense_modifier: number;
     description: string;
 }
@@ -88,6 +88,11 @@ export interface RoleInstance {
     user: User;
     team_instance: TeamInstance;
     role: Role;
+}
+
+export interface TeamInstanceRolePoints {
+    team_instance: TeamInstance;
+    role: Role;
     supply_points: number;
 }
 
@@ -97,7 +102,7 @@ export interface UnitInstance {
     unit: Unit;
     tile: Tile;
     health: number;
-    supply_count: number;
+    supply_points: number;
 }
 
 export interface Message {

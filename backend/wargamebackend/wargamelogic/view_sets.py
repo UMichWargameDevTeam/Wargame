@@ -6,11 +6,11 @@ from wargamelogic.models.static import (
     Team, Branch, Role, Unit, UnitBranch, Attack, Ability, Landmark, Tile
 )
 from wargamelogic.models.dynamic import (
-    GameInstance, TeamInstance, RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile
+    GameInstance, TeamInstance, RoleInstance, TeamInstanceRolePoints, UnitInstance, LandmarkInstance, LandmarkInstanceTile
 )
 from wargamelogic.serializers import (
     TeamSerializer, BranchSerializer, RoleSerializer, UnitSerializer, UnitBranchSerializer, AttackSerializer, AbilitySerializer, TileSerializer, LandmarkSerializer,
-    GameInstanceSerializer, TeamInstanceSerializer, RoleInstanceSerializer, UnitInstanceSerializer, LandmarkInstanceSerializer, LandmarkInstanceTileSerializer,
+    GameInstanceSerializer, TeamInstanceSerializer, RoleInstanceSerializer, TeamInstanceRolePointsSerializer, UnitInstanceSerializer, LandmarkInstanceSerializer, LandmarkInstanceTileSerializer,
 )
 from wargamelogic.check_roles import (
     require_role_instance, require_any_role_instance, get_object_and_related_with_cache_or_404
@@ -198,6 +198,24 @@ class RoleInstanceViewSet(viewsets.ModelViewSet):
     })
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
+
+class TeamInstanceRolePointsViewSet(viewsets.ModelViewSet):
+    permission_classes = [IsAuthenticated]
+    queryset = RoleInstance.objects.all()
+    serializer_class = RoleInstanceSerializer
+    http_method_names = ['get', 'patch']
+
+    @require_any_role_instance([
+        {
+            'team_instance.game_instance': lambda request, kwargs: get_object_and_related_with_cache_or_404(request, TeamInstanceRolePoints, pk=kwargs['pk'], select_related=['team_instance__game_instance']).team_instance.game_instance,
+            'role.name':'Gamemaster'
+        },
+        {
+            'team_instance': lambda request, kwargs: get_object_and_related_with_cache_or_404(request, TeamInstanceRolePoints, pk=kwargs['pk']).team_instance
+        }
+    ])
+    def partial_update(self, request, *args, **kwargs):
+        return super().partial_update(request, *args, **kwargs)
 
 class UnitInstanceViewSet(viewsets.ModelViewSet):
     permission_classes = [IsAuthenticated]

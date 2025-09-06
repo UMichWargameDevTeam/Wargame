@@ -4,7 +4,7 @@ from wargamelogic.models.static import (
     Team, Branch, Role, Unit, UnitBranch, Attack, Ability, Landmark, Tile
 )
 from wargamelogic.models.dynamic import (
-    GameInstance, TeamInstance, RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile
+    GameInstance, TeamInstance, RoleInstance, TeamInstanceRolePoints, UnitInstance, LandmarkInstance, LandmarkInstanceTile
 )
 
 # static model serializers
@@ -35,7 +35,7 @@ class UnitSerializer(serializers.ModelSerializer):
     class Meta:
         model = Unit
         fields = [
-            'id', 'name', 'cost', 'domain', 'is_logistic', 'type', 'speed', 'max_health', 'max_supply_space', 'defense_modifier', 'description', 
+            'id', 'name', 'cost', 'domain', 'is_logistic', 'type', 'speed', 'max_health', 'max_supply_points', 'defense_modifier', 'description', 
             'branches'
         ]
         read_only_fields = ['id']
@@ -159,6 +159,19 @@ class RoleInstanceSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id']
 
+
+class TeamInstanceRolePointsSerializer(serializers.ModelSerializer):
+    team_instance = TeamInstanceSerializer(read_only=True)
+    role = RoleSerializer(read_only=True)
+
+    class Meta:
+        model = TeamInstanceRolePoints
+        fields = [
+            'id', 'team_instance', 'role', 'supply_points'
+        ]
+        read_only_fields = ['id']
+    
+
 class UnitInstanceSerializer(serializers.ModelSerializer):
     team_instance = TeamInstanceSerializer(read_only=True)
     unit = UnitSerializer(read_only=True)
@@ -170,7 +183,7 @@ class UnitInstanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = UnitInstance
         fields = [
-            'id', 'team_instance', 'unit', 'tile', 'health', 'supply_count',
+            'id', 'team_instance', 'unit', 'tile', 'health', 'supply_points',
             'row', 'column'  # writable for PATCH
         ]
         read_only_fields = ['id']

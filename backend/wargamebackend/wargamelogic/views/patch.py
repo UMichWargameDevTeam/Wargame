@@ -4,10 +4,10 @@ from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
 from wargamelogic.models.static import (
-    Tile
+    Team, Role, Tile
 )
 from wargamelogic.models.dynamic import (
-    UnitInstance
+    TeamInstance, TeamInstanceRolePoints, UnitInstance
 )
 from wargamelogic.serializers import (
     UnitInstanceSerializer
@@ -66,19 +66,13 @@ def use_attack(request, pk, attack_name):
     if attack is None:
         return Response({"error": f"Attack '{attack_name}' not found for unit '{unit_instance.unit.name}'."}, status=status.HTTP_404_NOT_FOUND)
 
-    if role_instance.supply_points < attack.cost:
-        return Response({"detail": "Not enough supply points to perform this attack."}, status=status.HTTP_400_BAD_REQUEST)
-
-    role_instance.supply_points -= attack.cost
     # TODO: actual attack logic here
-    role_instance.save()
 
     return Response(
         {
             "unit_instance_id": unit_instance.id,
             "unit_name": unit_instance.unit.name,
             "attack_used": attack.name,
-            "supply_points_remaining": role_instance.supply_points,
             "message": f"{unit_instance.unit.name} used {attack.name}, costing {attack.cost} supply points."
         },
         status=status.HTTP_200_OK

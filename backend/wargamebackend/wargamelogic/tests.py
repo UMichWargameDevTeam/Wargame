@@ -32,7 +32,7 @@ class GetEndpointTests(TestCase):
             type='Heavy',
             speed=900.0,
             max_health=1000.0,
-            max_supply_space=500.0,
+            max_supply_points=500.0,
             defense_modifier=1.2,
             description='Stealth bomber aircraft'
         )
@@ -50,7 +50,7 @@ class GetEndpointTests(TestCase):
             unit=self.unit,
             tile=self.tile,
             health=1000.0,
-            supply_count=100.0
+            supply_points=100.0
         )
 
         role = Role.objects.create(
@@ -176,7 +176,7 @@ class RoleRequiredTests(TestCase):
             type="Heavy",
             speed=550,
             max_health=20,
-            max_supply_space=4,
+            max_supply_points=4,
             defense_modifier=2,
             description="Stealth bomber aircraft"
         )
@@ -190,7 +190,7 @@ class RoleRequiredTests(TestCase):
             unit=self.unit,
             tile=self.tile,
             health=20,
-            supply_count=4
+            supply_points=4
         )
 
         self.url = f"/api/game-instances/{self.game_instance.join_code}/team-instances/{self.team.name}/unit-instances/"
@@ -280,15 +280,13 @@ class UseAttackQueryCountTests(TestCase):
             role=self.gm_role,
             team_instance=self.team_instance,
             user=self.gm_user,
-            supply_points=50
         )
 
         # Assign non-GM ops role
         self.ops_role_instance = RoleInstance.objects.create(
             role=self.ops_role,
             team_instance=self.team_instance,
-            user=self.ops_user,
-            supply_points=50
+            user=self.ops_user
         )
 
         # Unit + attack
@@ -299,7 +297,7 @@ class UseAttackQueryCountTests(TestCase):
             is_logistic=False,
             type="Light",
             max_health=20,
-            max_supply_space=4,
+            max_supply_points=4,
             speed=30,
             defense_modifier=0,
             description="The Queen of the Battlefield."
@@ -328,7 +326,7 @@ class UseAttackQueryCountTests(TestCase):
             team_instance=self.team_instance,
             tile=self.tile,
             health=self.unit.max_health,
-            supply_count=self.unit.max_supply_space
+            supply_points=self.unit.max_supply_points
         )
 
     def test_use_attack_query_count_gm(self):
@@ -419,7 +417,7 @@ class BaseInstanceViewSetTestCase(TestCase):
             type="Heavy",
             speed=550,
             max_health=20,
-            max_supply_space=4,
+            max_supply_points=4,
             defense_modifier=2,
             description="Stealth bomber aircraft"
         )
@@ -436,10 +434,10 @@ class BaseInstanceViewSetTestCase(TestCase):
 
         # UnitInstances (one for each team)
         self.ui_red = UnitInstance.objects.create(
-            team_instance=self.ti_red, unit=self.unit, tile=self.tile_a, health=20, supply_count=4
+            team_instance=self.ti_red, unit=self.unit, tile=self.tile_a, health=20, supply_points=4
         )
         self.ui_blue = UnitInstance.objects.create(
-            team_instance=self.ti_blue, unit=self.unit, tile=self.tile_b, health=20, supply_count=4
+            team_instance=self.ti_blue, unit=self.unit, tile=self.tile_b, health=20, supply_points=4
         )
 
         self.landmark = Landmark.objects.create(

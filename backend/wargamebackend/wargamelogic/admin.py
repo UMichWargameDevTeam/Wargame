@@ -3,7 +3,7 @@ from wargamelogic.models.static import (
     Team, Branch, Role, Unit, UnitBranch, Attack, Ability, Tile, Landmark,
 )
 from wargamelogic.models.dynamic import (
-    GameInstance, TeamInstance, RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile
+    GameInstance, TeamInstance, RoleInstance, TeamInstanceRolePoints, UnitInstance, LandmarkInstance, LandmarkInstanceTile
 )
 
 class TeamInstanceInline(admin.TabularInline):
@@ -16,14 +16,21 @@ class TeamInstanceInline(admin.TabularInline):
 class RoleInstanceInline(admin.TabularInline):
     model = RoleInstance
     extra = 0
-    fields = ('user', 'role', 'supply_points')
+    fields = ('user', 'role')
     autocomplete_fields = ('user', 'role')
+
+
+class TeamInstanceRolePointsInline(admin.TabularInline):
+    model = TeamInstanceRolePoints
+    extra = 0
+    fields = ('role', 'supply_points')
+    autocomplete_fields = ('role',)
 
 
 class UnitInstanceInline(admin.TabularInline):
     model = UnitInstance
     extra = 0
-    fields = ('unit', 'tile', 'health', 'supply_count')
+    fields = ('unit', 'tile', 'health', 'supply_points')
     autocomplete_fields = ('unit', 'tile')
 
 
@@ -53,7 +60,7 @@ class RoleAdmin(admin.ModelAdmin):
 @admin.register(Unit)
 class UnitAdmin(admin.ModelAdmin):
     inlines = [UnitBranchInline, AttackInline, AbilityInline]
-    list_display = ("name", "cost", "domain", "is_logistic", "type", "speed", "max_health", "max_supply_space",
+    list_display = ("name", "cost", "domain", "is_logistic", "type", "speed", "max_health", "max_supply_points",
                      "defense_modifier", "description")
     search_fields = ("name",)
     list_filter = ("domain", "type", "is_logistic")
@@ -102,20 +109,28 @@ class TeamInstanceAdmin(admin.ModelAdmin):
     list_display = ('game_instance', 'team', 'victory_points')
     list_filter = ('game_instance', 'team')
     search_fields = ('team__name', 'game_instance__join_code')
-    inlines = [RoleInstanceInline, UnitInstanceInline]
+    inlines = [RoleInstanceInline, TeamInstanceRolePointsInline, UnitInstanceInline]
 
 
 @admin.register(RoleInstance)
 class RoleInstanceAdmin(admin.ModelAdmin):
-    list_display = ('user', 'team_instance', 'role', 'supply_points')
+    list_display = ('user', 'team_instance', 'role')
     list_filter = ('team_instance__game_instance', 'role__branch', 'role')
     search_fields = ('user__username', 'team_instance__team__name', 'role__name')
     autocomplete_fields = ('user', 'team_instance', 'role')
 
 
+@admin.register(TeamInstanceRolePoints)
+class TeamInstanceRolePointsAdmin(admin.ModelAdmin):
+    list_display = ('team_instance', 'role', 'supply_points')
+    list_filter = ('team_instance__game_instance', 'role__branch', 'role')
+    search_fields = ('team_instance__team__name', 'role__name')
+    autocomplete_fields = ('team_instance', 'role')
+
+
 @admin.register(UnitInstance)
 class UnitInstanceAdmin(admin.ModelAdmin):
-    list_display = ('unit', 'team_instance', 'tile', 'health', 'supply_count')
+    list_display = ('unit', 'team_instance', 'tile', 'health', 'supply_points')
     list_filter = ('team_instance__game_instance', 'unit', 'tile')
     search_fields = ('unit__name', 'team_instance__team__name', 'tile__row', 'tile__column')
     autocomplete_fields = ('team_instance', 'unit', 'tile')

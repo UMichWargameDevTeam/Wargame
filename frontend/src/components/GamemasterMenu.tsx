@@ -19,7 +19,7 @@ export default function GamemasterMenu({ joinCode, socketRef, socketReady, roleI
 
     const handleDeleteGame = async () => {
         if (!socketReady || !socketRef.current) return;
-        if (!confirm("Are you sure you want to delete this game?")) return;
+        if (!confirm("Are you sure you want to delete this game?\nThis is irreversible.")) return;
         const socket = socketRef.current;
 
         try {
