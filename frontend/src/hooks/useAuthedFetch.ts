@@ -20,10 +20,9 @@ export function useAuthedFetch() {
       });
 
       if (res.status === 401) {
-        const refreshToken = localStorage.getItem("refresh_token");
-
+        const refreshToken = localStorage.getItem("refreshToken");
         if (refreshToken) {
-          const refreshRes = await fetch(`${BACKEND_URL}/api/token/refresh/`, {
+          const refreshRes = await fetch(`${BACKEND_URL}/api/auth/token/refresh/`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ refresh: refreshToken }),
