@@ -25,13 +25,12 @@ class TeamInstance(models.Model):
         ]
 
     def __str__(self):
-        return f"GameInstance: {self.game_instance.join_code} | {self.team.name} | Victory Points: {self.victory_points}"
+        return f"GameInstance: {self.game_instance.join_code} | Team: {self.team.name}"
 
 class RoleInstance(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     team_instance = models.ForeignKey(TeamInstance, on_delete=models.CASCADE)
     role = models.ForeignKey(Role, on_delete=models.CASCADE)
-    supply_points = models.FloatField(default=0)
 
     class Meta:
         constraints = [
@@ -39,17 +38,31 @@ class RoleInstance(models.Model):
         ]
     
     def __str__(self):
-        return f"GameInstance: {self.team_instance.game_instance.join_code} | User: {self.user.username} | {self.team_instance.team.name} | {self.role.name} | Supply Points: {self.supply_points}"
+        return f"GameInstance: {self.team_instance.game_instance.join_code} | Team: {self.team_instance.team.name} | Role: {self.role.name} | User: {self.user.username} "
+
+class TeamInstanceRolePoints(models.Model):
+    team_instance = models.ForeignKey(TeamInstance, on_delete=models.CASCADE)
+    role = models.ForeignKey(Role, on_delete=models.CASCADE)
+    supply_points = models.FloatField(default=0)
+
+    class Meta:
+        verbose_name_plural = "team instance role points"
+        constraints = [
+            models.UniqueConstraint(fields=["team_instance", "role"], name="unique_team_instance_role_pair")
+        ]
+    
+    def __str__(self):
+        return f"GameInstance: {self.team_instance.game_instance.join_code} | Team: {self.team_instance.team.name} | Role: {self.role.name}"
 
 class UnitInstance(models.Model):
     team_instance = models.ForeignKey(TeamInstance, on_delete=models.CASCADE)
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE)
     tile = models.ForeignKey(Tile, on_delete=models.CASCADE)
     health = models.FloatField()
-    supply_count = models.FloatField()
+    supply_points = models.FloatField()
 
     def __str__(self):
-        return f"GameInstance: {self.team_instance.game_instance.join_code} | {self.team_instance.team.name} | {self.unit.name} | Tile: ({self.tile.row}, {self.tile.column}) | Health: {self.health} | Supply Count: {self.supply_count}"
+        return f"id: {self.id} | GameInstance: {self.team_instance.game_instance.join_code} | Team: {self.team_instance.team.name}"
 
 class LandmarkInstance(models.Model):
     # Here, game_instance is a foreign key since team_instance can be null
@@ -60,7 +73,7 @@ class LandmarkInstance(models.Model):
 
     def __str__(self):
         team_name = self.team_instance.team.name if self.team_instance else "No Team"
-        return f"GameInstance: {self.game_instance.join_code} | {team_name} | {self.landmark.name} | Victory Points: {self.victory_points}"
+        return f"id: {self.id} | GameInstance: {self.game_instance.join_code} | Team: {team_name} | Landmark: {self.landmark.name}"
 
 # My current understanding is that multiple tiles can be part of a landmark,
 # And possibly that a tile can be part of multiple landmarks. 
@@ -78,4 +91,4 @@ class LandmarkInstanceTile(models.Model):
 
     def __str__(self):
         team_name = self.landmark_instance.team_instance.team.name if self.landmark_instance.team_instance else "No Team"
-        return f"GameInstance: {self.landmark_instance.game_instance.join_code} | {team_name} | {self.landmark_instance.landmark.name} | Tile ({self.tile.row}, {self.tile.column})"
+        return f"GameInstance: {self.landmark_instance.game_instance.join_code} | Team: {team_name} | Landmark: {self.landmark_instance.landmark.name} | Tile ({self.tile.row}, {self.tile.column})"

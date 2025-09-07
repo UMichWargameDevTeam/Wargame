@@ -3,7 +3,7 @@
 import React, { useEffect, useState, useRef, RefObject, useCallback } from 'react';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 import DraggableUnitInstance from './DraggableUnitInstance';
-import { UnitInstance } from "@/lib/Types";
+import { UnitInstance } from '@/lib/Types';
 
 interface InteractiveMapProps {
     socketRef: RefObject<WebSocket | null>;
@@ -28,6 +28,7 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const imageRef = useRef<HTMLImageElement | null>(null);
+    const addedUnitsMessageListener = useRef<boolean>(false);
 
     const [zoom, setZoom] = useState<number>(1);
     const [offset, setOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -49,10 +50,11 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
         sessionStorage.setItem('map_offset', JSON.stringify(offset));
     }, [zoom, offset]);
 
-    // WebSocket: keep your existing message handler
+    // WebSocket setup
     useEffect(() => {
-        if (!socketReady || !socketRef.current) return;
-        const cachedSocket = socketRef.current;
+        if (!socketReady || !socketRef.current || addedUnitsMessageListener.current) return;
+        addedUnitsMessageListener.current = true;
+        const socket = socketRef.current;
 
         const handleUnitsMessage = (event: MessageEvent) => {
             const msg  = JSON.parse(event.data);
@@ -79,8 +81,13 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
             }
         };
 
-        cachedSocket.addEventListener("message", handleUnitsMessage);
-        return () => cachedSocket.removeEventListener("message", handleUnitsMessage);
+        socket.addEventListener("message", handleUnitsMessage);
+
+        return () => {
+            socket.removeEventListener("message", handleUnitsMessage);
+            addedUnitsMessageListener.current = false;
+        }
+
     }, [socketRef, socketReady, setUnitInstances]);
 
     function getLabelPart(row: number, col: number, useLowercase = false) {
@@ -289,6 +296,9 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
 
     // Toggle drag on a unit (click to start; click again to stop & commit)
     const toggleElementDrag = async (id: number) => {
+        if (!socketReady || !socketRef.current) return;
+        const socket = socketRef.current;
+
         if (elementDragId === id) {
             // stop dragging immediately so UI un-sticks
             setElementDragId(0);
@@ -307,8 +317,8 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
                     throw new Error(data.error || data.detail || "Failed to move unit instance.");
                 }
 
-                if (socketRef.current?.readyState === WebSocket.OPEN) {
-                    socketRef.current.send(JSON.stringify({
+                if (socket.readyState === WebSocket.OPEN) {
+                    socket.send(JSON.stringify({
                         channel: "units",
                         action: "move",
                         data: data

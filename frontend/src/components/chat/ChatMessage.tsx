@@ -3,24 +3,37 @@
 import { Message, RoleInstance } from '@/lib/Types';
 
 interface ChatMessageProps {
-    destinationTeamName: string;
+    recipientTeamName: string;
     viewerRoleInstance: RoleInstance;
     message: Message;
     previousMessage: Message | null;
 }
 
-export default function ChatMessage({ destinationTeamName, viewerRoleInstance, message, previousMessage }: ChatMessageProps) {
-    const isViewerMessage = message.sender_role_instance.user.id === viewerRoleInstance.user.id;
-    const isSameSenderAsPrevious = message.sender_role_instance.user.id === previousMessage?.sender_role_instance.user.id;
-
-    const isCrossTeamChannel = destinationTeamName != "Gamemasters" && viewerRoleInstance.team_instance.team.name !== destinationTeamName;
-    const messageSenderRoleName = message.sender_role_instance.role.name;
-    const messageRoleDisplayName = isCrossTeamChannel ? `${destinationTeamName} ${messageSenderRoleName}` : messageSenderRoleName;
+export default function ChatMessage({ recipientTeamName, viewerRoleInstance, message, previousMessage }: ChatMessageProps) {
 
     const timestampText = new Date(message.timestamp).toLocaleTimeString([], {
         hour: '2-digit',
         minute: '2-digit',
+        hour12: false,
     });
+
+    if (message.type === "system") {
+        return (
+            <div className="flex flex-col items-center w-full my-2">
+                <span className="text-xs text-gray-400 text-center">
+                    <p>{timestampText}</p>
+                    <p>{message.text}</p>
+                </span>
+            </div>
+        );
+    }
+
+    const isViewerMessage = message.sender_role_instance.user.id === viewerRoleInstance.user.id;
+    const isSameSenderAsPrevious = message.sender_role_instance.user.id === previousMessage?.sender_role_instance.user.id && previousMessage.type !== "system";
+
+    const isCrossTeamChannel = recipientTeamName != "Gamemasters" && viewerRoleInstance.team_instance.team.name !== recipientTeamName;
+    const messageSenderRoleName = message.sender_role_instance.role.name;
+    const messageRoleDisplayName = isCrossTeamChannel ? `${recipientTeamName} ${messageSenderRoleName}` : messageSenderRoleName;
 
     return (
         <div

@@ -3,32 +3,33 @@
 import { useEffect, useState, useRef, RefObject } from 'react';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 import ChatChannel from './ChatChannel';
-import { Team, Role, RoleInstance, Message } from '@/lib/Types';
 import { getSessionStorageOrFetch, arraysEqual } from '@/lib/utils';
+import { Team, Role, RoleInstance, Message } from '@/lib/Types';
 
 interface ChatProps {
     socketRef: RefObject<WebSocket | null>;
     socketReady: boolean;
-    userJoined: boolean;
     viewerRoleInstance: RoleInstance
 }
 
-export default function Chat({ socketRef, socketReady, userJoined, viewerRoleInstance }: ChatProps) {
+export default function Chat({ socketRef, socketReady, viewerRoleInstance }: ChatProps) {
     const authedFetch = useAuthedFetch();
 
     const [open, setOpen] = useState<boolean>(true);
 
     const [viewerChannels, setviewerChannels] = useState<[string, string][]>([]);
-    const [messages, setMessages] = useState<Record<string, Message[]>>({});
+    const [messages, setMessages] = useState<Record<string, Record<string, Message[]>>>({});
     const [activeChannel, setActiveChannel] = useState<[string, string] | null>(null);
     const [unreadChannels, setUnreadChannels] = useState<[string, string][]>([]);
 
+    const addedChatMessageListener = useRef<boolean>(false);
     const wasAtBottomRef = useRef<boolean>(true);
 
     // WebSocket setup
     useEffect(() => {
-        if (!socketReady || !socketRef.current) return;
-        const cachedSocket = socketRef.current;
+        if (!socketReady || !socketRef.current || addedChatMessageListener.current) return;
+        addedChatMessageListener.current = true;
+        const socket = socketRef.current;
 
         const handleChatMessage = (event: MessageEvent) => {
             const msg = JSON.parse(event.data);
@@ -39,11 +40,13 @@ export default function Chat({ socketRef, socketReady, userJoined, viewerRoleIns
                         const viewerIsSender = receivedMessage.sender_role_instance.user.id === viewerRoleInstance.user.id;
                         const viewerChannel = determineViewerChannel(viewerRoleInstance, receivedMessage);
                         const [viewerTeamName, viewerRoleName] = viewerChannel;
-                        const viewerChannelKey = `${viewerTeamName} ${viewerRoleName}`;
 
                         setMessages(prev => ({
                             ...prev,
-                            [viewerChannelKey]: [...(prev[viewerChannelKey] || []), receivedMessage]
+                            [viewerTeamName]: {
+                                ...prev[viewerTeamName],
+                                [viewerRoleName]: [...(prev[viewerTeamName]?.[viewerRoleName] || []), receivedMessage]
+                            }
                         }));
                         
                         if (!arraysEqual(viewerChannel, activeChannel || [])
@@ -57,17 +60,18 @@ export default function Chat({ socketRef, socketReady, userJoined, viewerRoleIns
             }
         };
 
-        cachedSocket.addEventListener("message", handleChatMessage);
+        socket.addEventListener("message", handleChatMessage);
 
         return () => {
-            cachedSocket.removeEventListener("message", handleChatMessage);
+            socket.removeEventListener("message", handleChatMessage);
+            addedChatMessageListener.current = false;
         };
     }, [socketRef, socketReady, viewerRoleInstance, activeChannel]);
 
     // get list of roles (the channels) this user can message
     useEffect(() => {
         async function fetchRoles() {
-            if (!socketReady || !socketRef.current || !userJoined || !viewerRoleInstance) return;
+            if (!socketReady || !socketRef.current || !viewerRoleInstance) return;
 
             try {
                 const roleData = await getSessionStorageOrFetch<Role[]>("roles", async () => {
@@ -84,8 +88,15 @@ export default function Chat({ socketRef, socketReady, userJoined, viewerRoleIns
 
                 const channels = getViewerChannels(teamData, roleData, viewerRoleInstance);
                 setviewerChannels(channels);
-                setMessages(Object.fromEntries(channels.map(ch => [ch, []])));
-
+                setMessages(
+                    channels.reduce<Record<string, Record<string, Message[]>>>((acc, [teamName, roleName]) => {
+                        if (!acc[teamName]) {
+                        acc[teamName] = {};
+                        }
+                        acc[teamName][roleName] = [];
+                        return acc;
+                    }, {})
+                );
             } catch (err: unknown) {
                 console.error(err);
                 if (err instanceof Error) {
@@ -95,7 +106,7 @@ export default function Chat({ socketRef, socketReady, userJoined, viewerRoleIns
         }
 
         fetchRoles();
-    }, [authedFetch, socketRef, socketReady, userJoined, viewerRoleInstance]);
+    }, [authedFetch, socketRef, socketReady, viewerRoleInstance]);
 
     function getViewerChannels(teams: Team[], roles: Role[], viewerRoleInstance: RoleInstance): [string, string][] {
         const r = viewerRoleInstance.role;
@@ -183,21 +194,21 @@ export default function Chat({ socketRef, socketReady, userJoined, viewerRoleIns
     function determineViewerChannel(viewerRoleInstance: RoleInstance, receivedMessage: Message): [string, string] {
         const senderTeamName = receivedMessage.sender_role_instance.team_instance.team.name;
         const senderRoleName = receivedMessage.sender_role_instance.role.name;
-        const destinationTeamName = receivedMessage.destination_team_name;
-        const destinationRoleName = receivedMessage.destination_role_name;
+        const recipientTeamName = receivedMessage.recipient_team_name;
+        const recipientRoleName = receivedMessage.recipient_role_name;
 
         const viewerTeamName = viewerRoleInstance.team_instance.team.name;
         const viewerRoleName = viewerRoleInstance.role.name;
 
         if (viewerTeamName == senderTeamName && viewerRoleName == senderRoleName) {
-            return [destinationTeamName, destinationRoleName];
+            return [recipientTeamName, recipientRoleName];
         }
 
-        if (viewerTeamName == destinationTeamName && viewerRoleName == destinationRoleName) {
+        if (viewerTeamName == recipientTeamName && viewerRoleName == recipientRoleName) {
             return [senderTeamName, senderRoleName];
         }
 
-        throw Error("Recipient of message isn't sender or destination!");
+        throw Error("Recipient of message isn't sender or intended recipient!");
     }
 
     return (
@@ -224,28 +235,28 @@ export default function Chat({ socketRef, socketReady, userJoined, viewerRoleIns
                             channel={activeChannel}
                             setActiveChannel={setActiveChannel}
                             wasAtBottomRef={wasAtBottomRef}
-                            messages={messages[`${activeChannel[0]} ${activeChannel[1]}`] || []}
+                            messages={messages[activeChannel[0]]?.[activeChannel[1]] || []}
                         />
                     ) : (
                         <div className="overflow-y-auto">
-                            <h4 className="text-lg font-semibold">Select a channel...</h4>
+                            <h4 className="text-md font-semibold mb-2">Select a role to communicate with...</h4>
                             <ul className="space-y-2">
-                                {viewerChannels.map((destinationChannel) => {
+                                {viewerChannels.map((recipientChannel) => {
 
-                                    const [destinationTeamName, destinationRoleName] = destinationChannel;
-                                    const channelKey = `${destinationTeamName} ${destinationRoleName}`;
-                                    const channelDisplayName = destinationRoleName === "Gamemaster" ? destinationRoleName : channelKey;
+                                    const [recipientTeamName, recipientRoleName] = recipientChannel;
+                                    const channelKey = `${recipientTeamName} ${recipientRoleName}`;
+                                    const channelDisplayName = recipientRoleName === "Gamemaster" ? recipientRoleName : channelKey;
 
                                     return (
                                         <li
                                             key={channelKey}
                                             className="cursor-pointer bg-neutral-600 hover:bg-neutral-500 rounded px-3 py-2"
                                             onClick={() => {
-                                                setActiveChannel(destinationChannel);
-                                                setUnreadChannels(prev => prev.filter(c => !arraysEqual(c, destinationChannel)));
+                                                setActiveChannel(recipientChannel);
+                                                setUnreadChannels(prev => prev.filter(c => !arraysEqual(c, recipientChannel)));
                                             }}
                                         >
-                                            {unreadChannels.some(c => arraysEqual(c, destinationChannel)) ? (
+                                            {unreadChannels.some(c => arraysEqual(c, recipientChannel)) ? (
                                                 <div className="font-semibold">
                                                     <span className="text-red-400">! </span> # {channelDisplayName}
                                                 </div>

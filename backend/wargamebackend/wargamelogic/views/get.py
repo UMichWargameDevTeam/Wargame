@@ -7,11 +7,11 @@ from wargamelogic.models.static import (
     Team, Role, Unit, Attack, Ability, Landmark, Tile
 )
 from wargamelogic.models.dynamic import (
-    GameInstance, TeamInstance, RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile
+    GameInstance, TeamInstance, RoleInstance, TeamInstanceRolePoints, UnitInstance, LandmarkInstance, LandmarkInstanceTile
 )
 from wargamelogic.serializers import (
     TeamSerializer, RoleSerializer, UnitSerializer, AttackSerializer, AbilitySerializer, LandmarkSerializer, TileSerializer,
-    TeamInstanceSerializer, RoleInstanceSerializer, UnitInstanceSerializer, LandmarkInstanceSerializer,
+    TeamInstanceSerializer, RoleInstanceSerializer, TeamInstanceRolePointsSerializer, UnitInstanceSerializer, LandmarkInstanceSerializer,
 )
 from wargamelogic.check_roles import (
     require_role_instance, require_any_role_instance
@@ -129,6 +129,17 @@ def get_game_role_instances_by_team_and_role(request, join_code, team_name, role
     role = get_object_or_404(Role, name=role_name)
     role_instances = get_list_or_404(RoleInstance, team_instance=team_instance, role=role)
     serializer = RoleInstanceSerializer(role_instances, many=True)
+    return Response(serializer.data)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def get_game_team_instance_role_points(request, join_code, team_name, role_name):
+    game_instance = get_object_or_404(GameInstance, join_code=join_code)
+    team = get_object_or_404(Team, name=team_name)
+    team_instance = get_object_or_404(TeamInstance, game_instance=game_instance, team=team)
+    role = get_object_or_404(Role, name=role_name)
+    team_instance_role_points = get_object_or_404(TeamInstanceRolePoints, team_instance=team_instance, role=role)
+    serializer = TeamInstanceRolePointsSerializer(team_instance_role_points)
     return Response(serializer.data)
 
 @api_view(['GET'])

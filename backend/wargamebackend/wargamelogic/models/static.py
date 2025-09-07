@@ -80,7 +80,7 @@ class Unit(models.Model):
     type = models.CharField(max_length=20, choices=DEFENDER_TYPES)
     speed = models.FloatField()
     max_health = models.FloatField()
-    max_supply_space = models.FloatField()
+    max_supply_points = models.FloatField()
     defense_modifier = models.FloatField()
     description = models.TextField(blank=True, null=False)
 

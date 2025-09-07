@@ -1,26 +1,29 @@
 'use client';
 
-import { useEffect, useState, RefObject } from 'react';
+import React, { useEffect, useState, useRef, RefObject } from 'react';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 import { RoleInstance } from '@/lib/Types'
 
 interface UsersListProps {
     socketRef: RefObject<WebSocket | null>;
     socketReady: boolean;
-    setUserJoined: React.Dispatch<React.SetStateAction<boolean>>;
     roleInstance: RoleInstance | null;
+    roleInstances: RoleInstance[];
+    setRoleInstances: React.Dispatch<React.SetStateAction<RoleInstance[]>>;
 }
 
-export default function UsersList({ socketRef, socketReady, setUserJoined, roleInstance }: UsersListProps) {
+export default function UsersList({ socketRef, socketReady, roleInstance, roleInstances, setRoleInstances }: UsersListProps) {
     const authedFetch = useAuthedFetch();
     
-    const [roleInstances, setRoleInstances] = useState<RoleInstance[]>([]);
     const [deletingRoleInstance, setDeletingRoleInstance] = useState<number | null>(null);
+
+    const addedUsersMessageListener = useRef<boolean>(false);
 
     // WebSocket setup
     useEffect(() => {
-        if (!socketReady || !socketRef.current) return;
-        const cachedSocket = socketRef.current;
+        if (!socketReady || !socketRef.current || !roleInstance || addedUsersMessageListener.current) return;
+        addedUsersMessageListener.current = true;
+        const socket = socketRef.current;
 
         const handleUsersMessage = (event: MessageEvent) => {
             const msg = JSON.parse(event.data);
@@ -28,17 +31,16 @@ export default function UsersList({ socketRef, socketReady, setUserJoined, roleI
                 switch (msg.action) {
                     case "list":
                         setRoleInstances(() => msg.data);
-                        cachedSocket.send(JSON.stringify({
-                            channel: "users",
-                            action: "join",
-                            data: roleInstance
-                        }));
+                        if (!msg.data.some((ri: RoleInstance) => ri.user.id == roleInstance.user.id)) {
+                            socket.send(JSON.stringify({
+                                channel: "users",
+                                action: "join",
+                                data: roleInstance
+                            }));
+                        }
                         break;
                     case "join":
                         setRoleInstances(prev => [...prev, msg.data]);
-                        if (msg.data.user.id == roleInstance?.user.id) {
-                            setUserJoined(true);
-                        }
                         break;
                     case "leave":
                         setRoleInstances(prev => prev.filter(r => r.id !== msg.data.id));
@@ -47,16 +49,25 @@ export default function UsersList({ socketRef, socketReady, setUserJoined, roleI
             }
         };
 
-        cachedSocket.addEventListener("message", handleUsersMessage);
+        socket.addEventListener("message", handleUsersMessage);
+        if (socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({
+                channel: "users",
+                action: "list",
+                data: {}
+            }));
+        }
 
         return () => {
-            cachedSocket.removeEventListener("message", handleUsersMessage);
+            socket.removeEventListener("message", handleUsersMessage);
+            addedUsersMessageListener.current = false;
         };
-    }, [socketRef, socketReady, roleInstance, setUserJoined]);
+    }, [socketRef, socketReady, roleInstance, setRoleInstances]);
 
     const handleDeleteRoleInstance = async (roleId: number) => {
         if (!socketReady || !socketRef.current) return;
         if (!confirm("Are you sure you want to delete this user's role?")) return;
+        const socket = socketRef.current;
 
         try {
             setDeletingRoleInstance(roleId);
@@ -71,8 +82,8 @@ export default function UsersList({ socketRef, socketReady, setUserJoined, roleI
 
             const roleUserId = roleInstances.find(ri => ri.id === roleId)?.user.id;
 
-            if (socketRef.current?.readyState === WebSocket.OPEN && roleUserId) {
-                socketRef.current.send(JSON.stringify({
+            if (socket.readyState === WebSocket.OPEN && roleUserId) {
+                socket.send(JSON.stringify({
                     channel: "role_instances",
                     action: "delete",
                     data: { id: roleUserId }

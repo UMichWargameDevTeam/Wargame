@@ -71,7 +71,7 @@ export default function DraggableUnitInstance({ unitInstance, cellSize, zoom, of
                     <div><b>Unit:</b> {unitInstance.unit.name}</div>
                     <div><b>Row:</b> {unitInstance.tile.row}, <b>Column:</b> {unitInstance.tile.column}</div>
                     <div><b>Health:</b> {unitInstance.health}</div>
-                    <div><b>Supply count:</b> {unitInstance.supply_count}</div>
+                    <div><b>Supply count:</b> {unitInstance.supply_points}</div>
                 </div>
             )}
         </div>

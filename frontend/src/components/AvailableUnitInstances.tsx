@@ -2,7 +2,7 @@
 
 import { useState, RefObject } from 'react';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
-import { RoleInstance, UnitInstance } from "@/lib/Types"
+import { RoleInstance, UnitInstance } from '@/lib/Types';
 
 interface AvailableUnitInstancesProps {
     socketRef: RefObject<WebSocket | null>;
@@ -20,8 +20,9 @@ export default function AvailableUnitInstances({ socketRef, socketReady, roleIns
     const isGamemaster = roleInstance.role.name === "Gamemaster";
 
     const handleDeleteUnitInstance = async (unitId: number) => {
-        if (!socketReady) return;
+        if (!socketReady || !socketRef.current) return;
         if (!confirm("Are you sure you want to delete this unit?")) return;
+        const socket = socketRef.current;
 
         try {
             setDeletingUnitInstance(unitId);
@@ -34,8 +35,8 @@ export default function AvailableUnitInstances({ socketRef, socketReady, roleIns
                 throw new Error(data.error || data.detail || 'Failed to delete unit.');
             }
 
-            if (socketRef.current?.readyState === WebSocket.OPEN) {
-                socketRef.current.send(JSON.stringify({
+            if (socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({
                     channel: "units",
                     action: "delete",
                     data: {
@@ -80,7 +81,7 @@ export default function AvailableUnitInstances({ socketRef, socketReady, roleIns
                                 <div><strong>Unit:</strong> {unitInstance.unit.name}</div>
                                 <div><strong>Row:</strong> {unitInstance.tile.row}, <strong>Column:</strong> {unitInstance.tile.column}</div>
                                 <div><strong>Health:</strong> {unitInstance.health}</div>
-                                <div><strong>Supply Count:</strong> {unitInstance.supply_count}</div>
+                                <div><strong>Supply Count:</strong> {unitInstance.supply_points}</div>
                             </div>
                             {isGamemaster && handleDeleteUnitInstance && (
                                 <button
