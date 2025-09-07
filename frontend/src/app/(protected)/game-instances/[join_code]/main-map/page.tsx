@@ -242,7 +242,6 @@ export default function MainMapPage() {
                             socketRef={socketRef}
                             socketReady={socketReady}
                             viewerRoleInstance={roleInstance}
-                            roleInstances={roleInstances}
                             teamInstanceRolePoints={teamInstanceRolePoints}
                             setTeamInstanceRolePoints={setTeamInstanceRolePoints}
                         />
@@ -285,7 +284,6 @@ export default function MainMapPage() {
                             socketRef={socketRef}
                             socketReady={socketReady}
                             viewerRoleInstance={roleInstance}
-                            roleInstances={roleInstances}
                             teamInstanceRolePoints={teamInstanceRolePoints}
                             setTeamInstanceRolePoints={setTeamInstanceRolePoints}
                         />
@@ -338,7 +336,6 @@ export default function MainMapPage() {
                             socketRef={socketRef}
                             socketReady={socketReady}
                             viewerRoleInstance={roleInstance}
-                            roleInstances={roleInstances}
                             teamInstanceRolePoints={teamInstanceRolePoints}
                             setTeamInstanceRolePoints={setTeamInstanceRolePoints}
                         />
@@ -365,7 +362,6 @@ export default function MainMapPage() {
                             socketRef={socketRef}
                             socketReady={socketReady}
                             viewerRoleInstance={roleInstance}
-                            roleInstances={roleInstances}
                             teamInstanceRolePoints={teamInstanceRolePoints}
                             setTeamInstanceRolePoints={setTeamInstanceRolePoints}
                         />

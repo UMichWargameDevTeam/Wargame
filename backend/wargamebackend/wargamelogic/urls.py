@@ -50,14 +50,15 @@ urlpatterns = [
     path('api/game-instances/<str:join_code>/landmark-instances/<int:pk>/tiles/', get.get_game_tiles_for_landmark_instance_by_id, name='get_tiles_for_landmark_instance_by_id'),
     path('api/game-instances/<str:join_code>/tiles/<int:row>/<int:column>/landmark-instances/', get.get_game_landmark_instances_for_tile_by_coords, name='get_landmark_instances_for_tile_by_coords'),
 
-    path("api/game-instances/create/", post.create_game_instance, name="create_game_instance"),
+    path('api/game-instances/create/', post.create_game_instance, name='create_game_instance'),
     path('api/role-instances/create/', post.create_role_instance, name='create_role_instance'),
     path('api/unit-instances/create/', post.create_unit_instance, name='create_unit_instance'),
 
+    path('api/game-instances/<str:join_code>/team-instances/<str:team_name>/role/<str:role_name>/points/send/', patch.send_points, name='send_points'),
     path('api/unit-instances/<int:pk>/move/tiles/<int:row>/<int:column>/', patch.move_unit_instance, name='move_unit_instance'),
     path('api/unit-instances/<int:pk>/attacks/<str:attack_name>/use/', patch.use_attack, name='use_attack'),
 
-    path("api/game-instances/delete/<str:join_code>/", delete.delete_game_instance, name="delete_game_instance"),
+    path('api/game-instances/delete/<str:join_code>/', delete.delete_game_instance, name='delete_game_instance'),
 
     path('api/', include(router.urls)),
 ]

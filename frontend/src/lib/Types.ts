@@ -108,8 +108,9 @@ export interface UnitInstance {
 export interface Message {
     id: string;
     sender_role_instance: RoleInstance;
-    destination_team_name: string;
-    destination_role_name: string;
+    recipient_team_name: string;
+    recipient_role_name: string;
+    type?: string;
     text: string;
     timestamp: number;
 }

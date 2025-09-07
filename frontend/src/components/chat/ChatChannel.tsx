@@ -32,9 +32,9 @@ export default function ChatChannel({
     const textareaRef = useRef<HTMLTextAreaElement | null>(null);
     const lastSendTimeRef = useRef<number>(0);
 
-    const [destinationTeamName, destinationRoleName] = channel;
-    const channelKey = `${destinationTeamName} ${destinationRoleName}`;
-    const channelDisplayName = destinationRoleName === "Gamemaster" ? destinationRoleName : channelKey;
+    const [recipientTeamName, recipientRoleName] = channel;
+    const channelKey = `${recipientTeamName} ${recipientRoleName}`;
+    const channelDisplayName = recipientRoleName === "Gamemaster" ? recipientRoleName : channelKey;
 
     // attach an event listener to the messages div that updates wasAtBottomRef.current dynamically
     useEffect(() => {
@@ -74,10 +74,7 @@ export default function ChatChannel({
         });
     }, [channel]);
 
-    const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-        const textarea = e.target;
-        const value = textarea.value;
-
+    const handleInputChange = (value: string) => {
         const container = messagesDivRef.current;
         const isAtBottom = container
             ? container.scrollHeight - container.scrollTop - container.clientHeight < 2
@@ -85,8 +82,6 @@ export default function ChatChannel({
 
         if (value.length <= MAX_MESSAGE_LENGTH) {
             setInput(value);
-            textarea.style.height = "auto";
-            textarea.style.height = `${textarea.scrollHeight}px`;
         } else {
             setInput(value.slice(0, MAX_MESSAGE_LENGTH));
         }
@@ -116,8 +111,8 @@ export default function ChatChannel({
                     data: {
                         id: crypto.randomUUID(),
                         sender_role_instance: viewerRoleInstance,
-                        destination_team_name: destinationTeamName,
-                        destination_role_name: destinationRoleName,
+                        recipient_team_name: recipientTeamName,
+                        recipient_role_name: recipientRoleName,
                         text: input,
                         timestamp: Date.now(),
                     }
@@ -150,7 +145,7 @@ export default function ChatChannel({
                     {unreadChannels.some(c => !arraysEqual(c, channel)) && <span className="text-red-400">! </span>}
                     {"< Back"}
                 </button>
-                <h4 className="text-lg font-semibold">
+                <h4 className="text-md font-semibold">
                     {unreadChannels.some(c => arraysEqual(c, channel)) && <span className="text-red-400">! </span> }
                     # {channelDisplayName}
                 </h4>
@@ -163,7 +158,7 @@ export default function ChatChannel({
                 {messages.map((message, index) => (
                     <ChatMessage
                         key={message.id}
-                        destinationTeamName={destinationTeamName}
+                        recipientTeamName={recipientTeamName}
                         viewerRoleInstance={viewerRoleInstance}
                         message={message}
                         previousMessage={index > 0 ? messages[index - 1] : null}
@@ -182,7 +177,7 @@ export default function ChatChannel({
                         ref={textareaRef}
                         placeholder="Send message..."
                         value={input}
-                        onChange={handleInputChange}
+                        onChange={(e) => handleInputChange(e.target.value)}
                         onKeyDown={(e) => {
                             if (e.key === "Enter" && !e.shiftKey) {
                                 e.preventDefault();

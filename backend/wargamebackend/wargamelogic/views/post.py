@@ -206,7 +206,7 @@ def create_unit_instance(request):
 
         team_instance_role_points = TeamInstanceRolePoints.objects.get(team_instance=team_instance, role=role_instance.role)
         if team_instance_role_points.supply_points < unit.cost:
-            return Response({"detail": f"Unit costs {unit.cost} supply points, but you only have {team_instance_role_points.supply_points}."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": f"Unit costs {unit.cost} supply points, but you only have {team_instance_role_points.supply_points}!"}, status=status.HTTP_400_BAD_REQUEST)
 
         team_instance_role_points.supply_points -= unit.cost
         role_instance.save()

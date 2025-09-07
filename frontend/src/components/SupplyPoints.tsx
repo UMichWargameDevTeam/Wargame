@@ -2,33 +2,33 @@
 
 import { useState, useEffect, useRef, RefObject } from 'react';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
-import { getSessionStorageOrFetch, arraysEqual } from '@/lib/utils';
-import { Team, Role, RoleInstance } from '@/lib/Types';
-import { stringify } from 'querystring';
+import { getSessionStorageOrFetch } from '@/lib/utils';
+import { Team, Role, RoleInstance, TeamInstanceRolePoints, Message } from '@/lib/Types';
 
 interface SupplyPointsProps {
     joinCode: string;
     socketRef: RefObject<WebSocket | null>;
     socketReady: boolean;
     viewerRoleInstance: RoleInstance | null;
-    roleInstances: RoleInstance[];
     teamInstanceRolePoints: number;
     setTeamInstanceRolePoints: React.Dispatch<React.SetStateAction<number>>;
 }
 
 
-export default function SupplyPoints({ joinCode, socketRef, socketReady, viewerRoleInstance, roleInstances, teamInstanceRolePoints, setTeamInstanceRolePoints }: SupplyPointsProps) {
+export default function SupplyPoints({ joinCode, socketRef, socketReady, viewerRoleInstance, teamInstanceRolePoints, setTeamInstanceRolePoints }: SupplyPointsProps) {
     const authedFetch = useAuthedFetch();
 
     const [open, setOpen] = useState<boolean>(true);
-    const [viewerPointDestinations, setViewerPointDestinations] = useState<[string, string][]>([]);
+
+    const [viewerTransferRecipients, setViewerTransferRecipients] = useState<[string, string][]>([]);
+    const [inputs, setInputs] = useState<Record<string, Record<string, string>>>({});
     const [sendingPoints, setSendingPoints] = useState<boolean>(false);
 
     const addedPointsMessageListener = useRef<boolean>(false);
 
     // WebSocket setup
     useEffect(() => {
-        if (!socketReady || !socketRef.current || addedPointsMessageListener.current) return;
+        if (!socketReady || !socketRef.current || !viewerRoleInstance || addedPointsMessageListener.current) return;
         addedPointsMessageListener.current = true;
         const socket = socketRef.current;
 
@@ -37,10 +37,19 @@ export default function SupplyPoints({ joinCode, socketRef, socketReady, viewerR
             if (msg.channel === "points") {
                 switch (msg.action) {
                     case "send":
-                        // TODO
-                        break;
-                    case "spend":
-                        // TODO
+                        const transfer: Message = msg.data;
+                        const supplyPoints = Number(transfer.text);
+                        if (transfer.recipient_team_name == viewerRoleInstance.team_instance.team.name
+                         && transfer.recipient_role_name == viewerRoleInstance.role.name) {
+                            setTeamInstanceRolePoints(prev => prev + supplyPoints);
+                        }
+                        else if (transfer.sender_role_instance.team_instance.team.name == viewerRoleInstance.team_instance.team.name
+                              && transfer.sender_role_instance.role.name == viewerRoleInstance.role.name) {
+                            setTeamInstanceRolePoints(prev => prev - supplyPoints);
+                        }
+                        else {
+                            throw Error("Recipient of message isn't sender or intended recipient!");
+                        }
                         break;
                 }
             }
@@ -52,7 +61,7 @@ export default function SupplyPoints({ joinCode, socketRef, socketReady, viewerR
             socket.removeEventListener("message", handlePointsMessage);
             addedPointsMessageListener.current = false;
         };
-    }, [socketRef, socketReady, setTeamInstanceRolePoints]);
+    }, [socketRef, socketReady, viewerRoleInstance, setTeamInstanceRolePoints]);
 
     // get list of roles this user can send points to
     useEffect(() => {
@@ -72,8 +81,15 @@ export default function SupplyPoints({ joinCode, socketRef, socketReady, viewerR
                     return res.json();
                 });
 
-                const pointDestinations = getViewerPointDestinations(teamData, roleData, viewerRoleInstance);
-                setViewerPointDestinations(pointDestinations);
+                const pointRecipients = getViewerTransferRecipients(teamData, roleData, viewerRoleInstance);
+                setViewerTransferRecipients(pointRecipients);
+                setInputs(
+                    pointRecipients.reduce<Record<string, Record<string, string>>>((acc, [teamName, roleName]) => {
+                        if (!acc[teamName]) acc[teamName] = {};
+                        acc[teamName][roleName] = "0";
+                        return acc;
+                    }, {})
+                );
 
             } catch (err: unknown) {
                 console.error(err);
@@ -86,13 +102,13 @@ export default function SupplyPoints({ joinCode, socketRef, socketReady, viewerR
         fetchRoles();
     }, [authedFetch, socketRef, socketReady, viewerRoleInstance]);
 
-    function getViewerPointDestinations(teams: Team[], roles: Role[], roleInstance: RoleInstance): [string, string][] {
+    function getViewerTransferRecipients(teams: Team[], roles: Role[], roleInstance: RoleInstance): [string, string][] {
         const r = roleInstance.role;
         const viewerTeamName = roleInstance.team_instance.team.name;
-        let destinations: [string, string][] = [];
+        let recipients: [string, string][] = [];
 
         if (r.name === "Gamemaster") {
-            destinations = [
+            recipients = [
                 ...teams.flatMap(team =>
                     team.name === "Gamemasters"
                         ? []
@@ -104,33 +120,137 @@ export default function SupplyPoints({ joinCode, socketRef, socketReady, viewerR
         }
 
         if (r.name === "Combatant Commander") {
-            destinations = roles
+            recipients = roles
                     .filter(role => role.is_chief_of_staff)
                     .map(role => [viewerTeamName, role.name] as [string, string]);
         }
 
         else if (r.is_chief_of_staff) {
-            destinations = roles
+            recipients = roles
                 .filter(role => role.is_logistics && role.is_commander && role.branch.name === r.branch.name)
                 .map(role => [viewerTeamName, role.name] as [string, string]);
         }
 
         else if (r.is_logistics && r.is_commander) {
-            destinations = roles
+            recipients = roles
                 .filter(role => role.is_logistics && role.is_vice_commander && role.branch.name === r.branch.name)
                 .map(role => [viewerTeamName, role.name] as [string, string]);
         }
 
-        return destinations.sort();
+        return recipients.sort();
     }
 
+    const validTransferValues = (() => {
+        let hasValidGreaterThanZero = false;
+
+        for (const team of Object.values(inputs)) {
+            for (const rawValue of Object.values(team)) {
+                const num = Number(rawValue);
+
+                if (rawValue !== "" && isNaN(num)) {
+                    return false;
+                }
+
+                if (num > 0) {
+                    hasValidGreaterThanZero = true;
+                }
+            }
+        }
+
+        return hasValidGreaterThanZero;
+    })();
+
+    const handleInputChange = (teamName: string, roleName: string, value: string) => {
+        setInputs(prev => ({
+            ...prev,
+            [teamName]: {
+                ...prev[teamName],
+                [roleName]: value,
+            },
+        }));
+    };
+
     const handleSendPoints = async (joinCode: string) => {
-        if (!socketReady || !socketRef.current) return;
+        if (!socketReady || !socketRef.current || !viewerRoleInstance) return;
         const socket = socketRef.current;
 
         try {
             setSendingPoints(true);
-            // TODO
+            const teamName = viewerRoleInstance.team_instance.team.name;
+            const roleName = viewerRoleInstance.role.name;
+
+            const res = await authedFetch(`/api/game-instances/${joinCode}/team-instances/${teamName}/role/${roleName}/points/send/`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    transfers: Object.entries(inputs).flatMap(([teamName, roleInputs]) =>
+                        Object.entries(roleInputs)
+                            .filter((entry) => parseInt(entry[1]) > 0)
+                            .map(([roleName, value]) => ({
+                                team_name: teamName,
+                                role_name: roleName,
+                                supply_points: parseInt(value),
+                            }))
+                    )
+                })
+            });
+            const data = await res.json();
+            if (!res.ok) {
+                throw new Error(data.error || data.detail || 'Failed to add unit instance.');
+            }
+
+            if (socket.readyState === WebSocket.OPEN) {
+                const transfers: TeamInstanceRolePoints[] = data;
+                for (const transfer of transfers) {
+                    const messageRecipientTeamName = transfer.team_instance.team.name;
+                    const messageRecipientRoleName = transfer.role.name;
+
+                    socket.send(JSON.stringify({
+                        channel: "points",
+                        action: "send",
+                        data: {
+                            id: crypto.randomUUID(),
+                            sender_role_instance: viewerRoleInstance,
+                            recipient_team_name: messageRecipientTeamName,
+                            recipient_role_name: messageRecipientRoleName,
+                            text: String(transfer.supply_points),
+                            timestamp: Date.now(),
+                        }
+                    }));
+
+                    const messageSenderName = viewerRoleInstance.user.username;
+                    const messageSenderTeamName = viewerRoleInstance.team_instance.team.name;
+                    const messageSenderRoleName = viewerRoleInstance.role.name;
+                    const messageRoleDisplayName = messageSenderTeamName == "Gamemasters" ? messageSenderRoleName : `${messageSenderTeamName} ${messageSenderRoleName}`;
+                    const messageText = `${messageRoleDisplayName} ${messageSenderName} transferred ${transfer.supply_points} supply points to ${messageRecipientTeamName} ${messageRecipientRoleName}s.`
+    
+                    socket.send(JSON.stringify({
+                        channel: "chat",
+                        action: "send",
+                        data: {
+                            id: crypto.randomUUID(),
+                            sender_role_instance: viewerRoleInstance,
+                            recipient_team_name: transfer.team_instance.team.name,
+                            recipient_role_name: transfer.role.name,
+                            type: "system",
+                            text: messageText,
+                            timestamp: Date.now(),
+                        }
+                    }));
+                }
+
+            }
+
+            setInputs(prev =>
+                Object.fromEntries(
+                    Object.entries(prev).map(([team, roles]) => [
+                        team,
+                        Object.fromEntries(
+                            Object.keys(roles).map(role => [role, "0"])
+                        )
+                    ])
+                )
+            );
 
         } catch (err: unknown) {
             console.error(err);
@@ -156,8 +276,58 @@ export default function SupplyPoints({ joinCode, socketRef, socketReady, viewerR
             </div>
 
             {open && (
-                <div className="flex flex-col max-h-[80vh]">
-                    {teamInstanceRolePoints}
+                <div className="flex flex-col max-h-[80vh] overflow-y-auto">
+
+                    {viewerRoleInstance && (() => {
+                        
+                        const teamName = viewerRoleInstance.team_instance.team.name;
+                        const roleName = viewerRoleInstance.role.name;
+                        const roleDisplayName = teamName === "Gamemasters" ? roleName : `${teamName} ${roleName}`;
+
+                        return (
+                            <p className="mb-5">
+                                {roleDisplayName}s have 
+                                <span className="font-semibold text-yellow-200"> {teamInstanceRolePoints} </span>
+                                supply points.
+                            </p>
+                        )
+                    })()}
+
+                    <form
+                        onSubmit={(e) => {
+                            e.preventDefault();
+                            handleSendPoints(joinCode);
+                        }}
+                        className="space-y-3 mb-4"
+                    >
+                        <h4 className="text-md font-semibold">Send Supply Points</h4>
+
+                        {viewerTransferRecipients.map(([teamName, roleName]) => (
+                            <div key={`${teamName} ${roleName}`} className="flex items-center justify-between bg-neutral-800 p-3 rounded-lg">
+                                <span className="font-bold">{roleName === "Gamemaster" ? roleName : `${teamName} ${roleName}`}</span>
+                                <input
+                                    type="number"
+                                    value={inputs[teamName]?.[roleName] ?? "0"}
+                                    onChange={(e) => handleInputChange(teamName, roleName, e.target.value)}
+                                    className="w-[80px] px-2 py-1 bg-neutral-900 border border-gray-600 rounded text-white"
+                                    placeholder="0"
+                                />
+                                
+                            </div>
+                        ))}
+
+                        <button
+                            type="submit"
+                            disabled={sendingPoints || !validTransferValues}
+                            className={`w-full py-2 rounded-lg font-medium transition 
+                                ${sendingPoints || !validTransferValues
+                                    ? "bg-gray-600 cursor-not-allowed text-gray-300"
+                                    : "bg-green-600 cursor-pointer hover:bg-green-500 text-white"
+                                }`}
+                        >
+                            {sendingPoints ? "Sending..." : "Send Points"}
+                        </button>
+                    </form>
                 </div>
             )}
         </div>

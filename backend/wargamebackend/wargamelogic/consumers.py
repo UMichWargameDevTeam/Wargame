@@ -80,8 +80,10 @@ class GameConsumer(AsyncWebsocketConsumer):
 
         await self.channel_layer.group_discard(self.game_group, self.channel_name)
         await self.channel_layer.group_discard(self.user_group, self.channel_name)
-        for channel in getattr(self, "channel_groups", []):
-            await self.channel_layer.group_discard(channel, self.channel_name)
+        for group in getattr(self, "channel_groups", []):
+            await self.channel_layer.group_discard(group, self.channel_name)
+        for group in getattr(self, "transfer_groups", []):
+            await self.channel_layer.group_discard(group, self.channel_name)
 
         print(f"{user.username} disconnected from game '{self.join_code}'.")
     
@@ -191,6 +193,9 @@ class GameConsumer(AsyncWebsocketConsumer):
         self.channel_groups = get_user_channel_groups(self.join_code, teams, roles, data)
         for group in self.channel_groups:
             await self.channel_layer.group_add(group, self.channel_name)
+        self.transfer_groups = get_user_transfer_groups(self.join_code, teams, roles, data)
+        for group in self.transfer_groups:
+            await self.channel_layer.group_add(group, self.channel_name)
 
         redis_client.hset(role_key, user.id, json.dumps(data))
 
@@ -235,16 +240,33 @@ class GameConsumer(AsyncWebsocketConsumer):
         sender_team_name = data["sender_role_instance"]["team_instance"]["team"]["name"].replace(" ", "")
         sender_role_name = data["sender_role_instance"]["role"]["name"].replace(" ", "")
 
-        destination_team_name = data["destination_team_name"].replace(" ", "")
-        destination_role_name = data["destination_role_name"].replace(" ", "")
+        recipient_team_name = data["recipient_team_name"].replace(" ", "")
+        recipient_role_name = data["recipient_role_name"].replace(" ", "")
 
         a, b = sorted([
             f"{sender_team_name}{sender_role_name}",
-            f"{destination_team_name}{destination_role_name}"
+            f"{recipient_team_name}{recipient_role_name}"
         ])
         target_group = f"game_{self.join_code}_channel_{a}_{b}"
 
         if target_group not in self.channel_groups:
+            raise Exception(f"User {data['role_instance']['user']['username']} on team {sender_team_name} with role {sender_role_name} is not in group {target_group}")
+
+        return target_group, data
+    
+    async def handle_points_send(self, data):
+        """
+        data: Message
+        """
+        sender_team_name = data["sender_role_instance"]["team_instance"]["team"]["name"].replace(" ", "")
+        sender_role_name = data["sender_role_instance"]["role"]["name"].replace(" ", "")
+
+        recipient_team_name = data["recipient_team_name"].replace(" ", "")
+        recipient_role_name = data["recipient_role_name"].replace(" ", "")
+
+        target_group = f"game_{self.join_code}_transfer_{sender_team_name}{sender_role_name}_{recipient_team_name}{recipient_role_name}"
+
+        if target_group not in self.transfer_groups:
             raise Exception(f"User {data['role_instance']['user']['username']} on team {sender_team_name} with role {sender_role_name} is not in group {target_group}")
 
         return target_group, data
@@ -260,58 +282,97 @@ def get_redis_client():
 # helper functions     #
 # -------------------- #
 def get_user_channel_groups(join_code, teams, roles, role_instance):
-    role_name = role_instance["role"]["name"]
+    user_role_name = role_instance["role"]["name"]
     user_team_name = role_instance["team_instance"]["team"]["name"]
     gamemaster_team_name = "Gamemasters"
 
-    if role_name == "Gamemaster":
-        groups = (
+    groups = []
+
+    if user_role_name == "Gamemaster":
+        groups += (
             [(gamemaster_team_name, "Gamemaster")] +
             [(t.name, r.name) for r in roles if r.name != "Gamemaster" for t in teams if t.name != gamemaster_team_name]
         )
 
-    elif role_name == "Ambassador":
-        groups = (
+    if user_role_name == "Ambassador":
+        groups += (
             [(gamemaster_team_name, "Gamemaster")] +
-            [(t.name, role_name) for t in teams if t.name != gamemaster_team_name] +
+            [(t.name, user_role_name) for t in teams if t.name != gamemaster_team_name] +
             [(user_team_name, "Combatant Commander")] +
             [(user_team_name, r.name) for r in roles if r.is_chief_of_staff]
         )
 
-    elif role_name == "Combatant Commander":
-        groups = (
-            [(user_team_name, role_name), (gamemaster_team_name, "Gamemaster"), (user_team_name, "Ambassador")] +
+    if user_role_name == "Combatant Commander":
+        groups += (
+            [(user_team_name, user_role_name), (gamemaster_team_name, "Gamemaster"), (user_team_name, "Ambassador")] +
             [(user_team_name, r.name) for r in roles if r.is_chief_of_staff]
         )
 
-    elif role_instance["role"]["is_chief_of_staff"]:
-        groups = (
-            [(user_team_name, role_name), (gamemaster_team_name, "Gamemaster"), (user_team_name, "Combatant Commander")] +
+    if role_instance["role"]["is_chief_of_staff"]:
+        groups += (
+            [(user_team_name, user_role_name), (gamemaster_team_name, "Gamemaster"), (user_team_name, "Combatant Commander")] +
             [(user_team_name, r.name) for r in roles if r.is_commander and r.branch.name == role_instance["role"]["branch"]["name"]]
         )
 
-    elif role_instance["role"]["is_commander"]:
-        groups = (
+    if role_instance["role"]["is_commander"]:
+        groups += (
             [(gamemaster_team_name, "Gamemaster")] +
             [(user_team_name, r.name) for r in roles if r.is_chief_of_staff and r.branch.name == role_instance["role"]["branch"]["name"]] +
             [(user_team_name, r.name) for r in roles if r.is_commander and r.branch.name == role_instance["role"]["branch"]["name"]] +
             [(user_team_name, r.name) for r in roles if r.is_vice_commander and r.branch.name == role_instance["role"]["branch"]["name"]]
         )
 
-    elif role_instance["role"]["is_vice_commander"]:
-        groups = (
+    if role_instance["role"]["is_vice_commander"]:
+        groups += (
             [(gamemaster_team_name, "Gamemaster")] +
             [(user_team_name, r.name) for r in roles if r.is_commander and r.branch.name == role_instance["role"]["branch"]["name"]] +
             [(user_team_name, r.name) for r in roles if r.is_vice_commander and r.branch.name == role_instance["role"]["branch"]["name"]]
         )
 
-    else:
-        groups = []
-
     channel_groups = sorted([
         f"game_{join_code}_channel_{teamRole1}_{teamRole2}"
         for team, role in groups
-        for teamRole1, teamRole2 in [sorted([f"{user_team_name}{role_name}".replace(" ", ""), f"{team}{role}".replace(" ", "")])]
+        for teamRole1, teamRole2 in [sorted([f"{user_team_name}{user_role_name}".replace(" ", ""), f"{team}{role}".replace(" ", "")])]
     ])
 
     return channel_groups
+
+
+def get_user_transfer_groups(join_code, teams, roles, role_instance):
+    user_role_name = role_instance["role"]["name"]
+    user_team_name = role_instance["team_instance"]["team"]["name"]
+    gamemaster_team_name = "Gamemasters"
+
+    transfer_to_groups = []
+    transfer_from_groups = []
+
+    if user_role_name == "Gamemaster":
+        transfer_to_groups += [(t.name, r.name) for r in roles if r.name != "Gamemaster" for t in teams if t.name != gamemaster_team_name]
+
+    if user_role_name == "Combatant Commander":
+        transfer_to_groups += [(user_team_name, r.name) for r in roles if r.is_chief_of_staff]
+        transfer_from_groups += [(gamemaster_team_name, "Gamemaster")]
+
+    if role_instance["role"]["is_chief_of_staff"]:
+        transfer_to_groups += [(user_team_name, r.name) for r in roles if r.is_logistics and r.is_commander and r.branch.name == role_instance["role"]["branch"]["name"]]
+        transfer_from_groups += [(user_team_name, r.name) for r in roles if r.name == "Combatant Commander"]
+
+    if role_instance["role"]["is_commander"] and role_instance["role"]["is_logistics"]:
+        transfer_to_groups += [(user_team_name, r.name) for r in roles if r.is_logistics and r.is_vice_commander and r.branch.name == role_instance["role"]["branch"]["name"]]
+        transfer_from_groups += [(user_team_name, r.name) for r in roles if r.is_chief_of_staff and r.branch.name == role_instance["role"]["branch"]["name"]]
+    
+    if role_instance["role"]["is_vice_commander"] and role_instance["role"]["is_logistics"]:
+        transfer_from_groups += [(user_team_name, r.name) for r in roles if r.is_commander and r.branch.name == role_instance["role"]["branch"]["name"]]
+
+    transfer_groups = (
+        sorted([
+            f"game_{join_code}_transfer_{user_team_name}{user_role_name}_{team}{role}".replace(" ", "")
+            for team, role in transfer_to_groups
+        ]) +
+        sorted ([
+            f"game_{join_code}_transfer_{team}{role}_{user_team_name}{user_role_name}".replace(" ", "")
+            for team, role in transfer_from_groups
+        ])
+    )
+
+    return transfer_groups
