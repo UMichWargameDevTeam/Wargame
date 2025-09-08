@@ -18,8 +18,8 @@ class GameUnit:
     health: float
     max_health: float
     defense_modifier: float
-    supply_count: float
-    max_supply_space: float
+    supply_points: float
+    max_supply_points: float
     position: tuple[int, int]
 
     @classmethod
@@ -33,8 +33,8 @@ class GameUnit:
             health=instance.health,
             max_health=unit.max_health,
             defense_modifier=unit.defense_modifier,
-            supply_count=instance.supply_count,
-            max_supply_space=unit.max_supply_space,
+            supply_points=instance.supply_points,
+            max_supply_points=unit.max_supply_points,
             position=(instance.tile.row, instance.tile.column),
         )
 
