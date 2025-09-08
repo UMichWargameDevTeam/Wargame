@@ -75,7 +75,7 @@ export default function AddUnitInstance({ joinCode, socketRef, socketReady, role
                 const messageText = `${messageRoleDisplayName} ${messageSenderName} spent ${unitCost} supply points to spawn a ${unitName}.`
 
                 socket.send(JSON.stringify({
-                    channel: "chat",
+                    channel: "communications",
                     action: "send",
                     data: {
                         id: crypto.randomUUID(),

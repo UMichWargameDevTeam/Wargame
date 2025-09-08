@@ -141,7 +141,7 @@ export default function UsersList({ socketRef, socketReady, roleInstance, roleIn
                                 <h4 className="text-md font-semibold text-green-300">{branch}</h4>
                                 {Object.keys(grouped[team][branch]).sort().map((role) => (
                                     <div key={role} className="ml-4">
-                                        <h5 className="text-sm font-medium text-yellow-300">{role}</h5>
+                                        <h5 className="text-sm font-medium text-yellow-200">{role.replace(new RegExp(`^${branch} `), "")}</h5>
                                         <ul className="ml-3 space-y-0.5">
                                             {grouped[team][branch][role]
                                                 .sort((a, b) =>

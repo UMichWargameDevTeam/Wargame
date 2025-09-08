@@ -229,7 +229,7 @@ export default function SupplyPoints({ joinCode, socketRef, socketReady, viewerR
                     const messageText = `${messageRoleDisplayName} ${messageSenderName} transferred ${transfer.supply_points} supply points to ${messageRecipientTeamName} ${messageRecipientRoleName}s.`
     
                     socket.send(JSON.stringify({
-                        channel: "chat",
+                        channel: "communications",
                         action: "send",
                         data: {
                             id: crypto.randomUUID(),
@@ -289,7 +289,7 @@ export default function SupplyPoints({ joinCode, socketRef, socketReady, viewerR
                         const roleDisplayName = teamName === "Gamemasters" ? roleName : `${teamName} ${roleName}`;
 
                         return (
-                            <p className="mb-5">
+                            <p>
                                 {roleDisplayName}s have 
                                 <span className="font-semibold text-yellow-200"> {teamInstanceRolePoints} </span>
                                 supply points.
@@ -297,41 +297,43 @@ export default function SupplyPoints({ joinCode, socketRef, socketReady, viewerR
                         )
                     })()}
 
-                    <form
-                        onSubmit={(e) => {
-                            e.preventDefault();
-                            handleSendPoints(joinCode);
-                        }}
-                        className="space-y-3 mb-4"
-                    >
-                        <h4 className="text-md font-semibold">Send Supply Points</h4>
-
-                        {viewerTransferRecipients.map(([teamName, roleName]) => (
-                            <div key={`${teamName} ${roleName}`} className="flex items-center justify-between bg-neutral-800 p-3 rounded-lg">
-                                <span className="font-bold">{roleName === "Gamemaster" ? roleName : `${teamName} ${roleName}`}</span>
-                                <input
-                                    type="number"
-                                    value={inputs[teamName]?.[roleName] ?? "0"}
-                                    onChange={(e) => handleInputChange(teamName, roleName, e.target.value)}
-                                    className="w-[80px] px-2 py-1 bg-neutral-900 border border-gray-600 rounded text-white"
-                                    placeholder="0"
-                                />
-                                
-                            </div>
-                        ))}
-
-                        <button
-                            type="submit"
-                            disabled={sendingPoints || !validTransferValues}
-                            className={`w-full py-2 rounded-lg font-medium transition 
-                                ${sendingPoints || !validTransferValues
-                                    ? "bg-gray-600 cursor-not-allowed text-gray-300"
-                                    : "bg-green-600 cursor-pointer hover:bg-green-500 text-white"
-                                }`}
+                    {viewerTransferRecipients.length > 0 && (
+                        <form
+                            onSubmit={(e) => {
+                                e.preventDefault();
+                                handleSendPoints(joinCode);
+                            }}
+                            className="space-y-3 mt-5"
                         >
-                            {sendingPoints ? "Sending..." : "Send Points"}
-                        </button>
-                    </form>
+                            <h4 className="text-md font-semibold">Send Supply Points</h4>
+
+                            {viewerTransferRecipients.map(([teamName, roleName]) => (
+                                <div key={`${teamName} ${roleName}`} className="flex items-center justify-between bg-neutral-800 p-3 rounded-lg">
+                                    <span className="font-bold">{roleName === "Gamemaster" ? roleName : `${teamName} ${roleName}`}</span>
+                                    <input
+                                        type="number"
+                                        value={inputs[teamName]?.[roleName] ?? "0"}
+                                        onChange={(e) => handleInputChange(teamName, roleName, e.target.value)}
+                                        className="w-[80px] px-2 py-1 bg-neutral-900 border border-gray-600 rounded text-white"
+                                        placeholder="0"
+                                    />
+                                    
+                                </div>
+                            ))}
+
+                            <button
+                                type="submit"
+                                disabled={sendingPoints || !validTransferValues}
+                                className={`w-full py-2 rounded-lg font-medium transition 
+                                    ${sendingPoints || !validTransferValues
+                                        ? "bg-gray-600 cursor-not-allowed text-gray-300"
+                                        : "bg-green-600 cursor-pointer hover:bg-green-500 text-white"
+                                    }`}
+                            >
+                                {sendingPoints ? "Sending..." : "Send Points"}
+                            </button>
+                        </form>
+                    )}
                 </div>
             )}
         </div>

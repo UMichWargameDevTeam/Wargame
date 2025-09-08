@@ -2,14 +2,14 @@
 
 import { Message, RoleInstance } from '@/lib/Types';
 
-interface ChatMessageProps {
+interface CommunicationsMessageProps {
     recipientTeamName: string;
     viewerRoleInstance: RoleInstance;
     message: Message;
     previousMessage: Message | null;
 }
 
-export default function ChatMessage({ recipientTeamName, viewerRoleInstance, message, previousMessage }: ChatMessageProps) {
+export default function CommunicationsMessage({ recipientTeamName, viewerRoleInstance, message, previousMessage }: CommunicationsMessageProps) {
 
     const timestampText = new Date(message.timestamp).toLocaleTimeString([], {
         hour: '2-digit',

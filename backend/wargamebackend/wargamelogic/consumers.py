@@ -96,7 +96,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         """
         text_data JSON format:
         {
-            "channel": "chat" | "points" | "timer" | "units" | "users" | ...,
+            "channel": "communications" | "points" | "timer" | "units" | "users" | ...,
             "action": "send" | "start" | "move" | ...,
             "data": {...}
         }
@@ -233,7 +233,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         return target_group, data
 
 
-    async def handle_chat_send(self, data):
+    async def handle_communications_send(self, data):
         """
         data: Message
         """

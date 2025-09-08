@@ -2,17 +2,17 @@
 
 import { useEffect, useState, useRef, RefObject } from 'react';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
-import ChatChannel from './ChatChannel';
+import CommunicationsChannel from './CommunicationsChannel';
 import { getSessionStorageOrFetch, arraysEqual } from '@/lib/utils';
 import { Team, Role, RoleInstance, Message } from '@/lib/Types';
 
-interface ChatProps {
+interface CommunicationsProps {
     socketRef: RefObject<WebSocket | null>;
     socketReady: boolean;
     viewerRoleInstance: RoleInstance
 }
 
-export default function Chat({ socketRef, socketReady, viewerRoleInstance }: ChatProps) {
+export default function Communications({ socketRef, socketReady, viewerRoleInstance }: CommunicationsProps) {
     const authedFetch = useAuthedFetch();
 
     const [open, setOpen] = useState<boolean>(true);
@@ -22,18 +22,18 @@ export default function Chat({ socketRef, socketReady, viewerRoleInstance }: Cha
     const [activeChannel, setActiveChannel] = useState<[string, string] | null>(null);
     const [unreadChannels, setUnreadChannels] = useState<[string, string][]>([]);
 
-    const addedChatMessageListener = useRef<boolean>(false);
+    const addedCommunicationsMessageListener = useRef<boolean>(false);
     const wasAtBottomRef = useRef<boolean>(true);
 
     // WebSocket setup
     useEffect(() => {
-        if (!socketReady || !socketRef.current || addedChatMessageListener.current) return;
-        addedChatMessageListener.current = true;
+        if (!socketReady || !socketRef.current || addedCommunicationsMessageListener.current) return;
+        addedCommunicationsMessageListener.current = true;
         const socket = socketRef.current;
 
-        const handleChatMessage = (event: MessageEvent) => {
+        const handleCommunicationsMessage = (event: MessageEvent) => {
             const msg = JSON.parse(event.data);
-            if (msg.channel === "chat") {
+            if (msg.channel === "communications") {
                 switch (msg.action) {
                     case "send":
                         const receivedMessage: Message = msg.data;
@@ -60,11 +60,11 @@ export default function Chat({ socketRef, socketReady, viewerRoleInstance }: Cha
             }
         };
 
-        socket.addEventListener("message", handleChatMessage);
+        socket.addEventListener("message", handleCommunicationsMessage);
 
         return () => {
-            socket.removeEventListener("message", handleChatMessage);
-            addedChatMessageListener.current = false;
+            socket.removeEventListener("message", handleCommunicationsMessage);
+            addedCommunicationsMessageListener.current = false;
         };
     }, [socketRef, socketReady, viewerRoleInstance, activeChannel]);
 
@@ -214,7 +214,7 @@ export default function Chat({ socketRef, socketReady, viewerRoleInstance }: Cha
     return (
         <div className="bg-neutral-700 rounded-lg mb-4 p-4">
             <div className="flex justify-between items-center mb-2">
-                <h3 className="text-lg font-semibold">Chat</h3>
+                <h3 className="text-lg font-semibold">Communications</h3>
                 <button
                     onClick={() => setOpen(!open)}
                     className="text-sm bg-neutral-600 px-2 py-1 rounded cursor-pointer hover:bg-neutral-500"
@@ -226,7 +226,7 @@ export default function Chat({ socketRef, socketReady, viewerRoleInstance }: Cha
             {open && (
                 <div className="flex flex-col max-h-[80vh]">
                     {activeChannel ? (
-                        <ChatChannel
+                        <CommunicationsChannel
                             socketRef={socketRef}
                             socketReady={socketReady}
                             viewerRoleInstance={viewerRoleInstance}
