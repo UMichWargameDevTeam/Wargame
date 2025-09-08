@@ -179,7 +179,7 @@ def use_attack(request, pk, attack_name):
     if not success:
         return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
 
-    attacker_instance.supply_count = attacker.supply_count
+    attacker_instance.supply_points = attacker.supply_points
     target_instance.health = target.health
     attacker_instance.save()
     target_instance.save()
@@ -189,7 +189,7 @@ def use_attack(request, pk, attack_name):
             "attacker_id": attacker_instance.id,
             "target_id": target_instance.id,
             "attack_used": attack.name,
-            "supply_points_remaining": attacker_instance.supply_count,
+            "supply_points_remaining": attacker_instance.supply_points,
             "message": f"{attacker_instance.unit.name} used {attack.name}. {message}"
         },
         status=status.HTTP_200_OK

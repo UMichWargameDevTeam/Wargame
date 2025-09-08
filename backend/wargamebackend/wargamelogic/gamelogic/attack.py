@@ -13,7 +13,7 @@ def calculate_attack_damage(attacker: GameUnit, target: GameUnit, attack: GameAt
 
 
 def conduct_attack(attacker: GameUnit, target: GameUnit, attack: GameAttack):
-    if attack.cost > attacker.supply_count:
+    if attack.cost > attacker.supply_points:
         return {False, "Unit does not have enough supplies for this attack"}
     
     dist = calculate_distance(attacker.position, target.position)
@@ -22,7 +22,7 @@ def conduct_attack(attacker: GameUnit, target: GameUnit, attack: GameAttack):
     
     dmg = calculate_attack_damage(attacker, target, attack)
     target.health -= dmg
-    attacker.supply_count -= attack.cost
+    attacker.supply_points -= attack.cost
 
     return {True, f"Unit successfully landed the attack to do {dmg} damage"}
     
