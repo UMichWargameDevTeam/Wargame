@@ -16,7 +16,7 @@ import GamemasterMenu from '@/components/GamemasterMenu';
 import UnitAttackDisplay from '@/components/UnitAttackDisplay';
 import Timer from '@/components/Timer';
 import UsersList from '@/components/UsersList';
-import Chat from '@/components/chat/Chat';
+import Communications from '@/components/communications/Communications';
 import { Team, Unit, RoleInstance, UnitInstance, Attack } from '@/lib/Types'
 
 
@@ -271,7 +271,7 @@ export default function MainMapPage() {
                             roleInstances={roleInstances}
                             setRoleInstances={setRoleInstances}
                         />
-                        <Chat
+                        <Communications
                             socketRef={socketRef}
                             socketReady={socketReady}
                             viewerRoleInstance={roleInstance}
@@ -313,7 +313,7 @@ export default function MainMapPage() {
                             roleInstances={roleInstances}
                             setRoleInstances={setRoleInstances}
                         />
-                        <Chat
+                        <Communications
                             socketRef={socketRef}
                             socketReady={socketReady}
                             viewerRoleInstance={roleInstance}
@@ -348,7 +348,7 @@ export default function MainMapPage() {
                             roleInstances={roleInstances}
                             setRoleInstances={setRoleInstances}
                         />
-                        <Chat
+                        <Communications
                             socketRef={socketRef}
                             socketReady={socketReady}
                             viewerRoleInstance={roleInstance}
@@ -365,7 +365,7 @@ export default function MainMapPage() {
                             roleInstances={roleInstances}
                             setRoleInstances={setRoleInstances}
                         />
-                        <Chat
+                        <Communications
                             socketRef={socketRef}
                             socketReady={socketReady}
                             viewerRoleInstance={roleInstance}
@@ -391,7 +391,7 @@ export default function MainMapPage() {
                             roleInstances={roleInstances}
                             setRoleInstances={setRoleInstances}
                         />
-                        <Chat
+                        <Communications
                             socketRef={socketRef}
                             socketReady={socketReady}
                             viewerRoleInstance={roleInstance}

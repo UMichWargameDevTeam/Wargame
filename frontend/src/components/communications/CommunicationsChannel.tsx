@@ -1,11 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, useRef, RefObject } from 'react';
-import ChatMessage from './ChatMessage';
+import CommunicationsMessage from './CommunicationsMessage';
 import { arraysEqual } from '@/lib/utils';
 import { Message, RoleInstance } from '@/lib/Types';
 
-interface ChatChannelProps {
+interface CommunicationsChannelProps {
     socketRef: RefObject<WebSocket | null>;
     socketReady: boolean;
     viewerRoleInstance: RoleInstance;
@@ -17,11 +17,11 @@ interface ChatChannelProps {
     messages: Message[];
 }
 
-export default function ChatChannel({ 
+export default function CommunicationsChannel({ 
     socketRef, socketReady, viewerRoleInstance, 
     unreadChannels, setUnreadChannels, channel, setActiveChannel, wasAtBottomRef, 
     messages
-}: ChatChannelProps) {
+}: CommunicationsChannelProps) {
     const MAX_MESSAGE_LENGTH = 400;
     const SEND_DEBOUNCE_MS = 2000;
 
@@ -106,7 +106,7 @@ export default function ChatChannel({
 
             if (socket.readyState === WebSocket.OPEN) {
                 socket.send(JSON.stringify({
-                    channel: "chat",
+                    channel: "communications",
                     action: "send",
                     data: {
                         id: crypto.randomUUID(),
@@ -156,7 +156,7 @@ export default function ChatChannel({
                     <p className="text-sm text-gray-400">Be the first to send a message in this channel...</p>
                 )}
                 {messages.map((message, index) => (
-                    <ChatMessage
+                    <CommunicationsMessage
                         key={message.id}
                         recipientTeamName={recipientTeamName}
                         viewerRoleInstance={viewerRoleInstance}

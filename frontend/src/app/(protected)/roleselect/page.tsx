@@ -166,7 +166,7 @@ export default function RoleSelectPage() {
                     <div className="space-y-6 text-lg leading-relaxed">
                         <p>🚀 Move units by dragging them onto the map grid.</p>
                         <p>🛡️ Supply your units regularly to maintain performance.</p>
-                        <p>📡 Coordinate between teams using real-time chat.</p>
+                        <p>📡 Coordinate between teams using real-time communications.</p>
                         <p>💣 Some roles have special abilities. Use them strategically.</p>
                         <p>📍 Control key landmarks to gain map advantage.</p>
                         <p>⏱️ Turns are timed. Be efficient in your planning.</p>
