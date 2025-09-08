@@ -425,6 +425,7 @@ export default function MainMapPage() {
                             joinCode={joinCode}
                             socketRef={socketRef}
                             socketReady={socketReady}
+                            roleInstance={roleInstance}
                             units={units}
                             teams={teams}
                         />
