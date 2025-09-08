@@ -86,7 +86,9 @@ export default function UsersList({ socketRef, socketReady, roleInstance, roleIn
                 socket.send(JSON.stringify({
                     channel: "role_instances",
                     action: "delete",
-                    data: { id: roleUserId }
+                    data: { 
+                        id: roleUserId
+                    }
                 }));
             }
 

@@ -37,7 +37,9 @@ export default function GamemasterMenu({ joinCode, socketRef, socketReady, roleI
                 socket.send(JSON.stringify({
                     channel: "games",
                     action: "delete",
-                    data: { join_code: joinCode }
+                    data: {
+                        join_code: joinCode
+                    }
                 }));
             }
             

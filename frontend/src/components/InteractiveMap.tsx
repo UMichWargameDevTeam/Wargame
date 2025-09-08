@@ -318,10 +318,12 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
                 }
 
                 if (socket.readyState === WebSocket.OPEN) {
+                    const unitInstance: UnitInstance = data;
+
                     socket.send(JSON.stringify({
                         channel: "units",
                         action: "move",
-                        data: data
+                        data: unitInstance
                     }));
                 }
             } catch (err: unknown) {

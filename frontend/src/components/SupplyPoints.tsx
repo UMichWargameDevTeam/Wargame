@@ -38,18 +38,22 @@ export default function SupplyPoints({ joinCode, socketRef, socketReady, viewerR
                 switch (msg.action) {
                     case "send":
                         const transfer: Message = msg.data;
-                        const supplyPoints = Number(transfer.text);
+                        const transferAmount = Number(transfer.text);
                         if (transfer.recipient_team_name == viewerRoleInstance.team_instance.team.name
                          && transfer.recipient_role_name == viewerRoleInstance.role.name) {
-                            setTeamInstanceRolePoints(prev => prev + supplyPoints);
+                            setTeamInstanceRolePoints(prev => prev + transferAmount);
                         }
                         else if (transfer.sender_role_instance.team_instance.team.name == viewerRoleInstance.team_instance.team.name
                               && transfer.sender_role_instance.role.name == viewerRoleInstance.role.name) {
-                            setTeamInstanceRolePoints(prev => prev - supplyPoints);
+                            setTeamInstanceRolePoints(prev => prev - transferAmount);
                         }
                         else {
                             throw Error("Recipient of message isn't sender or intended recipient!");
                         }
+                        break;
+                    case "spend":
+                        const spendingAmount = msg.data.supply_points;
+                        setTeamInstanceRolePoints(prev => prev - spendingAmount);
                         break;
                 }
             }

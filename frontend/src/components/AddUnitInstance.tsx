@@ -2,17 +2,18 @@
 
 import { useState, RefObject } from 'react';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
-import { Team, Unit } from '@/lib/Types';
+import { Team, Unit, RoleInstance, UnitInstance } from '@/lib/Types';
 
 interface AddUnitInstanceProps {
     joinCode: string;
     socketRef: RefObject<WebSocket | null>;
     socketReady: boolean;
+    roleInstance: RoleInstance;
     units: Unit[];
     teams: Team[];
 }
 
-export default function AddUnitInstance({ joinCode, socketRef, socketReady, units, teams }: AddUnitInstanceProps) {
+export default function AddUnitInstance({ joinCode, socketRef, socketReady, roleInstance, units, teams }: AddUnitInstanceProps) {
     const authedFetch = useAuthedFetch();
     const [open, setOpen] = useState<boolean>(true);
     
@@ -45,11 +46,48 @@ export default function AddUnitInstance({ joinCode, socketRef, socketReady, unit
             }
 
             if (socket.readyState === WebSocket.OPEN) {
+                const unitInstance: UnitInstance = data;
+                const unitName = unitInstance.unit.name;
+                const unitCost = roleInstance.role.name == "Gamemaster" ? 0 : unitInstance.unit.cost;
+
                 socket.send(JSON.stringify({
                     channel: "units",
                     action: "create",
-                    data: data
+                    data: unitInstance
                 }));
+
+                if (roleInstance.role.name != "Gamemaster") {
+                    socket.send(JSON.stringify({
+                        channel: "points",
+                        action: "spend",
+                        data: {
+                            team_name: roleInstance.team_instance.team.name,
+                            role_name: roleInstance.role.name,
+                            supply_points: unitCost
+                        }
+                    }));
+                }
+
+                const messageSenderName = roleInstance.user.username;
+                const messageSenderTeamName = roleInstance.team_instance.team.name;
+                const messageSenderRoleName = roleInstance.role.name;
+                const messageRoleDisplayName = messageSenderTeamName == "Gamemasters" ? messageSenderRoleName : `${messageSenderTeamName} ${messageSenderRoleName}`;
+                const messageText = `${messageRoleDisplayName} ${messageSenderName} spent ${unitCost} supply points to spawn a ${unitName}.`
+
+                socket.send(JSON.stringify({
+                    channel: "chat",
+                    action: "send",
+                    data: {
+                        id: crypto.randomUUID(),
+                        sender_role_instance: roleInstance,
+                        recipient_team_name: roleInstance.team_instance.team.name,
+                        recipient_role_name: roleInstance.role.name,
+                        type: "system",
+                        text: messageText,
+                        timestamp: Date.now(),
+                    }
+                }));
+
             }
 
             setUnitName('');

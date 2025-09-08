@@ -258,18 +258,38 @@ class GameConsumer(AsyncWebsocketConsumer):
         """
         data: Message
         """
-        sender_team_name = data["sender_role_instance"]["team_instance"]["team"]["name"].replace(" ", "")
-        sender_role_name = data["sender_role_instance"]["role"]["name"].replace(" ", "")
+        sender_team_name = data["sender_role_instance"]["team_instance"]["team"]["name"]
+        sender_role_name = data["sender_role_instance"]["role"]["name"]
 
-        recipient_team_name = data["recipient_team_name"].replace(" ", "")
-        recipient_role_name = data["recipient_role_name"].replace(" ", "")
+        recipient_team_name = data["recipient_team_name"]
+        recipient_role_name = data["recipient_role_name"]
 
-        target_group = f"game_{self.join_code}_transfer_{sender_team_name}{sender_role_name}_{recipient_team_name}{recipient_role_name}"
+        target_group = f"game_{self.join_code}_transfer_{sender_team_name}{sender_role_name}_{recipient_team_name}{recipient_role_name}".replace(" ", "")
 
         if target_group not in self.transfer_groups:
             raise Exception(f"User {data['role_instance']['user']['username']} on team {sender_team_name} with role {sender_role_name} is not in group {target_group}")
 
         return target_group, data
+    
+    async def handle_points_spend(self, data):
+        """
+        data: {
+            team_name: string;
+            role_name: string;
+            supply_points: number;
+        }
+        """
+        sender_team_name = data["team_name"]
+        sender_role_name = data["role_name"]
+
+        target_group = f"game_{self.join_code}_channel_{sender_team_name}{sender_role_name}_{sender_team_name}{sender_role_name}".replace(" ", "")
+
+        if target_group not in self.channel_groups:
+            username = self.scope["user"].username
+            raise Exception(f"User {username} on team {sender_team_name} with role {sender_role_name} is not in group {target_group}")
+
+        return target_group, data
+
 
 # ---------------- #
 # Redis helpers    #
