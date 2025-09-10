@@ -7,6 +7,17 @@ interface MapSelectorProps {
     initialMap: string;
 }
 
+/**
+ * A collapsible UI block that lets the user choose a map and notifies the parent of changes.
+ *
+ * The component maintains internal open/collapsed state and the currently selected map.
+ * When `initialMap` changes the selection is updated to match. Selecting an option updates
+ * local state and calls `onMapChange` with the selected map path (or an empty string for the placeholder).
+ *
+ * @param onMapChange - Callback invoked with the selected map path whenever the selection changes.
+ * @param initialMap - Initial selected map path; the component will sync its selection to this prop when it changes.
+ * @returns The rendered MapSelector React element.
+ */
 export default function MapSelector({ onMapChange, initialMap }: MapSelectorProps) {
     const [open, setOpen] = useState<boolean>(true);
     const [selectedMap, setSelectedMap] = useState<string>('');

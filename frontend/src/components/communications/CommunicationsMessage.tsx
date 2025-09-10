@@ -9,6 +9,17 @@ interface CommunicationsMessageProps {
     previousMessage: Message | null;
 }
 
+/**
+ * Renders a single chat message for the communications UI.
+ *
+ * Renders system messages as a centered timestamp + text block. For regular messages it aligns and styles the message bubble based on whether the message is from the viewer, whether the sender is the same as the previous non-system message (controls spacing and header suppression), and whether the message is a cross-team channel (prefixes the role display name with the recipient team). Timestamps are shown in 24-hour `HH:mm` format.
+ *
+ * @param recipientTeamName - Name of the team/channel receiving the message; used when rendering cross-team role labels.
+ * @param viewerRoleInstance - The viewer's RoleInstance (used to determine if a message is from the viewer and the viewer's team).
+ * @param message - The Message to render.
+ * @param previousMessage - The previous Message in the thread, or null; used to decide whether to collapse repeated sender headers.
+ * @returns The message rendered as JSX for the chat UI.
+ */
 export default function CommunicationsMessage({ recipientTeamName, viewerRoleInstance, message, previousMessage }: CommunicationsMessageProps) {
 
     const timestampText = new Date(message.timestamp).toLocaleTimeString([], {

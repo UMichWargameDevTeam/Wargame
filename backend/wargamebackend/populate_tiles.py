@@ -11,6 +11,16 @@ def wipe_tiles():
     Tile.objects.all().delete()
 
 def populate_tiles():
+    """
+    Create and insert a full game grid of Tile records into the database.
+    
+    This function constructs and bulk-inserts a rectangular grid of Tile instances covering 41 rows (0–40)
+    and 81 columns (0–80), for a total of 3,321 tiles. Each tile is created with its row, column, and
+    terrain set to "Plains/Grasslands". After insertion it prints the number of tiles inserted.
+    
+    Side effects:
+    - Adds Tile rows to the database using bulk_create().
+    """
     tiles_to_create = []
     for row in range(41):
         for column in range(81):

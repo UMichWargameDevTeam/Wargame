@@ -11,6 +11,25 @@ interface GameMasterMenuProps {
     roleInstance: RoleInstance;
 }
 
+/**
+ * Gamemaster menu UI that provides a "Delete Game" action for the current game instance.
+ *
+ * Prompts the user for confirmation, issues an authenticated DELETE request to remove the game instance
+ * identified by the roleInstance's game join code, and — on successful deletion — notifies other clients
+ * over the provided WebSocket by sending a `{ channel: "games", action: "delete", data: { join_code } }` message.
+ * While the delete request is in progress the component disables the button and shows a loading label.
+ *
+ * Side effects:
+ * - Displays a blocking confirmation dialog before deleting.
+ * - Sends an authenticated HTTP DELETE request to the server.
+ * - Sends a WebSocket notification when deletion succeeds.
+ * - Alerts on errors and logs errors to the console.
+ *
+ * @param joinCode - The join code for the game shown in the UI; included in the WebSocket notification payload.
+ * @param socketRef - Ref to the WebSocket used to broadcast the deletion event to other clients.
+ * @param socketReady - Whether the WebSocket connection is considered ready; if false, delete is disabled.
+ * @param roleInstance - RoleInstance used to derive the server API path for the game instance to delete.
+ */
 export default function GamemasterMenu({ joinCode, socketRef, socketReady, roleInstance }: GameMasterMenuProps) {
 
     const authedFetch = useAuthedFetch();

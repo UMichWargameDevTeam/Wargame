@@ -20,6 +20,17 @@ from wargamelogic.check_roles import (
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_game_instance(request):
+    """
+    Create or join a game instance by join code and assign the requesting user as the Gamemaster.
+    
+    If a GameInstance with the provided join_code exists, this will attach the requesting user as the Gamemaster for that game's Gamemasters team unless a Gamemaster already exists (returns 400). If no game exists with the join_code, a new GameInstance is created along with TeamInstance and TeamInstanceRolePoints records for all teams and roles, a Gamemaster TeamInstance seeded with a large supply_points value, and the requesting user is created as that game's Gamemaster.
+    
+    Parameters:
+        request (rest_framework.request.Request): DRF request whose `data` must include `join_code` (non-empty, non-whitespace).
+    
+    Returns:
+        rest_framework.response.Response: On success returns serialized RoleInstance for the created/assigned Gamemaster with HTTP 201. Returns HTTP 400 when `join_code` is missing/invalid or when the game already has a Gamemaster. Standard 404 responses are raised via get_object_or_404 when required static records (Role or Team) are missing.
+    """
     join_code = request.data.get("join_code")
     if not join_code:
         return Response({"error": "join_code is required."}, status=status.HTTP_400_BAD_REQUEST)
@@ -106,6 +117,16 @@ def create_game_instance(request):
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def create_role_instance(request):
+    """
+    Create a RoleInstance for the requesting user in a specified game team or return the user's existing role.
+    
+    Expects a Django REST Framework request with `join_code`, `team_name`, and `role_name` in request.data. Behavior:
+    - Returns 400 if `join_code` is missing.
+    - Returns 404 if no GameInstance exists for the join code, or if the named Team, Role, or TeamInstance cannot be found.
+    - If the user already has a RoleInstance in the game, returns 200 with the serialized existing role.
+    - Enforces that only one "Gamemaster" exists per game; attempts to create a second Gamemaster return 400.
+    - On success creates a RoleInstance and returns 201 with its serialized representation (RoleInstanceSerializer).
+    """
     join_code = request.data.get('join_code')
     team_name = request.data.get('team_name')
     role_name = request.data.get('role_name')
@@ -174,6 +195,18 @@ def create_role_instance(request):
     }
 ])
 def create_unit_instance(request):
+    """
+    Create a UnitInstance on a specified tile for a team's game instance.
+    
+    Validates required fields in request.data (join_code, team_name, unit_name, row, column), ensures the GameInstance, TeamInstance, Unit, and Tile exist, and enforces that the requesting user is either the game's Gamemaster or a member of the target team. For non-Gamemaster users, verifies and deducts the required supply points from the user's TeamInstanceRolePoints before creating the UnitInstance.
+    
+    Returns:
+        rest_framework.response.Response: On success returns serialized UnitInstance with HTTP 201 Created.
+        On error returns an HTTP response with one of:
+          - 400 Bad Request: missing fields or insufficient supply points.
+          - 403 Forbidden: user is not part of the team.
+          - 404 Not Found: game, team instance, unit, or tile not found.
+    """
     join_code = request.data.get("join_code")
     team_name = request.data.get("team_name")
     unit_name = request.data.get("unit_name")

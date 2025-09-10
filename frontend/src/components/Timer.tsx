@@ -5,6 +5,15 @@ interface TimerProps {
     socketReady: boolean;
 }
 
+/**
+ * Countdown timer component that displays a MM:SS countdown synced from a WebSocket.
+ *
+ * When a WebSocket is provided and ready, the component registers a single message
+ * listener and requests the server's `finish_time`. If a `finish_time` is received,
+ * the component counts down to that epoch second; otherwise it shows a default
+ * 10-minute timer. The countdown updates every second. Message listener and timer
+ * interval are cleaned up on unmount or when dependencies change.
+ */
 export default function Timer({ socketRef, socketReady }: TimerProps) {
     const defaultTime = 600;
 

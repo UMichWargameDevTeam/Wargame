@@ -8,6 +8,11 @@ import { getSessionStorageOrFetch } from '@/lib/utils';
 import { Team, Branch, Role, RoleInstance } from '@/lib/Types'
 
 
+/**
+ * Role selection page for creating or joining a game.
+ *
+ * Renders a two-column UI that lets a user either create a new game as a Gamemaster or join an existing game by selecting a team, branch, and role. On mount it loads teams, branches, and roles (using sessionStorage when available), and restores any persisted role instance from sessionStorage. Creating a game POSTs to /api/game-instances/create/ and joining POSTs to /api/role-instances/create/; on success the received role instance is saved to sessionStorage and the app navigates to the game's main map. The component also provides client-side join-code validation and a logout action that clears stored tokens and session data.
+ */
 export default function RoleSelectPage() {
     const router = useRouter();
     const authedFetch = useAuthedFetch();

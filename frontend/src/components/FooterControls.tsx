@@ -2,6 +2,16 @@
 
 import React, { useState } from 'react';
 
+/**
+ * FooterControls component rendering three action buttons and an optional attack popup.
+ *
+ * Renders "Request", "Move", and "Attack" buttons. Clicking "Attack" toggles a local
+ * boolean state to show or hide a popup that contains two uncontrolled <select> controls:
+ * one for ammunition type and one for number of barrages. Clicking "Request" or "Move"
+ * logs a message to the console.
+ *
+ * @returns The footer controls UI as JSX.
+ */
 export default function FooterControls() {
   const [showAttackPopup, setShowAttackPopup] = useState<boolean>(false);
 

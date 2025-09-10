@@ -45,6 +45,22 @@ from ..gamelogic.attack import *
     }
 ])
 def send_points(request, join_code, team_name, role_name):
+    """
+    Transfer supply points from a sender role instance to one or more recipient role instances in the same game instance.
+    
+    Validates a non-empty list in request.data["transfers"], where each transfer requires "team_name", "role_name", and a non-negative "supply_points". Ensures the sender (identified by join_code, team_name, role_name) has enough supply points, increments each recipient's supply_points by the requested amount, decrements the sender by the total, and returns serialized recipient role-point objects with their returned `supply_points` values replaced by the transfer amounts.
+    
+    Parameters:
+        join_code (str): Game instance join code used to locate the sender's game instance.
+        team_name (str): Sender team name.
+        role_name (str): Sender role name.
+    
+    Returns:
+        rest_framework.response.Response: HTTP 200 with serialized recipients on success; HTTP 400 for invalid payloads or insufficient points; HTTP 404 if referenced objects are not found.
+    
+    Notes:
+        - Updates are persisted immediately (uses save with update_fields). There is a potential race condition when applying multiple transfers (no transactional locking).
+    """
     sender_team_instance_role_points = get_object_and_related_with_cache_or_404(
         request,
         TeamInstanceRolePoints, 
@@ -119,6 +135,19 @@ def send_points(request, join_code, team_name, role_name):
     }
 ])
 def move_unit_instance(request, pk, row, column):
+    """
+    Move the UnitInstance identified by `pk` to the Tile at (row, column) and return the updated serialized unit.
+    
+    Parameters:
+        pk: Primary key of the UnitInstance to move.
+        row, column: Coordinates of the target Tile. A 404 response is returned if the Tile or UnitInstance does not exist.
+    
+    Side effects:
+        Updates and persists unit_instance.tile.
+    
+    Returns:
+        DRF Response containing the serialized UnitInstance and HTTP 200 on success.
+    """
     unit_instance = get_object_and_related_with_cache_or_404(request, UnitInstance, pk=pk)
     target_tile = get_object_or_404(Tile, row=row, column=column)
     unit_instance.tile = target_tile
@@ -143,6 +172,23 @@ def move_unit_instance(request, pk, row, column):
     }
 ])
 def use_attack(request, pk, attack_name):
+    """
+    Execute a named attack from one UnitInstance against another.
+    
+    Expects JSON body with keys: `attacker_id`, `target_id`, and `attack_name`. Validates the requester controls the attacker unit, looks up the specified Attack for the attacker unit, runs the domain attack logic, and on success persists the attacker’s remaining supply points and the target’s updated health.
+    
+    Returns HTTP 400 if required fields are missing or the attack fails, HTTP 403 if the user does not control the attacker unit, and HTTP 404 if any referenced objects (attacker, target, or attack) are not found.
+    
+    Response on success (HTTP 200) includes:
+    - attacker_id
+    - target_id
+    - attack_used (attack name)
+    - supply_points_remaining (attacker's remaining supply)
+    - message (human-readable outcome)
+    
+    Side effects:
+    - Updates and saves attacker_instance.supply_points and target_instance.health when the attack succeeds.
+    """
     attacker_id = request.data.get("attacker_id")
     target_id = request.data.get("target_id")
     attack_name = request.data.get("attack_name")

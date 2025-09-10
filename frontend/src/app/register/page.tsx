@@ -5,6 +5,17 @@ import { useRouter } from "next/navigation";
 import React, { useState } from "react";
 import {BACKEND_URL } from '@/lib/utils';
 
+/**
+ * Client-side registration form component.
+ *
+ * Renders a username/password form that posts { username, password } to `${BACKEND_URL}/api/auth/register/`.
+ * On successful registration navigates to the root path ("/"). Tracks local UI state for `username`, `password`,
+ * `showPassword` (toggles password visibility), `loading` (disables the submit button while the request is in-flight),
+ * and `error` (used to display server-provided error messages when set).
+ *
+ * Note: network errors and non-OK responses are logged to the console; the catch block does not currently update the
+ * visible `error` state for display.
+ */
 export default function RegisterForm() {
     const router = useRouter();
     const [username, setUsername] = useState<string>("");

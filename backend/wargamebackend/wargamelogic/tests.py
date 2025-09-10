@@ -13,6 +13,18 @@ from wargamelogic.models.dynamic import (
 
 class GetEndpointTests(TestCase):
     def setUp(self):
+        """
+        Create a consistent test fixture: authenticate an APIClient and build a minimal game state.
+        
+        Sets up:
+        - an authenticated APIClient and test user
+        - a GameInstance with a Team and TeamInstance
+        - a Branch, Unit, and UnitBranch linking the unit to the branch
+        - a Tile and a UnitInstance placed on that tile
+        - a Role "Gamemaster" and a RoleInstance for the test user
+        
+        All created objects are assigned to self for use in tests.
+        """
         self.client = APIClient()
         self.user = User.objects.create_user(username='testuser', password='testpass')
         self.client.force_authenticate(user=self.user)
@@ -82,6 +94,18 @@ class GetEndpointTests(TestCase):
 
 class PostEndpointTests(TestCase):
     def setUp(self):
+        """
+        Initialize test fixtures used by the test case.
+        
+        Creates an API test client and basic objects shared by tests:
+        - an authenticated test user,
+        - a Gamemaster role,
+        - two teams ("USA" and "Gamemasters"),
+        - a GameInstance with join code "ABC123",
+        - and a TeamInstance linking the "USA" team to the GameInstance.
+        
+        These objects are attached to self as attributes: client, user, role, team, gamemaster_team, game_instance, team_instance.
+        """
         self.client = APIClient()
         self.user = User.objects.create_user(username='testuser', password='testpass')
 
@@ -124,6 +148,21 @@ class PostEndpointTests(TestCase):
 
 class RoleRequiredTests(TestCase):
     def setUp(self):
+        """
+        Set up a test fixture with branches, roles, users, a game/team, role assignments, a unit and its branch, a tile and a unit instance, and common API URLs.
+        
+        Creates:
+        - Two Branch objects (Navy, Air Force).
+        - Two Role objects (Combatant Commander, Navy Commander; Navy Commander is branch-scoped and marked chief-of-staff).
+        - Three User accounts (combatant commander, navy commander, random user).
+        - A GameInstance and a Team with a TeamInstance.
+        - RoleInstance entries linking the two commander users to the team instance.
+        - A Unit and a UnitBranch linking it to the Air Force branch.
+        - A Tile and a UnitInstance placed on that tile with full health and supply points.
+        - Common endpoint URLs used by the tests (unit-instances list for the game/team and role-instances create endpoint).
+        
+        This fixture is used by tests that validate role-based access control and role-instantiation behavior.
+        """
         self.client = APIClient()
 
         self.navy_branch = Branch.objects.create(name="Navy")
@@ -253,6 +292,23 @@ class RoleRequiredTests(TestCase):
 
 class UseAttackQueryCountTests(TestCase):
     def setUp(self):
+        """
+        Set up test fixture: API client and a game state with GM and operations users, a team/branch, roles, a unit with an attack, and a UnitInstance.
+        
+        Creates:
+        - APIClient bound to self.client
+        - Two users: gm_user (gamemaster) and ops_user (non-GM operations user)
+        - Team and Branch
+        - Gamemaster Role and an operations Role (branch-scoped; is_operations=True)
+        - Tile at (0,0)
+        - GameInstance with join_code "TEST123" and its TeamInstance for the team
+        - RoleInstance for the GM and for the ops user (both tied to the same TeamInstance)
+        - Unit with max_supply_points and a UnitBranch linking it to the Branch
+        - Attack associated with the Unit
+        - UnitInstance located on the Tile with full health and supply_points
+        
+        This fixture is intended for tests that exercise attack usage and permission/query-count behavior.
+        """
         self.client = APIClient()
 
         # Users
@@ -365,6 +421,11 @@ class BaseInstanceViewSetTestCase(TestCase):
     """
 
     def setUp(self):
+        """
+        Set up a shared test fixture: creates users, branches, roles, a game with teams and their instances, role assignments, a static unit (with branch linkage), map tiles, unit instances for two teams, and a landmark with its instance and tile.
+        
+        This prepares a complete, consistent game state used by multiple viewset tests (role, unit, landmark, game, and team instance behaviors). It persists objects to the test database so tests can authenticate as different users and exercise permission and CRUD operations against the API.
+        """
         self.client = APIClient()
 
         # Users

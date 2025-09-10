@@ -5,6 +5,17 @@ import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 import { getSessionStorageOrFetch } from '@/lib/utils';
 import { Branch } from '@/lib/Types';
 
+/**
+ * Client React component that displays a dynamic tab-style menu of military branches.
+ *
+ * On mount it loads a Branch[] from session storage or from the "/api/branches/" endpoint via the authenticated fetch hook,
+ * stores the result in component state, and initializes the active tab to the first branch (if any). Renders a button for
+ * each branch and displays branch-specific overview content for the selected tab.
+ *
+ * Side effects: performs an authenticated fetch and caches results in session storage; fetch errors are caught and logged.
+ *
+ * @returns The menu UI as a React element.
+ */
 export default function JTFMenu() {
     const authedFetch = useAuthedFetch();
 

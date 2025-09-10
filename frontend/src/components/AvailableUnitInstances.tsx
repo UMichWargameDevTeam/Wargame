@@ -11,6 +11,21 @@ interface AvailableUnitInstancesProps {
     unitInstances: UnitInstance[];
 }
 
+/**
+ * Renders a collapsible list of available unit instances with optional delete controls for Gamemasters.
+ *
+ * When the current role is a Gamemaster, each unit shows a Delete button that:
+ * - prompts the user for confirmation,
+ * - sends an authenticated HTTP DELETE to `/api/unit-instances/{id}/`,
+ * - on success, publishes a WebSocket message (channel `"units"`, action `"delete"`, data `{ id }`).
+ * Errors are logged and shown to the user via `alert`; the UI disables the button while a delete is in progress.
+ *
+ * @param socketRef - Ref object pointing to the active WebSocket (may be null).
+ * @param socketReady - Whether the WebSocket connection is ready for use.
+ * @param roleInstance - The current user's role instance; used to determine Gamemaster privileges.
+ * @param unitInstances - Array of unit instances to display.
+ * @returns A React element containing the collapsible panel and unit list.
+ */
 export default function AvailableUnitInstances({ socketRef, socketReady, roleInstance, unitInstances }: AvailableUnitInstancesProps) {
     const authedFetch = useAuthedFetch();
     

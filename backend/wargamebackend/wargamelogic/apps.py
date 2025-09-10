@@ -6,6 +6,11 @@ class WargamelogicConfig(AppConfig):
     name = 'wargamelogic'
 
     def ready(self):
+        """
+        Clear Redis keys with the "game_*" prefix when the Django app starts.
+        
+        On application startup (AppConfig.ready), obtains a Redis client via wargamelogic.consumers.get_redis_client(), deletes any keys matching the "game_*" pattern, and prints a confirmation message. This has the side effect of removing game-related state from Redis; any exceptions raised by the import or Redis operations will propagate.
+        """
         from wargamelogic.consumers import get_redis_client
 
         redis_client = get_redis_client()

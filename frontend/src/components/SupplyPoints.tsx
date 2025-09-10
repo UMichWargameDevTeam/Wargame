@@ -15,6 +15,19 @@ interface SupplyPointsProps {
 }
 
 
+/**
+ * Displays and manages the viewer's supply points, including sending points to permitted recipients and applying real-time updates.
+ *
+ * Renders a collapsible panel that shows the viewer's current supply points, a validated form of per-recipient numeric inputs for sending points, and a send button. The component:
+ * - Fetches roles and teams to derive eligible transfer recipients based on the viewer's role.
+ * - Validates inputs so at least one positive numeric transfer is required.
+ * - PATCHes transfers to the server and, on success, broadcasts both per-recipient "points" messages and a system "communications" message over the provided WebSocket.
+ * - Listens for inbound WebSocket "points" and "spend" messages to adjust the viewer's displayed points in real time.
+ *
+ * Side effects: network requests (authenticated fetch), WebSocket listeners/messages, and calls to update parent state for the viewer's points.
+ *
+ * @returns The SupplyPoints UI component as JSX.Element.
+ */
 export default function SupplyPoints({ joinCode, socketRef, socketReady, viewerRoleInstance, teamInstanceRolePoints, setTeamInstanceRolePoints }: SupplyPointsProps) {
     const authedFetch = useAuthedFetch();
 

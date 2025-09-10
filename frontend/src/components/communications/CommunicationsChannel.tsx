@@ -17,6 +17,22 @@ interface CommunicationsChannelProps {
     messages: Message[];
 }
 
+/**
+ * Renders and manages a single communications chat channel UI.
+ *
+ * This React client component displays the message list, unread indicators, and a textarea/send control for a single channel.
+ * It enforces a 400-character message limit, debounces sends to at most one per 2000ms, and auto-scrolls behavior:
+ * - attaches a scroll listener to track whether the view is near the bottom and clears the channel from unreadChannels when it is,
+ * - auto-scrolls to the bottom on new messages if the user was already at the bottom, and
+ * - scrolls to the bottom when switching channels.
+ *
+ * When sending, it constructs and sends a JSON payload over the provided WebSocket containing an id (UUID), sender_role_instance,
+ * recipient_team_name, recipient_role_name, text, and timestamp. After a successful send the input is cleared and the textarea height reset.
+ * Errors are logged and, if an Error is thrown, its message is shown via alert.
+ *
+ * @param channel - A tuple [teamName, roleName]. If roleName === "Gamemaster" the header shows "Gamemaster"; otherwise the header shows "teamName roleName".
+ * @param messages - Array of Message objects for this channel, ordered from oldest to newest; used to render messages and drive auto-scroll behavior.
+ */
 export default function CommunicationsChannel({ 
     socketRef, socketReady, viewerRoleInstance, 
     unreadChannels, setUnreadChannels, channel, setActiveChannel, wasAtBottomRef, 

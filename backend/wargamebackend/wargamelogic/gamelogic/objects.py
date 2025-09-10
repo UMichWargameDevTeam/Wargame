@@ -24,6 +24,18 @@ class GameUnit:
 
     @classmethod
     def from_models(cls, instance: "UnitInstance", unit: "Unit"):
+        """
+        Create a GameUnit from persistence models.
+        
+        Builds and returns a GameUnit populated from a UnitInstance (runtime state) and its Unit model (static unit data).
+        
+        Parameters:
+            instance (UnitInstance): persisted instance holding runtime state (id, team_instance, health, supply_points, tile).
+            unit (Unit): unit model holding static attributes (name, type, domain, max_health, defense_modifier, max_supply_points).
+        
+        Returns:
+            GameUnit: new GameUnit initialized with combined data from `instance` and `unit`.
+        """
         return cls(
             id=instance.id,
             team_id=instance.team_instance.id,
@@ -56,6 +68,21 @@ class GameAttack:
 
     @classmethod
     def from_models(cls, attack: "Attack"):
+        """
+        Create a GameAttack from an Attack persistence model.
+        
+        Maps fields from the provided Attack model instance into a new GameAttack dataclass,
+        copying identifier, owning unit id, name, cost, to-hit, shots, damage range, range,
+        attack type, modifiers, and description.
+        
+        Parameters:
+            attack (Attack): Persistence model instance with attributes
+                id, unit, name, cost, to_hit, shots, min_damage, max_damage, range,
+                type, attack_modifier, attack_modifier_applies_to, and description.
+        
+        Returns:
+            GameAttack: New instance populated from the model.
+        """
         return cls(
             id=attack.id,
             unit_id=attack.unit,

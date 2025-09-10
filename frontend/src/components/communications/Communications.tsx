@@ -12,6 +12,22 @@ interface CommunicationsProps {
     viewerRoleInstance: RoleInstance
 }
 
+/**
+ * Client-side communications panel that provides role- and team-scoped chat channels over a WebSocket.
+ *
+ * Renders a collapsible UI that lists channels the current viewer can message (derived from their RoleInstance),
+ * initializes per-channel message storage, subscribes to incoming "communications" WebSocket messages, and routes
+ * received messages into the appropriate viewer-facing channel. Tracks the active channel, unread channels, and
+ * whether the message view was scrolled to the bottom to determine unread state. Also fetches roles and teams
+ * to compute available channels when the component mounts or the viewer changes.
+ *
+ * Side effects:
+ * - Attaches a single WebSocket "message" listener while the socket is ready; removes it on cleanup.
+ * - Performs authenticated fetches of /api/roles/ and /api/teams/ (with session-storage caching) to compute channels.
+ *
+ * The component focuses on presentation and local state management; it delegates actual message sending and per-channel
+ * rendering to the CommunicationsChannel child component.
+ */
 export default function Communications({ socketRef, socketReady, viewerRoleInstance }: CommunicationsProps) {
     const authedFetch = useAuthedFetch();
 

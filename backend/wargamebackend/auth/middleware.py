@@ -11,10 +11,22 @@ import jwt
 # as request.user in DRF.
 class JWTAuthMiddleware:
     def __init__(self, app):
+        """
+        Initialize the middleware with the wrapped ASGI application.
+        
+        Parameters:
+            app: The inner ASGI application callable to which the middleware will delegate
+                 after attaching authentication information to the connection scope.
+        """
         self.app = app
 
     async def __call__(self, scope, receive, send):
         # Parse token from query string
+        """
+        Authenticate an incoming ASGI connection by extracting a JWT from the connection's query string and setting scope["user"] accordingly.
+        
+        If a "token" parameter is present in scope["query_string"], the token is decoded using settings.SECRET_KEY with the HS256 algorithm and the user is looked up by payload["user_id"] via an asynchronous DB call; on success scope["user"] is set to that User instance. If no token is present or any validation/lookup step fails, scope["user"] is set to django.contrib.auth.models.AnonymousUser(). After setting scope["user"], control is delegated to the wrapped ASGI application and its result is returned.
+        """
         query_string = parse_qs(scope["query_string"].decode())
         token = query_string.get("token", [None])[0]
 

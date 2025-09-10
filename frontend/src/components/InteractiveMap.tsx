@@ -22,6 +22,25 @@ const MAX_ZOOM = 5;
 const MAX_GRID_LEVEL = 2;
 const FINE_CELL_SIZE = BASE_CELL_SIZE / (2 ** MAX_GRID_LEVEL);
 
+/**
+ * Interactive, client-side map component with pan/zoom, multi-level grid, and draggable unit instances.
+ *
+ * Renders a zoomable/pannable map image with an optional hierarchical grid overlay and axis labels.
+ * Unit instances passed in `unitInstances` are rendered above the canvas (filtered by `selectedUnitInstances`)
+ * and can be dragged on a canonical finest-grid resolution; releasing a drag commits the new tile to the server
+ * and broadcasts the move over the provided WebSocket.
+ *
+ * Behavior and side effects:
+ * - Persists zoom and pan offset to sessionStorage and restores them on mount.
+ * - Subscribes to the provided `socketRef` for "units" messages and applies create/delete/move updates to `unitInstances`.
+ * - Commits unit moves with an authenticated PATCH via `authedFetch` and, on success, sends a "units" move message over the socket.
+ *
+ * @param mapSrc - URL of the map image to display.
+ * @param unitInstances - Array of UnitInstance objects; used for rendering and in-place updates while dragging.
+ * @param setUnitInstances - State updater used to apply websocket-driven and drag-driven changes to unitInstances.
+ * @param selectedUnitInstances - Map of unit domain -> boolean; only units with a truthy entry are rendered.
+ * @returns The InteractiveMap React element.
+ */
 export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitInstances, setUnitInstances, selectedUnitInstances }: InteractiveMapProps) {
     const authedFetch = useAuthedFetch();
     

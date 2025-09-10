@@ -20,6 +20,20 @@ import Communications from '@/components/communications/Communications';
 import { Team, Unit, RoleInstance, UnitInstance, Attack } from '@/lib/Types'
 
 
+/**
+ * Main protected map page for a game instance; validates access, loads initial game data,
+ * opens a WebSocket for realtime updates, and renders the role-aware combat map UI.
+ *
+ * This component:
+ * - Validates the current user's access to the map for the given join code and stores the returned role instance in sessionStorage.
+ * - Loads map selection, unit display preferences, unit instances, teams, units, attacks, and team-role points (with sessionStorage fallbacks where applicable).
+ * - Establishes a WebSocket connection to receive live updates and reacts to remote deletion of the game or the user's role by clearing sessionStorage and navigating to the role selection page.
+ * - Maintains UI state (map, selected unit types, unit instances, teams, attacks, role data, and socket readiness) and conditionally renders controls and sidebar menus based on the current role.
+ *
+ * On validation or fetch failures the component surfaces an error message in place of the UI.
+ *
+ * @returns The page's React element tree.
+ */
 export default function MainMapPage() {
     const params = useParams();
     const authedFetch = useAuthedFetch();

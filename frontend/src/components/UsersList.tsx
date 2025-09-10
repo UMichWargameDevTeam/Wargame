@@ -12,6 +12,17 @@ interface UsersListProps {
     setRoleInstances: React.Dispatch<React.SetStateAction<RoleInstance[]>>;
 }
 
+/**
+ * Renders a real-time list of connected players grouped by team → branch → role and allows Gamemasters to remove role assignments.
+ *
+ * This component listens for WebSocket messages on the "users" channel to keep `roleInstances` synchronized (actions: `list`, `join`, `leave`). When mounted and the socket is open it requests the current list; it also sends a `join` message for the current `roleInstance` if it is missing from a received list. Gamemasters see a per-item Delete button that issues an authenticated DELETE to `/api/role-instances/{id}/`, updates local state on success, and notifies the server via the "role_instances" channel with action `delete`.
+ *
+ * @param socketRef - Ref to the shared WebSocket used for real-time updates.
+ * @param socketReady - Whether the WebSocket is ready/usable.
+ * @param roleInstance - The current user's RoleInstance or null; used to determine permissions and to auto-join the user to the list.
+ * @param roleInstances - Array of RoleInstance objects representing currently connected role assignments.
+ * @param setRoleInstances - State setter to replace or update the `roleInstances` array in response to WS messages or deletions.
+ */
 export default function UsersList({ socketRef, socketReady, roleInstance, roleInstances, setRoleInstances }: UsersListProps) {
     const authedFetch = useAuthedFetch();
     

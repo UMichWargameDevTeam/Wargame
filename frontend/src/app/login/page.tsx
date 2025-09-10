@@ -5,6 +5,18 @@ import { useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
 import {BACKEND_URL } from '@/lib/utils';
 
+/**
+ * Login form UI component that authenticates a user and navigates to the role selection screen.
+ *
+ * Renders a username/password form with a password visibility toggle, displays server errors, and
+ * disables the submit button while a request is in progress. On mount, it redirects to "/roleselect"
+ * if an `accessToken` exists in localStorage. On successful login it POSTs credentials to
+ * `${BACKEND_URL}/api/auth/token/`, stores the returned `access` and `refresh` tokens in localStorage,
+ * saves the username to sessionStorage, and navigates to "/roleselect". Server-provided error messages
+ * (from `error`, `detail`, or `message` fields) are shown to the user when available.
+ *
+ * @returns The login form JSX element.
+ */
 export default function LoginForm() {
     const router = useRouter();
     const [username, setUsername] = useState<string>("");

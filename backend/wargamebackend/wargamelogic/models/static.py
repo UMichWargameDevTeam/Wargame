@@ -5,6 +5,12 @@ class Team(models.Model):
     name = models.CharField(max_length=100, unique=True)
 
     def __str__(self):
+        """
+        Return the instance's name as its string representation.
+        
+        Returns:
+            str: The value of the instance's `name` attribute.
+        """
         return self.name
 
 class Branch(models.Model):
@@ -14,6 +20,12 @@ class Branch(models.Model):
         verbose_name_plural = "branches"
 
     def __str__(self):
+        """
+        Return the instance's name as its string representation.
+        
+        Returns:
+            str: The value of the instance's `name` attribute.
+        """
         return self.name
 
 class Role(models.Model):
@@ -37,6 +49,18 @@ class Role(models.Model):
     description = models.TextField(blank=True, null=False)
 
     def clean(self):
+        """
+        Validate Role-level constraints.
+        
+        Performs model validation after calling super().clean() and enforces:
+        - At most one of is_chief_of_staff, is_commander, is_vice_commander may be True.
+        - At most one of is_operations, is_logistics may be True.
+        - If branch is set, the role must have at least one branch duty (one of the chief/commander/vice flags or one of operations/logistics).
+        - If branch is None, none of the branch-specific duty flags may be set.
+        
+        Raises:
+            ValidationError: If any of the above constraints are violated.
+        """
         super().clean()
 
         # Enforce at most one of CoS / CC / CV
@@ -58,6 +82,12 @@ class Role(models.Model):
             raise ValidationError("A role not in a branch cannot have a branch-specific duty.")
 
     def __str__(self):
+        """
+        Return the instance's name as its string representation.
+        
+        Returns:
+            str: The value of the instance's `name` attribute.
+        """
         return self.name
 
 class Unit(models.Model):
@@ -88,6 +118,12 @@ class Unit(models.Model):
     branches = models.ManyToManyField(Branch, through="UnitBranch")
 
     def __str__(self):
+        """
+        Return the instance's name as its string representation.
+        
+        Returns:
+            str: The value of the instance's `name` attribute.
+        """
         return self.name
 
 class UnitBranch(models.Model):
@@ -101,6 +137,12 @@ class UnitBranch(models.Model):
         ]
     
     def __str__(self):
+        """
+        Return a human-readable representation of the UnitBranch relation.
+        
+        Returns:
+            str: Formatted as "<unit name> - <branch name>".
+        """
         return f"{self.unit.name} - {self.branch.name}"
 
 class Attack(models.Model):
@@ -144,6 +186,12 @@ class Ability(models.Model):
         ]
 
     def __str__(self):
+        """
+        Return a human-readable string combining the related unit's name and this object's name.
+        
+        Returns:
+            str: A string in the form "UnitName - Name" (e.g., "Infantry - Rifle Shot").
+        """
         return f"{self.unit.name} - {self.name}"
 
 class Landmark(models.Model):
@@ -162,6 +210,12 @@ class Landmark(models.Model):
     description = models.TextField(blank=True, null=False)
 
     def __str__(self):
+        """
+        Return the instance's name as its string representation.
+        
+        Returns:
+            str: The value of the instance's `name` attribute.
+        """
         return self.name
 
 class Tile(models.Model):
@@ -186,4 +240,12 @@ class Tile(models.Model):
         ]
 
     def __str__(self):
+        """
+        Return a human-readable representation of the Tile.
+        
+        The string is formatted as "Tile (row, column)" using the tile's row and column values.
+        
+        Returns:
+            str: Formatted tile coordinate string.
+        """
         return f"Tile ({self.row}, {self.column})"

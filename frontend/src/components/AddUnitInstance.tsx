@@ -13,6 +13,24 @@ interface AddUnitInstanceProps {
     teams: Team[];
 }
 
+/**
+ * Renders a collapsible form to create a new UnitInstance and broadcasts the result in real time.
+ *
+ * The component lets the user pick a unit and team, specify row/column coordinates, submit a POST to
+ * /api/unit-instances/create/, and — when a WebSocket is ready — emits the created unit on the
+ * "units" channel. If the role is not "Gamemaster" it also emits a "points" spend message and a
+ * system "communications" message describing the action. Inputs are cleared after success; errors
+ * are logged and surfaced via alert when available.
+ *
+ * @param joinCode - Lobby/session join code used by the create API.
+ * @param socketRef - Ref to the WebSocket used for broadcasting (component checks readiness before sending).
+ * @param socketReady - Whether the WebSocket connection is considered ready; submission is no-op when false.
+ * @param roleInstance - The current user's RoleInstance; used to determine cost, team/role names, and message sender.
+ * @param units - Available Unit definitions used to populate the unit selector.
+ * @param teams - Available Team definitions used to populate the team selector.
+ *
+ * @returns The component's JSX.
+ */
 export default function AddUnitInstance({ joinCode, socketRef, socketReady, roleInstance, units, teams }: AddUnitInstanceProps) {
     const authedFetch = useAuthedFetch();
     const [open, setOpen] = useState<boolean>(true);

@@ -6,6 +6,17 @@ interface CommandersIntentProps {
     roleInstance: RoleInstance | null;
 }
 
+/**
+ * Displays a colored intent banner for a given role instance.
+ *
+ * Computes a short "intent" string from properties of `roleInstance.role` (operations, logistics,
+ * chief-of-staff with branch: Army/Air Force/Navy, or `role.name === "Combatant Commander"`) and
+ * renders the role name followed by the computed intent. If `roleInstance` is null or no conditions
+ * match, a default intent of "Default intent." is shown.
+ *
+ * @param roleInstance - The RoleInstance used to derive the displayed role name and intent; may be null.
+ * @returns A JSX element containing a styled banner with the role name and its intent.
+ */
 export default function CommandersIntent({ roleInstance }: CommandersIntentProps) {
     let intent = "Default intent."; // Default fallback value
 

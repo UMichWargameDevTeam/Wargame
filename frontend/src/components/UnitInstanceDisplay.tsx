@@ -7,6 +7,18 @@ interface UserInstanceDisplayProps {
     setSelectedUnitInstances: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
 }
 
+/**
+ * Collapsible "Unit Display" panel with checkboxes for Air, Ground, and Sea.
+ *
+ * Renders a panel that can be expanded or collapsed. Each domain checkbox reflects
+ * and updates the shared `selectedUnitInstances` state; toggling a checkbox flips
+ * that domain's boolean and persists the updated map to sessionStorage under
+ * the key "unitInstanceDisplay".
+ *
+ * @param selectedUnitInstances - Map from domain name to its selected state (true = shown).
+ * @param setSelectedUnitInstances - State setter for `selectedUnitInstances`.
+ * @returns A React element for the unit display control.
+ */
 export default function UnitInstanceDisplay({ selectedUnitInstances, setSelectedUnitInstances }: UserInstanceDisplayProps) {
     const [open, setOpen] = useState<boolean>(true);
 

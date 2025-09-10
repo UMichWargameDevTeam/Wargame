@@ -6,6 +6,15 @@ from rest_framework_simplejwt.tokens import RefreshToken
 
 class RegisterView(APIView):
     def post(self, request):
+        """
+        Handle user registration.
+        
+        Expects JSON payload with "username" and "password". If either is missing, responds with HTTP 400 and {"error": "Username and password required"}. If the username already exists, responds with HTTP 400 and {"detail": "Username taken"}. On success creates a new Django User, issues JWT refresh and access tokens, and responds with HTTP 201 containing:
+        {
+          "refresh": "<refresh token>",
+          "access": "<access token>"
+        }
+        """
         username = request.data.get("username")
         password = request.data.get("password")
 

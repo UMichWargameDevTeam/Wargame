@@ -23,6 +23,12 @@ class TeamViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'put', 'delete']
 
     def get_permissions(self):
+        """
+        Return the permission instances for the current request.
+        
+        Non-safe HTTP methods (POST, PUT, PATCH, DELETE, etc.) require admin privileges (IsAdminUser).
+        Safe methods (GET, HEAD, OPTIONS) require authentication (IsAuthenticated).
+        """
         if self.request.method not in SAFE_METHODS:
             return [IsAdminUser()]
         return [IsAuthenticated()]
@@ -33,6 +39,12 @@ class BranchViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'put', 'delete']
 
     def get_permissions(self):
+        """
+        Return the permission instances for the current request.
+        
+        Non-safe HTTP methods (POST, PUT, PATCH, DELETE, etc.) require admin privileges (IsAdminUser).
+        Safe methods (GET, HEAD, OPTIONS) require authentication (IsAuthenticated).
+        """
         if self.request.method not in SAFE_METHODS:
             return [IsAdminUser()]
         return [IsAuthenticated()]
@@ -53,6 +65,12 @@ class UnitViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'put', 'delete']
 
     def get_permissions(self):
+        """
+        Return the permission instances for the current request.
+        
+        Non-safe HTTP methods (POST, PUT, PATCH, DELETE, etc.) require admin privileges (IsAdminUser).
+        Safe methods (GET, HEAD, OPTIONS) require authentication (IsAuthenticated).
+        """
         if self.request.method not in SAFE_METHODS:
             return [IsAdminUser()]
         return [IsAuthenticated()]
@@ -63,6 +81,12 @@ class UnitBranchViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'put', 'delete']
 
     def get_permissions(self):
+        """
+        Return the permission instances for the current request.
+        
+        Non-safe HTTP methods (POST, PUT, PATCH, DELETE, etc.) require admin privileges (IsAdminUser).
+        Safe methods (GET, HEAD, OPTIONS) require authentication (IsAuthenticated).
+        """
         if self.request.method not in SAFE_METHODS:
             return [IsAdminUser()]
         return [IsAuthenticated()]
@@ -115,6 +139,11 @@ class GameInstanceViewSet(viewsets.ModelViewSet):
     http_method_names = ['get', 'post', 'patch', 'put']
     
     def get_queryset(self):
+        """
+        Return the base queryset, optionally filtered by the 'join_code' query parameter.
+        
+        If the request includes a 'join_code' query parameter, the returned queryset is filtered to objects whose join_code matches that value; otherwise the unmodified superclass queryset is returned.
+        """
         queryset = super().get_queryset()
         join_code = self.request.query_params.get('join_code')
         if join_code:
@@ -135,6 +164,14 @@ class GameInstanceViewSet(viewsets.ModelViewSet):
         'role.name':'Gamemaster'
     })
     def update(self, request, *args, **kwargs):
+        """
+        Update the targeted model instance and return a serialized Response.
+        
+        Delegates to the superclass implementation to validate input, persist changes, and produce the appropriate DRF Response for the updated object.
+        
+        Returns:
+            rest_framework.response.Response: Response containing the serialized updated instance and the corresponding HTTP status.
+        """
         return super().update(request, *args, **kwargs)
 
 
@@ -197,6 +234,11 @@ class RoleInstanceViewSet(viewsets.ModelViewSet):
         'role.name':'Gamemaster'
     })
     def destroy(self, request, *args, **kwargs):
+        """
+        Delete the target model instance.
+        
+        Performs the standard DRF destroy operation and returns HTTP 204 No Content on success. Access is subject to the view's permission checks and any role-based decorators applied to this action.
+        """
         return super().destroy(request, *args, **kwargs)
 
 class TeamInstanceRolePointsViewSet(viewsets.ModelViewSet):
@@ -215,6 +257,19 @@ class TeamInstanceRolePointsViewSet(viewsets.ModelViewSet):
         }
     ])
     def partial_update(self, request, *args, **kwargs):
+        """
+        Perform a partial update of the targeted model instance and return the resulting response.
+        
+        This method delegates to the superclass implementation to apply the partial update. Access control for this action is expected to be enforced by surrounding decorators or view-level permission configuration.
+        
+        Parameters:
+            request: DRF request carrying partial update data and authentication context.
+            *args: Positional arguments forwarded to the superclass.
+            **kwargs: Keyword arguments forwarded to the superclass.
+        
+        Returns:
+            rest_framework.response.Response: The response produced by the superclass partial_update call.
+        """
         return super().partial_update(request, *args, **kwargs)
 
 class UnitInstanceViewSet(viewsets.ModelViewSet):
@@ -225,6 +280,11 @@ class UnitInstanceViewSet(viewsets.ModelViewSet):
 
     @rest_framework.decorators.permission_classes([IsAuthenticated, IsAdminUser])
     def list(self, request, *args, **kwargs):
+        """
+        Return a list of UnitInstance objects.
+        
+        This endpoint is restricted to admin users (method-level permission). It delegates to the base ModelViewSet implementation to perform the standard listing behavior.
+        """
         return super().list(request, *args, **kwargs)
     
     @require_any_role_instance([
@@ -237,6 +297,12 @@ class UnitInstanceViewSet(viewsets.ModelViewSet):
         }
     ])
     def retrieve(self, request, *args, **kwargs):
+        """
+        Retrieve a single model instance and return its serialized representation.
+        
+        Returns:
+            rest_framework.response.Response: HTTP response containing the serialized object data (200 on success, 404 if not found).
+        """
         return super().retrieve(request, *args, **kwargs)
 
     @require_any_role_instance([
@@ -249,6 +315,11 @@ class UnitInstanceViewSet(viewsets.ModelViewSet):
         }
     ])
     def destroy(self, request, *args, **kwargs):
+        """
+        Delete the target model instance.
+        
+        Performs the standard DRF destroy operation and returns HTTP 204 No Content on success. Access is subject to the view's permission checks and any role-based decorators applied to this action.
+        """
         return super().destroy(request, *args, **kwargs)
 
 
@@ -263,6 +334,14 @@ class LandmarkInstanceViewSet(viewsets.ModelViewSet):
         'role.name': 'Gamemaster'
     })
     def create(self, request, *args, **kwargs):
+        """
+        Create a new instance using the viewset's serializer and return a 201 CREATED response.
+        
+        This action delegates to the base ModelViewSet.create implementation. Access to this endpoint is protected by a role-based decorator that requires the requester to hold the Gamemaster role on the related game instance; the decorator will return 403 or 404 when authorization or related-object resolution fails.
+        
+        Returns:
+            rest_framework.response.Response: HTTP 201 response with the serialized created object on success, or an appropriate error response from the framework/decorators.
+        """
         return super().create(request, *args, **kwargs)
 
     @require_role_instance({
@@ -297,6 +376,14 @@ class LandmarkInstanceTileViewSet(viewsets.ModelViewSet):
         'role.name': 'Gamemaster'
     })
     def create(self, request, *args, **kwargs):
+        """
+        Create a new instance using the viewset's serializer and return a 201 CREATED response.
+        
+        This action delegates to the base ModelViewSet.create implementation. Access to this endpoint is protected by a role-based decorator that requires the requester to hold the Gamemaster role on the related game instance; the decorator will return 403 or 404 when authorization or related-object resolution fails.
+        
+        Returns:
+            rest_framework.response.Response: HTTP 201 response with the serialized created object on success, or an appropriate error response from the framework/decorators.
+        """
         return super().create(request, *args, **kwargs)
 
     @require_role_instance({

@@ -13,6 +13,21 @@ interface Props {
     onAttackSuccess: (data: JSON) => void;
 }
 
+/**
+ * Dropdown UI for selecting an attacker, target, and attack, then executing the attack via an authenticated API call.
+ *
+ * Renders nothing when `open` is false. When open, lists friendly units (based on `roleInstance`) as attackers,
+ * enemy units as targets, and filters available `attacks` by the selected attacker's unit. Submits a PATCH request
+ * to use the selected attack; on success calls `onAttackSuccess` with the parsed response and shows a success message.
+ *
+ * @param open - Whether the dropdown is visible.
+ * @param onClose - Called to request closing the dropdown (also invoked when clicking outside).
+ * @param roleInstance - Current player's role instance; used to determine friendly vs. enemy units.
+ * @param unitInstances - All unit instances used to populate attacker and target selects.
+ * @param attacks - Available attacks; the attack select is filtered to attacks matching the selected attacker.
+ * @param onAttackSuccess - Invoked with the server response JSON after a successful attack.
+ * @returns A React element for the attack dropdown, or null when closed.
+ */
 export default function UnitAttackDropdown({
     open,
     onClose,

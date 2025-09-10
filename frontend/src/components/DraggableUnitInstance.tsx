@@ -12,6 +12,21 @@ interface DraggableUnitInstanceProps {
 }
 
 
+/**
+ * Renders a positioned, clickable circular marker for a unit that can toggle dragging and show an info popup.
+ *
+ * The marker's on-screen position and size are computed from the given world coordinates using `cellSize`, `zoom`, and `offset`.
+ * Single-click calls `onToggleDrag` with the unit's id; double-click toggles a small info panel showing team, unit, tile, health,
+ * and supply points. The rendered circle is colored red when the unit's team name is `"Red"`, otherwise blue. The visual size
+ * is rounded to integer pixels with a minimum of 6px to ensure visibility.
+ *
+ * @param unitInstance - The unit instance to render (provides tile, team, unit name, health, and supply points).
+ * @param cellSize - Size of a world cell in pixels (used to convert tile coordinates to screen coordinates).
+ * @param zoom - Current zoom factor applied to world → screen scaling.
+ * @param offset - Screen offset { x, y } applied after scaling (same transform used by the canvas).
+ * @param onToggleDrag - Callback invoked with the unit id when the marker is single-clicked to toggle dragging.
+ * @returns A JSX element representing the unit marker and its optional info popup.
+ */
 export default function DraggableUnitInstance({ unitInstance, cellSize, zoom, offset, onToggleDrag }: DraggableUnitInstanceProps) {
     const [showInfo, setShowInfo] = useState<boolean>(false);
 
