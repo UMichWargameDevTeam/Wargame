@@ -33,13 +33,13 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1", "t", "yes")
 
 ALLOWED_HOSTS = [
-    "longtermwargame.onrender.com",
+    "umichwargame.onrender.com",
     "localhost",
     "127.0.0.1"
 ]
 
 CSRF_TRUSTED_ORIGINS = [
-    "https://longtermwargame.onrender.com"
+    "https://umichwargame.onrender.com"
 ]
 
 CSRF_COOKIE_SECURE = True
