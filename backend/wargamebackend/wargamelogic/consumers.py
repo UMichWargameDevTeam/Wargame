@@ -219,6 +219,25 @@ class GameConsumer(AsyncWebsocketConsumer):
 
         data["finish_time"] = int(redis_client.get(timer_key))
         return target_group, data
+    
+    async def handle_timer_set_finish_time(self, data):
+        timer_key = f"game_{self.join_code}_timer"
+        redis_client = get_redis_client()
+
+        finish_time = data.get("finish_time")
+
+        if finish_time is None:
+            # Reset timer
+            redis_client.delete(timer_key)
+            print(f"Timer for game {self.join_code} has been reset.")
+        else:
+            # Set timer explicitly
+            redis_client.set(timer_key, int(finish_time))
+            print(f"Timer for game {self.join_code} set to end at {finish_time}.")
+
+        # Broadcast updated finish_time to all players in the game
+        return self.game_group, {"finish_time": finish_time}
+
 
 
     async def handle_role_instances_delete(self, data):

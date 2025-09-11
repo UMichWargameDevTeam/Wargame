@@ -15,6 +15,7 @@ import JTFMenu from '@/components/JTFMenu';
 import GamemasterMenu from '@/components/GamemasterMenu';
 import UnitAttackDisplay from '@/components/UnitAttackDisplay';
 import Timer from '@/components/Timer';
+import TimerControls from '@/components/TimerControls';
 import UsersList from '@/components/UsersList';
 import Communications from '@/components/communications/Communications';
 import { Team, Unit, RoleInstance, UnitInstance, Attack } from '@/lib/Types'
@@ -91,28 +92,28 @@ export default function MainMapPage() {
                     teamsData,
                     unitsData,
                     attackData
-                ] = 
-                await Promise.all([
-                    authedFetch(`/api/game-instances/${joinCode}/unit-instances/`)
-                        .then(res => res.ok ? res.json() : Promise.reject(`UnitInstance fetch failed with ${res.status}`)),
-                    authedFetch(`/api/game-instances/${joinCode}/team-instances/${roleInstance.team_instance.team.name}/role/${roleInstance.role.name}/points/`)
-                        .then(res => res.ok ? res.json() : Promise.reject(`TeamInstanceRolePoints fetch failed with ${res.status}`)),
-                    getSessionStorageOrFetch<Team[]>('teams', async () => {
-                        const res = await authedFetch("/api/teams/");
-                        if (!res.ok) throw new Error(`Team fetch failed with ${res.status}`);
-                        return res.json();
-                    }),
-                    getSessionStorageOrFetch<Unit[]>('units', async () => {
-                        const res = await authedFetch("/api/units/");
-                        if (!res.ok) throw new Error(`Unit fetch failed with ${res.status}`);
-                        return res.json();
-                    }),
-                    getSessionStorageOrFetch<Attack[]>('attacks', async () => {
-                        const res = await authedFetch("/api/attacks/");
-                        if (!res.ok) throw new Error(`Attack fetch failed with ${res.status}`);
-                        return res.json();
-                    })
-                ]);
+                ] =
+                    await Promise.all([
+                        authedFetch(`/api/game-instances/${joinCode}/unit-instances/`)
+                            .then(res => res.ok ? res.json() : Promise.reject(`UnitInstance fetch failed with ${res.status}`)),
+                        authedFetch(`/api/game-instances/${joinCode}/team-instances/${roleInstance.team_instance.team.name}/role/${roleInstance.role.name}/points/`)
+                            .then(res => res.ok ? res.json() : Promise.reject(`TeamInstanceRolePoints fetch failed with ${res.status}`)),
+                        getSessionStorageOrFetch<Team[]>('teams', async () => {
+                            const res = await authedFetch("/api/teams/");
+                            if (!res.ok) throw new Error(`Team fetch failed with ${res.status}`);
+                            return res.json();
+                        }),
+                        getSessionStorageOrFetch<Unit[]>('units', async () => {
+                            const res = await authedFetch("/api/units/");
+                            if (!res.ok) throw new Error(`Unit fetch failed with ${res.status}`);
+                            return res.json();
+                        }),
+                        getSessionStorageOrFetch<Attack[]>('attacks', async () => {
+                            const res = await authedFetch("/api/attacks/");
+                            if (!res.ok) throw new Error(`Attack fetch failed with ${res.status}`);
+                            return res.json();
+                        })
+                    ]);
 
                 setUnitInstances(unitInstancesData);
                 setTeamInstanceRolePoints(teamInstanceRolePointsData.supply_points);
@@ -193,8 +194,8 @@ export default function MainMapPage() {
         <div className="flex h-screen w-screen bg-neutral-900 text-white p-4 space-x-4">
             {/* Map + Header + Footer */}
             <div className="flex flex-col w-[70%] h-full space-y-4">
-                {/* Header for Combatant Commander and Chief of Staff */}
-                {(roleInstance?.role.name == "Combatant Commander" || roleInstance?.role.is_chief_of_staff) && (
+                {/* Header */}
+                {(roleInstance?.role.name != "Gamemaster") && (
                     <div className="flex space-x-4 w-full items-stretch">
                         <div className="flex-grow">
                             <CommandersIntent roleInstance={roleInstance} />
@@ -204,6 +205,20 @@ export default function MainMapPage() {
                                 socketRef={socketRef}
                                 socketReady={socketReady}
                             />
+                        </div>
+                    </div>
+                )}
+                {/* Gamemaster Header */}
+                {(roleInstance?.role.name == "Gamemaster") && (
+                    <div className="flex space-x-4 w-full items-stretch">
+                        <div className="flex-shrink-0">
+                            <Timer
+                                socketRef={socketRef}
+                                socketReady={socketReady}
+                            />
+                        </div>
+                        <div className="flex-shrink-0">
+                            <TimerControls socketRef={socketRef} socketReady={socketReady} />
                         </div>
                     </div>
                 )}
@@ -258,7 +273,7 @@ export default function MainMapPage() {
             </div>
 
             {/* Sidebar */}
-            <div className="flex-1 h-full bg-neutral-800 rounded-lg p-4 overflow-y-auto">
+            <div className="flex-1 h-full bg-neutral-800 space-y-4 rounded-lg p-4 overflow-y-auto">
                 <h2 className="text-lg mb-2">Team: {roleInstance?.team_instance.team.name || 'Unknown'}</h2>
                 <h2 className="text-lg mb-2">Role: {roleInstance?.role.name || 'Unknown'}</h2>
                 {/* Menu for Ops/Logs */}
@@ -299,7 +314,7 @@ export default function MainMapPage() {
                             socketRef={socketRef}
                             socketReady={socketReady}
                             roleInstance={roleInstance}
-                            unitInstances={unitInstances} 
+                            unitInstances={unitInstances}
                         />
                     </>
                 )}

@@ -22,17 +22,19 @@ export default function Timer({ socketRef, socketReady }: TimerProps) {
         const handleTimerMessage = (event: MessageEvent) => {
             const msg = JSON.parse(event.data);
             if (msg.channel === "timer") {
-                switch (msg.action) {
-                    case "get_finish_time":
-                        if (msg.data?.finish_time) {
-                            setFinishTime(msg.data.finish_time);
-                        } else {
-                            setFinishTime(null);
-                        }
-                        break;
+                if (
+                    (msg.action === "get_finish_time" || msg.action === "set_finish_time")
+                    && "finish_time" in msg.data
+                ) {
+                    if (msg.data.finish_time) {
+                        setFinishTime(msg.data.finish_time);
+                    } else {
+                        setFinishTime(null);
+                    }
                 }
             }
         };
+
 
         socket.addEventListener("message", handleTimerMessage);
         if (socket.readyState === WebSocket.OPEN) {

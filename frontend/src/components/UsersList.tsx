@@ -14,10 +14,9 @@ interface UsersListProps {
 
 export default function UsersList({ socketRef, socketReady, roleInstance, roleInstances, setRoleInstances }: UsersListProps) {
     const authedFetch = useAuthedFetch();
-    
     const [deletingRoleInstance, setDeletingRoleInstance] = useState<number | null>(null);
-
     const addedUsersMessageListener = useRef<boolean>(false);
+    const [isOpen, setIsOpen] = useState(true);
 
     // WebSocket setup
     useEffect(() => {
@@ -86,7 +85,7 @@ export default function UsersList({ socketRef, socketReady, roleInstance, roleIn
                 socket.send(JSON.stringify({
                     channel: "role_instances",
                     action: "delete",
-                    data: { 
+                    data: {
                         id: roleUserId
                     }
                 }));
@@ -128,52 +127,72 @@ export default function UsersList({ socketRef, socketReady, roleInstance, roleIn
     };
 
     return (
-        <div className="bg-neutral-800 p-4 rounded-lg shadow-lg w-full max-w-md max-h-md">
-            <h2 className="text-xl font-semibold mb-3 border-b border-neutral-700 pb-1">
-                Connected Players
-            </h2>
-            <div className="space-y-3">
-                {Object.keys(grouped).sort().map((team) => (
-                    <div key={team}>
-                        <h3 className={`text-lg font-bold ${teamColor(team)}`}>{team}</h3>
-                        {Object.keys(grouped[team]).sort().map((branch) => (
-                            <div key={branch} className="ml-3">
-                                <h4 className="text-md font-semibold text-green-300">{branch}</h4>
-                                {Object.keys(grouped[team][branch]).sort().map((role) => (
-                                    <div key={role} className="ml-4">
-                                        <h5 className="text-sm font-medium text-yellow-200">{role.replace(new RegExp(`^${branch} `), "")}</h5>
-                                        <ul className="ml-3 space-y-0.5">
-                                            {grouped[team][branch][role]
-                                                .sort((a, b) =>
-                                                    a.user.username.localeCompare(b.user.username)
-                                                )
-                                                .map((ri) => (
-                                                    <li key={ri.id} className="flex items-center gap-2 text-sm">
-                                                        <span>{ri.user.username}</span>
-                                                        {roleInstance?.role.name === "Gamemaster" && (
-                                                            <button
-                                                                onClick={() => handleDeleteRoleInstance(ri.id)}
-                                                                disabled={deletingRoleInstance === ri.id} 
-                                                                className={`px-2 py-0.5 rounded text-xs transition
-                                                                    ${deletingRoleInstance === ri.id
-                                                                        ? "bg-gray-500 cursor-not-allowed"
-                                                                        : "bg-red-600 cursor-pointer hover:bg-red-500"
-                                                                    }
-                                                                `}
-                                                            >
-                                                                {deletingRoleInstance === ri.id ? "Deleting..." : "Delete"}
-                                                            </button>
-                                                        )}
-                                                    </li>
-                                                ))}
-                                        </ul>
-                                    </div>
-                                ))}
-                            </div>
-                        ))}
-                    </div>
-                ))}
+        <div className="bg-neutral-700 p-4 rounded-lg shadow-lg w-full max-w-md max-h-md">
+            {/* Header with collapse toggle */}
+            <div
+                className="flex items-center justify-between cursor-pointer"
+                onClick={() => setIsOpen(!isOpen)}
+            >
+                <h2 className="text-xl font-semibold mb-2">Connected Players</h2>
+                <button
+                    className="text-sm px-2 py-1 rounded bg-neutral-600 hover:bg-neutral-500"
+                >
+                    {isOpen ? "Hide" : "Show"}
+                </button>
             </div>
+
+            {/* Collapsible content */}
+            {isOpen && (
+                <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
+                    {Object.keys(grouped).sort().map((team) => (
+                        <div key={team}>
+                            <h3 className={`text-lg font-bold ${teamColor(team)}`}>{team}</h3>
+                            {Object.keys(grouped[team]).sort().map((branch) => (
+                                <div key={branch} className="ml-3">
+                                    <h4 className="text-md font-semibold text-green-300">{branch}</h4>
+                                    {Object.keys(grouped[team][branch]).sort().map((role) => (
+                                        <div key={role} className="ml-4">
+                                            <h5 className="text-sm font-medium text-yellow-200">
+                                                {role.replace(new RegExp(`^${branch} `), "")}
+                                            </h5>
+                                            <ul className="ml-3 space-y-0.5">
+                                                {grouped[team][branch][role]
+                                                    .sort((a, b) =>
+                                                        a.user.username.localeCompare(b.user.username)
+                                                    )
+                                                    .map((ri) => (
+                                                        <li
+                                                            key={ri.id}
+                                                            className="flex items-center gap-2 text-sm"
+                                                        >
+                                                            <span>{ri.user.username}</span>
+                                                            {roleInstance?.role.name === "Gamemaster" && (
+                                                                <button
+                                                                    onClick={() => handleDeleteRoleInstance(ri.id)}
+                                                                    disabled={deletingRoleInstance === ri.id}
+                                                                    className={`px-2 py-0.5 rounded text-xs transition
+                                                                        ${deletingRoleInstance === ri.id
+                                                                            ? "bg-gray-500 cursor-not-allowed"
+                                                                            : "bg-red-600 cursor-pointer hover:bg-red-500"
+                                                                        }
+                                                                    `}
+                                                                >
+                                                                    {deletingRoleInstance === ri.id
+                                                                        ? "Deleting..."
+                                                                        : "Delete"}
+                                                                </button>
+                                                            )}
+                                                        </li>
+                                                    ))}
+                                            </ul>
+                                        </div>
+                                    ))}
+                                </div>
+                            ))}
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
     );
 }
