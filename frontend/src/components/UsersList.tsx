@@ -1,50 +1,129 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { WS_URL } from '@/lib/utils';
+import React, { useEffect, useState, useRef, RefObject } from 'react';
+import { useAuthedFetch } from '@/hooks/useAuthedFetch';
+import { RoleInstance } from '@/lib/Types'
 
-interface User {
-    username: string;
-    team: string;
-    branch: string;
-    role: string;
-    ready: boolean;
+interface UsersListProps {
+    socketRef: RefObject<WebSocket | null>;
+    socketReady: boolean;
+    roleInstance: RoleInstance | null;
+    roleInstances: RoleInstance[];
+    setRoleInstances: React.Dispatch<React.SetStateAction<RoleInstance[]>>;
 }
 
-export default function UsersList() {
-    const [users, setUsers] = useState<User[]>([]);
-    const gameInstanceId = typeof window !== 'undefined' ? sessionStorage.getItem('gameInstanceId') : null;
+export default function UsersList({ socketRef, socketReady, roleInstance, roleInstances, setRoleInstances }: UsersListProps) {
+    const authedFetch = useAuthedFetch();
+    
+    const [deletingRoleInstance, setDeletingRoleInstance] = useState<number | null>(null);
 
+    const addedUsersMessageListener = useRef<boolean>(false);
+
+    // WebSocket setup
     useEffect(() => {
-        if (!gameInstanceId) return;
-        const socket = new WebSocket(`${WS_URL}/game/${gameInstanceId}/`);
+        if (!socketReady || !socketRef.current || !roleInstance || addedUsersMessageListener.current) return;
+        addedUsersMessageListener.current = true;
+        const socket = socketRef.current;
 
-        socket.onmessage = (event) => {
-            const data = JSON.parse(event.data);
-            if (data.type === 'user_list') {
-                setUsers(data.users);
+        const handleUsersMessage = (event: MessageEvent) => {
+            const msg = JSON.parse(event.data);
+            if (msg.channel === "users") {
+                switch (msg.action) {
+                    case "list":
+                        setRoleInstances(() => msg.data);
+                        if (!msg.data.some((ri: RoleInstance) => ri.user.id == roleInstance.user.id)) {
+                            socket.send(JSON.stringify({
+                                channel: "users",
+                                action: "join",
+                                data: roleInstance
+                            }));
+                        }
+                        break;
+                    case "join":
+                        setRoleInstances(prev => [...prev, msg.data]);
+                        break;
+                    case "leave":
+                        setRoleInstances(prev => prev.filter(r => r.id !== msg.data.id));
+                        break;
+                }
             }
         };
 
+        socket.addEventListener("message", handleUsersMessage);
+        if (socket.readyState === WebSocket.OPEN) {
+            socket.send(JSON.stringify({
+                channel: "users",
+                action: "list",
+                data: {}
+            }));
+        }
+
         return () => {
-            socket.close();
+            socket.removeEventListener("message", handleUsersMessage);
+            addedUsersMessageListener.current = false;
         };
-    }, [gameInstanceId]);
+    }, [socketRef, socketReady, roleInstance, setRoleInstances]);
 
-    // Group users by team > branch > role
-    const groupedUsers = users.reduce((acc, user) => {
-        if (!acc[user.team]) acc[user.team] = {};
-        if (!acc[user.team][user.branch]) acc[user.team][user.branch] = {};
-        if (!acc[user.team][user.branch][user.role]) acc[user.team][user.branch][user.role] = [];
-        acc[user.team][user.branch][user.role].push(user);
+    const handleDeleteRoleInstance = async (roleId: number) => {
+        if (!socketReady || !socketRef.current) return;
+        if (!confirm("Are you sure you want to delete this user's role?")) return;
+        const socket = socketRef.current;
+
+        try {
+            setDeletingRoleInstance(roleId);
+            const res = await authedFetch(`/api/role-instances/${roleId}/`, {
+                method: 'DELETE'
+            });
+
+            if (!res.ok) {
+                const data = await res.json();
+                throw new Error(data.error || data.detail || "Failed to delete this user's role.");
+            }
+
+            const roleUserId = roleInstances.find(ri => ri.id === roleId)?.user.id;
+
+            if (socket.readyState === WebSocket.OPEN && roleUserId) {
+                socket.send(JSON.stringify({
+                    channel: "role_instances",
+                    action: "delete",
+                    data: { 
+                        id: roleUserId
+                    }
+                }));
+            }
+
+            setRoleInstances(prev => prev.filter(r => r.id !== roleId));
+
+        } catch (err: unknown) {
+            console.error(err);
+            if (err instanceof Error) {
+                alert(err.message);
+            }
+        } finally {
+            setDeletingRoleInstance(null);
+        }
+    };
+
+
+    // Group by team > branch > role
+    const grouped = roleInstances.reduce((acc, ri) => {
+        const team = ri.team_instance.team.name;
+        const branch = ri.role.branch?.name || "None";
+        const role = ri.role.name;
+
+        if (!acc[team]) acc[team] = {};
+        if (!acc[team][branch]) acc[team][branch] = {};
+        if (!acc[team][branch][role]) acc[team][branch][role] = [];
+        acc[team][branch][role].push(ri);
+
         return acc;
-    }, {} as Record<string, Record<string, Record<string, User[]>>>);
+    }, {} as Record<string, Record<string, Record<string, RoleInstance[]>>>);
 
-    // Helper to color team headers
+    // Color by team
     const teamColor = (team: string) => {
         if (team.toLowerCase() === 'red') return 'text-red-400';
         if (team.toLowerCase() === 'blue') return 'text-blue-400';
-        if (team.toLowerCase() === 'gamemaster') return 'text-indigo-400';
+        if (team.toLowerCase() === 'gamemasters') return 'text-indigo-400';
         return 'text-gray-300';
     };
 
@@ -54,24 +133,37 @@ export default function UsersList() {
                 Connected Players
             </h2>
             <div className="space-y-3">
-                {Object.keys(groupedUsers).sort().map((team) => (
+                {Object.keys(grouped).sort().map((team) => (
                     <div key={team}>
                         <h3 className={`text-lg font-bold ${teamColor(team)}`}>{team}</h3>
-                        {Object.keys(groupedUsers[team]).sort().map((branch) => (
+                        {Object.keys(grouped[team]).sort().map((branch) => (
                             <div key={branch} className="ml-3">
                                 <h4 className="text-md font-semibold text-green-300">{branch}</h4>
-                                {Object.keys(groupedUsers[team][branch]).sort().map((role) => (
+                                {Object.keys(grouped[team][branch]).sort().map((role) => (
                                     <div key={role} className="ml-4">
-                                        <h5 className="text-sm font-medium text-yellow-300">{role}</h5>
+                                        <h5 className="text-sm font-medium text-yellow-200">{role.replace(new RegExp(`^${branch} `), "")}</h5>
                                         <ul className="ml-3 space-y-0.5">
-                                            {groupedUsers[team][branch][role]
-                                                .sort((a, b) => a.username.localeCompare(b.username))
-                                                .map((user, idx) => (
-                                                    <li key={idx} className="flex items-center gap-2 text-sm">
-                                                        <span>{user.username}</span>
-                                                        <span className={user.ready ? 'text-green-400' : 'text-red-400'}>
-                                                            {user.ready ? '✓' : '✗'}
-                                                        </span>
+                                            {grouped[team][branch][role]
+                                                .sort((a, b) =>
+                                                    a.user.username.localeCompare(b.user.username)
+                                                )
+                                                .map((ri) => (
+                                                    <li key={ri.id} className="flex items-center gap-2 text-sm">
+                                                        <span>{ri.user.username}</span>
+                                                        {roleInstance?.role.name === "Gamemaster" && (
+                                                            <button
+                                                                onClick={() => handleDeleteRoleInstance(ri.id)}
+                                                                disabled={deletingRoleInstance === ri.id} 
+                                                                className={`px-2 py-0.5 rounded text-xs transition
+                                                                    ${deletingRoleInstance === ri.id
+                                                                        ? "bg-gray-500 cursor-not-allowed"
+                                                                        : "bg-red-600 cursor-pointer hover:bg-red-500"
+                                                                    }
+                                                                `}
+                                                            >
+                                                                {deletingRoleInstance === ri.id ? "Deleting..." : "Delete"}
+                                                            </button>
+                                                        )}
                                                     </li>
                                                 ))}
                                         </ul>

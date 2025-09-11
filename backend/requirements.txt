@@ -10,3 +10,4 @@ psycopg
 django-jazzmin
 djangorestframework-simplejwt
 whitenoise
+django-redis

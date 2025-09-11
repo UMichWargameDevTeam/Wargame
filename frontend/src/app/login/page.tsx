@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -7,17 +7,17 @@ import {BACKEND_URL } from '@/lib/utils';
 
 export default function LoginForm() {
     const router = useRouter();
-    const [username, setUsername] = useState("");
-    const [password, setPassword] = useState("");
-    const [showPassword, setShowPassword] = useState(false);
-    const [error, setError] = useState("");
-    const [loading, setLoading] = useState(false);
+    const [username, setUsername] = useState<string>("");
+    const [password, setPassword] = useState<string>("");
+    const [showPassword, setShowPassword] = useState<boolean>(false);
+    const [error, setError] = useState<string>("");
+    const [loading, setLoading] = useState<boolean>(false);
 
     // Redirect if already logged in
     useEffect(() => {
         const token = localStorage.getItem("accessToken");
         if (token) {
-            router.push('/roleselect')// role selection page
+            router.push("/roleselect");
         }
     }, [router]);
 
@@ -38,19 +38,22 @@ export default function LoginForm() {
                 }
             );
 
+            const data = await res.json();
+
             if (!res.ok) {
-                throw new Error("Login failed");
+                throw new Error(data.error || data.detail || data.message || "Login failed");
             }
 
-            const data = await res.json();
             localStorage.setItem("accessToken", data.access);
             localStorage.setItem("refreshToken", data.refresh);
             sessionStorage.setItem("username", username);
 
-            router.push('/roleselect') // after login
-        } catch (err) {
-            setError("Invalid username or password.");
+            router.push("/roleselect"); // after login
+        } catch (err: unknown) {
             console.error(err);
+            if (err instanceof Error) {
+                setError(err.message);
+            }
         } finally {
             setLoading(false);
         }
@@ -90,7 +93,7 @@ export default function LoginForm() {
                             <button
                                 type="button"
                                 onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-blue-400 hover:underline"
+                                className="absolute right-2 top-1/2 -translate-y-1/2 text-sm text-blue-400 cursor-pointer hover:underline"
                             >
                                 {showPassword ? "Hide" : "Show"}
                             </button>
@@ -104,7 +107,7 @@ export default function LoginForm() {
                     <button
                         type="submit"
                         disabled={loading}
-                        className="w-full bg-blue-600 text-white py-2 rounded-lg hover:bg-blue-700 transition duration-200"
+                        className="w-full bg-blue-600 text-white py-2 rounded-lg cursor-pointer hover:bg-blue-700 transition duration-200"
                     >
                         {loading ? "Logging in..." : "Log In"}
                     </button>

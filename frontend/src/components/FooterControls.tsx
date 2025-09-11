@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 
 export default function FooterControls() {
-  const [showAttackPopup, setShowAttackPopup] = useState(false);
+  const [showAttackPopup, setShowAttackPopup] = useState<boolean>(false);
 
   const handleClick = (label: string) => {
     if (label === 'ATTACK') {

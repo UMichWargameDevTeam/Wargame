@@ -10,9 +10,9 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/5.1/ref/settings/
 """
 
-from pathlib import Path
 import os
 import sys
+from pathlib import Path
 from dotenv import load_dotenv
 from urllib.parse import urlparse, parse_qsl
 
@@ -31,8 +31,6 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 
 DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1", "t", "yes")
-# print(DEBUG)
-
 
 ALLOWED_HOSTS = [
     "umichwargame.onrender.com",
@@ -172,6 +170,21 @@ CHANNEL_LAYERS = {
             "hosts": [REDIS_URL],
         },
     },
+}
+
+CACHES = {
+    "default": {
+        "BACKEND": "django_redis.cache.RedisCache",
+        "LOCATION": f"{REDIS_URL}/1",  # database 1
+        "OPTIONS": {
+            "CLIENT_CLASS": "django_redis.client.DefaultClient",
+            'CONNECTION_POOL_KWARGS': {
+                # I doubt we'll have more than 1000 concurrent users
+                'max_connections': 1000,
+                'retry_on_timeout': True,
+            }
+        }
+    }
 }
 
 CORS_ALLOW_ALL_ORIGINS = True

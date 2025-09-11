@@ -1,12 +1,13 @@
-"use client";
+'use client';
 
+import { useCallback } from "react";
 import { BACKEND_URL } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 
 export function useAuthedFetch() {
   const router = useRouter();
-
-  const authedFetch = async (url: string, options?: RequestInit): Promise<Response> => {
+  
+  const authedFetch = useCallback(async (url: string, options?: RequestInit): Promise<Response> => {
     try {
       const accessToken = localStorage.getItem("accessToken");
 
@@ -19,10 +20,9 @@ export function useAuthedFetch() {
       });
 
       if (res.status === 401) {
-        const refreshToken = localStorage.getItem("refresh_token");
-
+        const refreshToken = localStorage.getItem("refreshToken");
         if (refreshToken) {
-          const refreshRes = await fetch(`${BACKEND_URL}/api/token/refresh/`, {
+          const refreshRes = await fetch(`${BACKEND_URL}/api/auth/token/refresh/`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({ refresh: refreshToken }),
@@ -58,7 +58,7 @@ export function useAuthedFetch() {
       console.error("Authed fetch error:", err);
       throw err;
     }
-  };
-
+  }, [router]);
+  
   return authedFetch;
 }

@@ -1,22 +1,103 @@
-from django.http import JsonResponse
-from django.shortcuts import get_object_or_404, get_list_or_404
-from django.db import IntegrityError
-from django.views.decorators.csrf import csrf_exempt
+from rest_framework import status
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
-import json
-from ..models.static import (
-    Team, Role, Tile
+from rest_framework.response import Response
+from django.shortcuts import get_object_or_404
+from wargamelogic.models.static import (
+    Team, Role, Unit, Tile
 )
-from ..models.dynamic import (
-    GameInstance, TeamInstance, RoleInstance, UnitInstance
+from wargamelogic.models.dynamic import (
+    GameInstance, TeamInstance, RoleInstance, TeamInstanceRolePoints, UnitInstance
 )
-from ..game_logic import (
-    move_unit_instance
+from wargamelogic.serializers import (
+    RoleInstanceSerializer, UnitInstanceSerializer
 )
-from ..check_roles import (
-    require_role_instance, require_any_role_instance
+from wargamelogic.check_roles import (
+    require_any_role_instance
 )
+
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def create_game_instance(request):
+    join_code = request.data.get("join_code")
+    if not join_code:
+        return Response({"error": "join_code is required."}, status=status.HTTP_400_BAD_REQUEST)
+    
+    if len(join_code.strip()) < 1:
+        return Response({"detail": "join_code must contain least one non-whitespace character."}, status=status.HTTP_400_BAD_REQUEST)
+
+    gamemaster_role = get_object_or_404(Role, name="Gamemaster")
+    gamemaster_team = get_object_or_404(Team, name="Gamemasters")
+
+    # Case 1: Game already exists
+    try:
+        game_instance = GameInstance.objects.get(join_code=join_code)
+        gamemaster_team_instance = TeamInstance.objects.get(
+            game_instance=game_instance,
+            team=gamemaster_team,
+        )
+
+        if RoleInstance.objects.filter(
+            team_instance=gamemaster_team_instance,
+            role=gamemaster_role
+        ).exists():
+            return Response(
+                {"detail": f"Game '{join_code}' already has a Gamemaster."},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        role_instance = RoleInstance.objects.create(
+            team_instance=gamemaster_team_instance,
+            role=gamemaster_role,
+            user=request.user,
+        )
+        serializer = RoleInstanceSerializer(role_instance)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
+    except GameInstance.DoesNotExist:
+        # Case 2: Create a new game
+        game_instance = GameInstance.objects.create(join_code=join_code)
+
+        teams = list(Team.objects.exclude(pk=gamemaster_team.pk))
+
+        team_instances = [
+            TeamInstance(game_instance=game_instance, team=team) 
+            for team in teams
+        ]
+        TeamInstance.objects.bulk_create(team_instances)
+
+        team_instances = list(
+            TeamInstance.objects.filter(game_instance=game_instance).select_related("team")
+        )
+
+        roles = list(Role.objects.exclude(pk=gamemaster_role.pk))
+
+        team_instance_role_points_objects = [
+            TeamInstanceRolePoints(team_instance=ti, role=role)
+            for ti in team_instances
+            for role in roles
+        ]
+        TeamInstanceRolePoints.objects.bulk_create(team_instance_role_points_objects)
+
+        gamemaster_team_instance = TeamInstance.objects.create(
+            game_instance=game_instance,
+            team=gamemaster_team,
+        )
+        TeamInstanceRolePoints.objects.create(
+            team_instance=gamemaster_team_instance,
+            role=gamemaster_role,
+            supply_points=1000000,
+        )
+
+        role_instance = RoleInstance.objects.create(
+            team_instance=gamemaster_team_instance,
+            role=gamemaster_role,
+            user=request.user
+        )
+        serializer = RoleInstanceSerializer(role_instance)
+        return Response(serializer.data, status=status.HTTP_201_CREATED)
+
 
 # any user can create a role for themselves for any game,
 # but they cannot create a gamemaster role for a game that already has a gamemaster,
@@ -24,119 +105,119 @@ from ..check_roles import (
 # if they want to change their role, a gamemaster or admin must do it.
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-@csrf_exempt
-def register_role(request):
-    """
-    body: {
-        join-code: String,
-        role: String,
-        team: String
-    }
-    """
-    if request.method == 'POST':
-        try:
-            data = json.loads(request.body)
-            game_join_code = data.get('join-code')
-            team_name = data.get('team')
-            role_name = data.get('role')
+def create_role_instance(request):
+    join_code = request.data.get('join_code')
+    team_name = request.data.get('team_name')
+    role_name = request.data.get('role_name')
 
-            if not game_join_code or not team_name or not role_name:
-                return JsonResponse({'error': 'Missing join-code or team or role'}, status=400)
+    if not join_code:
+        return Response({"error": "Missing join_code"}, status=status.HTTP_400_BAD_REQUEST)
 
-            try:
-                role = Role.objects.get(name=role_name)
-            except Role.DoesNotExist:
-                return JsonResponse({'error': f'Role not found: {role_name}'}, status=404)
+    try:
+        game_instance = GameInstance.objects.get(join_code=join_code)
+    except GameInstance.DoesNotExist:
+        return Response({"error": f"No game found with Join Code '{join_code}'"}, status=status.HTTP_404_NOT_FOUND)
 
-            try:
-                team = Team.objects.get(name=team_name)
-            except Team.DoesNotExist:
-                return JsonResponse({'error': f'Team not found: {team_name}'}, status=404)
+    # Check if user already has a role (select_related reduces hits)
+    existing_role_instance = RoleInstance.objects.filter(
+        team_instance__game_instance=game_instance,
+        user=request.user
+    ).select_related("team_instance__team", "role__branch").first()
 
-            try:
-                game_instance = GameInstance.objects.get(join_code=game_join_code)
-            except GameInstance.DoesNotExist:
-                return JsonResponse({'error': f'GameInstance not found with join code: {game_join_code}'}, status=404)
+    if existing_role_instance:
+        serializer = RoleInstanceSerializer(existing_role_instance)
+        return Response(serializer.data, status=status.HTTP_200_OK)
 
-            try:
-                team_instance = TeamInstance.objects.get(game_instance=game_instance, team=team)
-            except TeamInstance.DoesNotExist:
-                return JsonResponse({'error': f'TeamInstance not found for team "{team_name}" in game "{game_join_code}"'}, status=404)
+    # Resolve Team and Role in parallel
+    try:
+        team = Team.objects.get(name=team_name)
+    except Team.DoesNotExist:
+        return Response({"error": f"You do not have a role in game '{join_code}', so you must select a team."}, status=status.HTTP_404_NOT_FOUND)
+    
+    try:
+        role = Role.objects.select_related("branch").get(name=role_name)
+    except Role.DoesNotExist:
+        return Response({"error": f"You do not have a role in game '{join_code}', so you must select a role."}, status=status.HTTP_404_NOT_FOUND)
 
-            if role.name == "Gamemaster":
-                if RoleInstance.objects.filter(
-                    team_instance__game_instance=game_instance,
-                    role__name="Gamemaster"
-                ).exists():
-                    return JsonResponse({'error': 'This game already has a Gamemaster'}, status=400)
+    try:
+        team_instance = TeamInstance.objects.get(game_instance=game_instance, team=team)
+    except TeamInstance.DoesNotExist:
+        return Response({"error": f"TeamInstance not found for team '{team_name}' in game '{join_code}'"}, status=status.HTTP_404_NOT_FOUND)
 
-            # Check if the user already has a role in this game
-            if RoleInstance.objects.filter(
-                team_instance__game_instance=game_instance,
-                user=request.user
-            ).exists():
-                return JsonResponse({'error': f'User {request.user.username} already has a role in this game'}, status=400)
+    # Gamemaster uniqueness check
+    if role.name == "Gamemaster" and RoleInstance.objects.filter(
+        team_instance__game_instance=game_instance,
+        role__name="Gamemaster"
+    ).exists():
+        return Response({"detail": "This game already has a Gamemaster."}, status=status.HTTP_400_BAD_REQUEST)
 
-            RoleInstance.objects.create(
-                team_instance=team_instance,
-                role=role,
-                user=request.user,
-            )
+    role_instance = RoleInstance.objects.create(
+        team_instance=team_instance,
+        role=role,
+        user=request.user,
+    )
 
-            print(f"[Backend] Role registered: {role_name} for team: {team_name} by user: {request.user.username}")
-            return JsonResponse({'status': 'ok', 'role': role_name, 'team': team_name}, status=201)
+    serializer = RoleInstanceSerializer(role_instance)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)    
 
-        except Exception as e:
-            return JsonResponse({'error': str(e)}, status=400)
 
-    return JsonResponse({'error': 'Invalid method'}, status=405)
-
-def join_game_instance(request):
-    if request.method == "POST":
-        join_code = request.POST.get("join_code")
-        try:
-            game_instance = GameInstance.objects.get(join_code=join_code)
-        except GameInstance.DoesNotExist:
-            return JsonResponse({"error": "Invalid join code"}, status=400)
-
-        request.user.game_instance = game_instance
-        request.user.save()
-
-        return JsonResponse({"status": "success"})
-
-# --------------------------- GAME LOGIC --------------------------- #
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
-def move_unit(request):
-    unit_instance_id = request.data.get('unitId')
-    target_row = request.data.get('targetRow')
-    target_col = request.data.get('targetCol')
+@require_any_role_instance([
+    {
+        'team_instance.game_instance.join_code': lambda request, kwargs: request.data.get("join_code"),
+        'role.name': 'Gamemaster'
+    },
+    {
+        'team_instance.game_instance.join_code': lambda request, kwargs: request.data.get("join_code"),
+        'team_instance.team.name': lambda request, kwargs: request.data.get("team_name"),
+    }
+])
+def create_unit_instance(request):
+    join_code = request.data.get("join_code")
+    team_name = request.data.get("team_name")
+    unit_name = request.data.get("unit_name")
+    row = request.data.get("row")
+    column = request.data.get("column")
 
-    if unit_instance_id is None or target_row is None or target_col is None:
-        return JsonResponse({'error': 'Missing parameters'}, status=400)
+    if not all([join_code, team_name, unit_name, row, column]):
+        return Response({"error": "Missing required fields."}, status=status.HTTP_400_BAD_REQUEST)
 
-    try:
-        unit_instance = UnitInstance.objects.select_related('unit', 'tile', 'team').get(id=unit_instance_id)
-    except UnitInstance.DoesNotExist:
-        return JsonResponse({'error': 'UnitInstance not found'}, status=404)
+    game_instance = get_object_or_404(GameInstance, join_code=join_code)
+    team_instance = get_object_or_404(
+        TeamInstance, game_instance=game_instance, team__name=team_name
+    )
+    unit = get_object_or_404(Unit, name=unit_name)
+    tile = get_object_or_404(Tile, row=row, column=column)
 
-    # TODO: Add team ownership validation if you want to ensure user controls this unit
-    # e.g., if unit_instance.team.user != user: return JsonResponse(...)
+    # find the RoleInstance for this user in this team_instance
+    # Check if user is the Gamemaster of this game
+    is_gamemaster = RoleInstance.objects.filter(
+        team_instance__game_instance=game_instance,
+        user=request.user,
+        role__name="Gamemaster",
+    ).exists()
 
-    try:
-        target_tile = Tile.objects.get(row=target_row, column=target_col)
-    except Tile.DoesNotExist:
-        return JsonResponse({'error': 'Target tile does not exist'}, status=404)
+    if not is_gamemaster:
+        try:
+            role_instance = RoleInstance.objects.select_related("role").get(team_instance=team_instance, user=request.user)
+        except RoleInstance.DoesNotExist:
+            return Response({"detail": "You are not part of this team."}, status=status.HTTP_403_FORBIDDEN)
 
-    success, message = move_unit_instance(unit_instance, target_tile)
+        team_instance_role_points = TeamInstanceRolePoints.objects.get(team_instance=team_instance, role=role_instance.role)
+        if team_instance_role_points.supply_points < unit.cost:
+            return Response({"detail": f"Unit costs {unit.cost} supply points, but you only have {team_instance_role_points.supply_points}!"}, status=status.HTTP_400_BAD_REQUEST)
 
-    if not success:
-        return JsonResponse({'error': message}, status=400)
+        team_instance_role_points.supply_points -= unit.cost
+        role_instance.save()
 
-    return JsonResponse({
-        'status': 'moved',
-        'new_position': {
-            'row': target_tile.row,
-            'column': target_tile.column,
-        }
-    })
+    unit_instance = UnitInstance.objects.create(
+        team_instance=team_instance,
+        unit=unit,
+        tile=tile,
+        health=unit.max_health,
+        supply_points=unit.max_supply_points,
+    )
+
+    serializer = UnitInstanceSerializer(unit_instance)
+    return Response(serializer.data, status=status.HTTP_201_CREATED)
