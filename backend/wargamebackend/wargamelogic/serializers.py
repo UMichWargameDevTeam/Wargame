@@ -35,7 +35,7 @@ class UnitSerializer(serializers.ModelSerializer):
     class Meta:
         model = Unit
         fields = [
-            'id', 'name', 'cost', 'domain', 'is_logistic', 'type', 'speed', 'max_health', 'max_supply_points', 'defense_modifier', 'description', 
+            'id', 'name', 'cost', 'domain', 'is_logistic', 'type', 'speed', 'max_health', 'max_supply_points', 'defense_modifier', 'icon', 'description', 
             'branches'
         ]
         read_only_fields = ['id']
