@@ -15,6 +15,8 @@ import JTFMenu from '@/components/JTFMenu';
 import GamemasterMenu from '@/components/GamemasterMenu';
 import UnitAttackDisplay from '@/components/UnitAttackDisplay';
 import Timer from '@/components/Timer';
+import Ready from '@/components/Ready';
+import TurnSystem from '@/components/TurnSystem';
 import TimerControls from '@/components/TimerControls';
 import UsersList from '@/components/UsersList';
 import Communications from '@/components/communications/Communications';
@@ -53,6 +55,7 @@ export default function MainMapPage() {
     const [validationError, setValidationError] = useState<string | null>(null);
 
     const [showAttack, setShowAttack] = useState(false);
+    const [timeRemaining, setTimeRemaining] = useState<number>(600);
     useEffect(() => {
 
         const validateAccess = async () => {
@@ -196,7 +199,7 @@ export default function MainMapPage() {
             <div className="flex flex-col w-[70%] h-full space-y-4">
                 {/* Header */}
                 {(roleInstance?.role.name != "Gamemaster") && (
-                    <div className="flex space-x-4 w-full items-stretch">
+                    <div className="flex space-x-4 w-full items-stretch overflow-x-auto overflow-y-hidden">
                         <div className="flex-grow">
                             <CommandersIntent roleInstance={roleInstance} />
                         </div>
@@ -204,7 +207,20 @@ export default function MainMapPage() {
                             <Timer
                                 socketRef={socketRef}
                                 socketReady={socketReady}
+                                timer={timeRemaining}
+                                setTimer={setTimeRemaining}
                             />
+                        </div>
+                        <TurnSystem
+                            socket={socketRef.current}
+                            socketReady={socketReady}
+                            roleInstance={roleInstance}
+                            roleInstances={roleInstances}
+                            timer={timeRemaining} // pass from your Timer
+                        />
+
+                        <div className="flex-shrink-0">
+                            <Ready socket={socketRef.current} socketReady={socketReady} roleInstance={roleInstance} />
                         </div>
                     </div>
                 )}
@@ -215,11 +231,21 @@ export default function MainMapPage() {
                             <Timer
                                 socketRef={socketRef}
                                 socketReady={socketReady}
+                                timer={timeRemaining}
+                                setTimer={setTimeRemaining}
                             />
                         </div>
                         <div className="flex-shrink-0">
                             <TimerControls socketRef={socketRef} socketReady={socketReady} />
                         </div>
+                        <TurnSystem
+                            socket={socketRef.current}
+                            socketReady={socketReady}
+                            roleInstance={roleInstance}
+                            roleInstances={roleInstances}
+                            timer={timeRemaining} // pass from your Timer
+                        />
+
                     </div>
                 )}
                 <div className="w-full h-full bg-neutral-800 rounded-lg overflow-hidden">

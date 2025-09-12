@@ -44,6 +44,13 @@ export default function UsersList({ socketRef, socketReady, roleInstance, roleIn
                     case "leave":
                         setRoleInstances(prev => prev.filter(r => r.id !== msg.data.id));
                         break;
+                    case "update_ready":
+                        setRoleInstances(prev =>
+                            prev.map(r =>
+                                r.id === msg.data.id ? { ...r, ready: msg.data.ready } : r
+                            )
+                        );
+                        break;
                 }
             }
         };
@@ -166,6 +173,9 @@ export default function UsersList({ socketRef, socketReady, roleInstance, roleIn
                                                             className="flex items-center gap-2 text-sm"
                                                         >
                                                             <span>{ri.user.username}</span>
+                                                            <span className={ri.ready ? "text-green-400" : "text-red-400"}>
+                                                                {ri.ready ? "Ready" : "Not Ready"}
+                                                            </span>
                                                             {roleInstance?.role.name === "Gamemaster" && (
                                                                 <button
                                                                     onClick={() => handleDeleteRoleInstance(ri.id)}

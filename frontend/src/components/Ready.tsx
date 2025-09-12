@@ -37,7 +37,7 @@ export default function Ready({ socket, socketReady, roleInstance }: ReadyProps)
     return (
         <button
             onClick={toggleReady}
-            className={`px-3 py-1 rounded text-sm font-medium transition ${ready ? "bg-green-600 hover:bg-green-500" : "bg-gray-600 hover:bg-gray-500"
+            className={`w-full bg-blue-600 text-white px-3 py-4 rounded-lg shadow-md mb-4 text-lg text-sm font-medium transition ${ready ? "bg-green-600 hover:bg-green-500" : "bg-gray-600 hover:bg-gray-500"
                 }`}
         >
             {ready ? "Ready ✅" : "Not Ready"}
