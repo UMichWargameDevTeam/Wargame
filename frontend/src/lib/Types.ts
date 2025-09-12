@@ -88,6 +88,7 @@ export interface RoleInstance {
     user: User;
     team_instance: TeamInstance;
     role: Role;
+    ready: boolean;
 }
 
 export interface TeamInstanceRolePoints {

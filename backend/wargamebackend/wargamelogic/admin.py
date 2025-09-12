@@ -114,8 +114,8 @@ class TeamInstanceAdmin(admin.ModelAdmin):
 
 @admin.register(RoleInstance)
 class RoleInstanceAdmin(admin.ModelAdmin):
-    list_display = ('user', 'team_instance', 'role')
-    list_filter = ('team_instance__game_instance', 'role__branch', 'role')
+    list_display = ('user', 'team_instance', 'role', 'ready')
+    list_filter = ('team_instance__game_instance', 'role__branch', 'role', 'ready')
     search_fields = ('user__username', 'team_instance__team__name', 'role__name')
     autocomplete_fields = ('user', 'team_instance', 'role')
 

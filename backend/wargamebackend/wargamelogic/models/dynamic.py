@@ -31,6 +31,7 @@ class RoleInstance(models.Model):
     user = models.ForeignKey(User, on_delete=models.CASCADE)
     team_instance = models.ForeignKey(TeamInstance, on_delete=models.CASCADE)
     role = models.ForeignKey(Role, on_delete=models.CASCADE)
+    ready = models.BooleanField(default=False)
 
     class Meta:
         constraints = [
