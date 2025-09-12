@@ -162,17 +162,31 @@ class GameConsumer(AsyncWebsocketConsumer):
     # Or if you raise an exception it won't be sent to anybody.
     async def handle_users_list(self, data):
         """
-        data: {}
+        data: RoleInstance
         """
-        redis_client = get_redis_client()
-        role_key = f"game_{self.join_code}_role_instances"
+        user = self.scope["user"]
+        if data["user"]["username"] != user.username:
+            raise Exception(f"{user.username} tried requesting the user list in game '{self.join_code}' but as the wrong user or did not provide role data.")
 
+        redis_client = get_redis_client()
+        role_instances_key = f"game_{self.join_code}_role_instances"
+        
         role_instances = {
             int(uid): json.loads(val)
-            for uid, val in redis_client.hgetall(role_key).items()
+            for uid, val in redis_client.hgetall(role_instances_key).items()
         }
 
-        return self.user_group, list(role_instances.values())
+        user_team = data["team_instance"]["team"]["name"]
+
+        if user_team == "Gamemasters":
+            return self.user_group, list(role_instances.values())
+
+        same_team_role_instances = [
+            ri for ri in role_instances.values()
+            if ri["team_instance"]["team"]["name"] == user_team
+        ]
+
+        return self.user_group, same_team_role_instances
 
 
     async def handle_users_join(self, data):
@@ -180,26 +194,42 @@ class GameConsumer(AsyncWebsocketConsumer):
         data: RoleInstance
         """
         user = self.scope["user"]
-        if data.get("user", {}).get("username") != user.username:
-            raise Exception(f"{user.username} tried joining as {data.get('user', {}).get('username')} in game '{self.join_code}'.")
+        user_username = data["user"]["username"]
+        if user_username != user.username:
+            raise Exception(f"{user.username} tried joining as {user_username} in game '{self.join_code}'.")
 
         redis_client = get_redis_client()
         role_key = f"game_{self.join_code}_role_instances"
 
         if redis_client.hexists(role_key, user.id):
-            raise Exception(f"{user.username} tried joining game '{self.join_code}', a game they had already joined.")
+            raise Exception(f"{user_username} tried joining game '{self.join_code}', a game they had already joined.")
         
         teams, roles = await load_data()
+        user_team = data["team_instance"]["team"]["name"]
+
+        self.team_group = f"game_{self.join_code}_team_{user_team}".replace(" ", "")
+        if user_team == "Gamemasters":
+            for team in teams:
+                team_group = f"game_{self.join_code}_team_{team.name}".replace(" ", "")
+                await self.channel_layer.group_add(team_group, self.channel_name)
+        else:
+            await self.channel_layer.group_add(self.team_group, self.channel_name)
+        
+        user_role = data["role"]["name"]
+        self.team_role_group = f"game_{self.join_code}_team_role_{user_team}{user_role}".replace(" ", "")
+        await self.channel_layer.group_add(self.team_role_group, self.channel_name)
+
         self.channel_groups = get_user_channel_groups(self.join_code, teams, roles, data)
         for group in self.channel_groups:
             await self.channel_layer.group_add(group, self.channel_name)
+
         self.transfer_groups = get_user_transfer_groups(self.join_code, teams, roles, data)
         for group in self.transfer_groups:
             await self.channel_layer.group_add(group, self.channel_name)
 
         redis_client.hset(role_key, user.id, json.dumps(data))
 
-        return self.game_group, data
+        return self.team_group, data
 
 
     async def handle_timer_get_finish_time(self, data):
@@ -209,17 +239,12 @@ class GameConsumer(AsyncWebsocketConsumer):
         redis_client = get_redis_client()
 
         if not redis_client.exists(timer_key):
-            target_group = self.game_group
-
-            expires_at = int(time.time()) + 600
-            redis_client.set(timer_key, expires_at)
-
-            username = self.scope["user"].username
-            print(f"{username} started {self.join_code}'s timer (ends at {expires_at}).")
+            return target_group, data
 
         data["finish_time"] = int(redis_client.get(timer_key))
         return target_group, data
-    
+
+
     async def handle_timer_set_finish_time(self, data):
         timer_key = f"game_{self.join_code}_timer"
         redis_client = get_redis_client()
@@ -235,9 +260,7 @@ class GameConsumer(AsyncWebsocketConsumer):
             redis_client.set(timer_key, int(finish_time))
             print(f"Timer for game {self.join_code} set to end at {finish_time}.")
 
-        # Broadcast updated finish_time to all players in the game
         return self.game_group, {"finish_time": finish_time}
-
 
 
     async def handle_role_instances_delete(self, data):
@@ -246,7 +269,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         """
         recipient_id = data.get("id")
         if not recipient_id:
-            user= self.scope["user"]
+            user = self.scope["user"]
             raise Exception(f"{user.username} did not provide the id of the user whose role they're deleting.")
         target_group = f"game_{self.join_code}_user_{recipient_id}"
         return target_group, data
@@ -269,7 +292,8 @@ class GameConsumer(AsyncWebsocketConsumer):
         target_group = f"game_{self.join_code}_channel_{a}_{b}"
 
         if target_group not in self.channel_groups:
-            raise Exception(f"User {data['role_instance']['user']['username']} on team {sender_team_name} with role {sender_role_name} is not in group {target_group}")
+            user = self.scope["user"]
+            raise Exception(f"User {user.username} on team {sender_team_name} with role {sender_role_name} is not in group {target_group}")
 
         return target_group, data
     
@@ -286,7 +310,8 @@ class GameConsumer(AsyncWebsocketConsumer):
         target_group = f"game_{self.join_code}_transfer_{sender_team_name}{sender_role_name}_{recipient_team_name}{recipient_role_name}".replace(" ", "")
 
         if target_group not in self.transfer_groups:
-            raise Exception(f"User {data['role_instance']['user']['username']} on team {sender_team_name} with role {sender_role_name} is not in group {target_group}")
+            user = self.scope["user"]
+            raise Exception(f"User {user.username} on team {sender_team_name} with role {sender_role_name} is not in group {target_group}")
 
         return target_group, data
     
@@ -301,7 +326,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         sender_team_name = data["team_name"]
         sender_role_name = data["role_name"]
 
-        target_group = f"game_{self.join_code}_channel_{sender_team_name}{sender_role_name}_{sender_team_name}{sender_role_name}".replace(" ", "")
+        target_group = self.team_role_group
 
         if target_group not in self.channel_groups:
             username = self.scope["user"].username
