@@ -53,7 +53,7 @@ export default function UsersList({ socketRef, socketReady, roleInstance, roleIn
             socket.send(JSON.stringify({
                 channel: "users",
                 action: "list",
-                data: {}
+                data: roleInstance
             }));
         }
 
@@ -107,7 +107,7 @@ export default function UsersList({ socketRef, socketReady, roleInstance, roleIn
     // Group by team > branch > role
     const grouped = roleInstances.reduce((acc, ri) => {
         const team = ri.team_instance.team.name;
-        const branch = ri.role.branch?.name || "None";
+        const branch = ri.role.branch?.name || "Branch-neutral";
         const role = ri.role.name;
 
         if (!acc[team]) acc[team] = {};
@@ -133,11 +133,11 @@ export default function UsersList({ socketRef, socketReady, roleInstance, roleIn
                 className="flex items-center justify-between cursor-pointer"
                 onClick={() => setIsOpen(!isOpen)}
             >
-                <h2 className="text-xl font-semibold mb-2">Connected Players</h2>
+                <h3 className="text-lg font-semibold mb-2">Connected Players</h3>
                 <button
                     className="text-sm px-2 py-1 rounded bg-neutral-600 hover:bg-neutral-500"
                 >
-                    {isOpen ? "Hide" : "Show"}
+                    {isOpen ? "-" : "+"}
                 </button>
             </div>
 
