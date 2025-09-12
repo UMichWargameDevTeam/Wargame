@@ -82,6 +82,7 @@ class Unit(models.Model):
     max_health = models.FloatField()
     max_supply_points = models.FloatField()
     defense_modifier = models.FloatField()
+    icon = models.CharField(max_length=200)
     description = models.TextField(blank=True, null=False)
 
     # allows us to use Unit.branches.all()

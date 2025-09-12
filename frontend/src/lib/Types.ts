@@ -37,6 +37,7 @@ export interface Unit {
     max_health: number;
     max_supply_points: number;
     defense_modifier: number;
+    icon: string;
     description: string;
 }
 

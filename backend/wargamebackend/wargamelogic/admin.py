@@ -61,7 +61,7 @@ class RoleAdmin(admin.ModelAdmin):
 class UnitAdmin(admin.ModelAdmin):
     inlines = [UnitBranchInline, AttackInline, AbilityInline]
     list_display = ("name", "cost", "domain", "is_logistic", "type", "speed", "max_health", "max_supply_points",
-                     "defense_modifier", "description")
+                     "defense_modifier", "icon", "description")
     search_fields = ("name",)
     list_filter = ("domain", "type", "is_logistic")
 
