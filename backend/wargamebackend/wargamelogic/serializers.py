@@ -154,7 +154,7 @@ class RoleInstanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = RoleInstance
         fields = [
-            'id', 'user', 'team_instance', 'role',
+            'id', 'user', 'team_instance', 'role', 'ready',
             'user_id', 'team_instance_id', 'role_id'
         ]
         read_only_fields = ['id']
