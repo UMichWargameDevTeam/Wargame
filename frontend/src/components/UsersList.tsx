@@ -137,7 +137,7 @@ export default function UsersList({ socketRef, socketReady, roleInstance, roleIn
                 <button
                     className="text-sm px-2 py-1 rounded bg-neutral-600 hover:bg-neutral-500"
                 >
-                    {isOpen ? "Hide" : "Show"}
+                    {isOpen ? "+" : "-"}
                 </button>
             </div>
 
