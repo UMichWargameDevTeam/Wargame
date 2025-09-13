@@ -1,9 +1,11 @@
+from django.contrib.auth.models import User
+from django.middleware.csrf import get_token
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from auth.authentication import CookieJWTAuthentication
-from rest_framework.permissions import IsAuthenticated
-from django.contrib.auth.models import User
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.decorators import api_view
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import (
     TokenRefreshView,
@@ -13,7 +15,18 @@ from rest_framework_simplejwt.views import (
 from wargamebackend.settings import DEBUG
 
 
+@api_view(["GET"])
+def csrf_token(request):
+    """
+    Returns the CSRF token for use in JS fetch headers.
+    """
+    token = get_token(request)  # generates or returns existing CSRF token
+    return Response({"csrfToken": token})
+
+
 class RegisterView(APIView):
+    permission_classes = [AllowAny]
+
     def post(self, request):
         username = request.data.get("username")
         password = request.data.get("password")
@@ -36,6 +49,7 @@ class RegisterView(APIView):
             httponly=True,
             secure=not DEBUG,
             samesite="Lax",
+            max_age=7*24*60*60
         )
 
         response.set_cookie(
@@ -44,6 +58,7 @@ class RegisterView(APIView):
             httponly=True,
             secure=not DEBUG,
             samesite="Lax",
+            max_age=7*24*60*60
         )
 
         return response

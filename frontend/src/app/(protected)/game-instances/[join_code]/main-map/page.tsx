@@ -275,6 +275,8 @@ export default function MainMapPage() {
             <div className="flex-1 h-full bg-neutral-800 space-y-4 rounded-lg p-4 overflow-y-auto">
                 <h2 className="text-lg mb-2">Team: {roleInstance?.team_instance.team.name || 'Unknown'}</h2>
                 <h2 className="text-lg mb-2">Role: {roleInstance?.role.name || 'Unknown'}</h2>
+                <h2 className="text-lg mb-2">User: {roleInstance?.user.username || 'Unknown'}</h2>
+
                 {/* Menu for Ops/Logs */}
                 {(roleInstance?.role.is_operations || roleInstance?.role.is_logistics) && (
                     <>
@@ -340,6 +342,13 @@ export default function MainMapPage() {
                             teamInstanceRolePoints={teamInstanceRolePoints}
                             setTeamInstanceRolePoints={setTeamInstanceRolePoints}
                         />
+                        <MapSelector
+                            initialMap={mapSrc}
+                            onMapChange={(path) => {
+                                setMapSrc(path);
+                                sessionStorage.setItem('mapSrc', path);
+                            }}
+                        />
                         <UnitInstanceDisplay
                             selectedUnitInstances={selectedUnitInstances}
                             setSelectedUnitInstances={setSelectedUnitInstances}
@@ -367,6 +376,13 @@ export default function MainMapPage() {
                             socketReady={socketReady}
                             viewerRoleInstance={roleInstance}
                         />
+                        <MapSelector
+                            initialMap={mapSrc}
+                            onMapChange={(path) => {
+                                setMapSrc(path);
+                                sessionStorage.setItem('mapSrc', path);
+                            }}
+                        />
                     </>
                 )}
                 {/* Menu for Combatant Commander */}
@@ -391,6 +407,13 @@ export default function MainMapPage() {
                             viewerRoleInstance={roleInstance}
                             teamInstanceRolePoints={teamInstanceRolePoints}
                             setTeamInstanceRolePoints={setTeamInstanceRolePoints}
+                        />
+                        <MapSelector
+                            initialMap={mapSrc}
+                            onMapChange={(path) => {
+                                setMapSrc(path);
+                                sessionStorage.setItem('mapSrc', path);
+                            }}
                         />
                         <JTFMenu />
                     </>

@@ -13,7 +13,7 @@ type AuthGuardProps = {
 export default function AuthGuard({children, redirectTo = '/login', publicPaths= ['/register', '/login']}: AuthGuardProps) {
     const router = useRouter();
     const authedFetch = useAuthedFetch();
-    const [loading, setLoading] = useState<boolean>(false);
+    const [loading, setLoading] = useState<boolean>(true);
 
     useEffect(() => {
         const checkAuth = async () => {
@@ -27,12 +27,12 @@ export default function AuthGuard({children, redirectTo = '/login', publicPaths=
 
                 if (!res.ok) {
                     router.replace(redirectTo);
+                } else {
+                    setLoading(false);
                 }
             } catch (err: unknown) {
                 console.error(err);
                 router.replace(redirectTo);
-            } finally {
-                setLoading(false);
             }
         };
 
@@ -41,7 +41,9 @@ export default function AuthGuard({children, redirectTo = '/login', publicPaths=
 
     if (loading) {
         return (
-            <p>Validating access...</p>
+            <div className="flex items-center justify-center h-screen text-white bg-neutral-900">
+                <h1 className="text-xl font-bold">Validating access...</h1>
+            </div>
         )
     };
     return <>{children}</>;
