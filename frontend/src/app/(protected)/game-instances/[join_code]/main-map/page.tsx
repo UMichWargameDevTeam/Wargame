@@ -132,8 +132,7 @@ export default function MainMapPage() {
         const connectToWebSocket = () => {
             if (socketRef.current) return;
 
-            const token = localStorage.getItem("accessToken");
-            socketRef.current = new WebSocket(`${WS_URL}/game-instances/${joinCode}/?token=${token}`);
+            socketRef.current = new WebSocket(`${WS_URL}/game-instances/${joinCode}/`);
 
             socketRef.current.onopen = () => {
                 setSocketReady(true);

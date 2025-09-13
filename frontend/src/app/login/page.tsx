@@ -3,10 +3,13 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useState, useEffect } from "react";
-import {BACKEND_URL } from '@/lib/utils';
+import { BACKEND_URL } from '@/lib/utils';
+import { useAuthedFetch } from "@/hooks/useAuthedFetch";
 
 export default function LoginForm() {
     const router = useRouter();
+    const authedFetch = useAuthedFetch();
+
     const [username, setUsername] = useState<string>("");
     const [password, setPassword] = useState<string>("");
     const [showPassword, setShowPassword] = useState<boolean>(false);
@@ -15,11 +18,14 @@ export default function LoginForm() {
 
     // Redirect if already logged in
     useEffect(() => {
-        const token = localStorage.getItem("accessToken");
-        if (token) {
-            router.push("/roleselect");
-        }
-    }, [router]);
+        const checkLoggedIn = async () => {
+            const res = await authedFetch("/api/auth/me/");
+            if (res.ok) {
+                router.push("/roleselect");
+            }
+        };
+        checkLoggedIn();
+    }, [router, authedFetch]);
 
     const handleLogin = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -27,28 +33,22 @@ export default function LoginForm() {
         setError("");
 
         try {
-            const res = await fetch(
-                `${BACKEND_URL}/api/auth/token/`,
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                    },
-                    body: JSON.stringify({ username, password }),
-                }
-            );
-
-            const data = await res.json();
+            const res = await fetch(`${BACKEND_URL}/api/auth/token/`,  {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({ username, password }),
+                credentials: "include",
+            });
 
             if (!res.ok) {
+                const data = await res.json().catch(() => ({}));
                 throw new Error(data.error || data.detail || data.message || "Login failed");
             }
 
-            localStorage.setItem("accessToken", data.access);
-            localStorage.setItem("refreshToken", data.refresh);
             sessionStorage.setItem("username", username);
-
-            router.push("/roleselect"); // after login
+            router.push("/roleselect");
         } catch (err: unknown) {
             console.error(err);
             if (err instanceof Error) {

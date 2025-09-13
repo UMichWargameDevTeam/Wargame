@@ -38,14 +38,6 @@ ALLOWED_HOSTS = [
     "127.0.0.1"
 ]
 
-CSRF_TRUSTED_ORIGINS = [
-    "https://umichwargame.onrender.com"
-]
-
-CSRF_COOKIE_SECURE = True
-
-SESSION_COOKIE_SECURE = True
-
 CONN_MAX_AGE = None
 
 # Application definition
@@ -126,9 +118,12 @@ else:
     }
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "auth.authentication.CookieJWTAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
 }
 
 # Password validation
@@ -187,8 +182,28 @@ CACHES = {
     }
 }
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
 
+if DEBUG:
+    CSRF_COOKIE_SECURE = False
+    SESSION_COOKIE_SECURE = False
+    CORS_ALLOWED_ORIGIN_REGEXES = [
+        r"^http://localhost:\d+$",
+        r"^http://127\.0\.0\.1:\d+$",
+    ]
+    CSRF_TRUSTED_ORIGINS = [
+        "http://localhost",
+        "http://127.0.0.1",
+    ]
+else:
+    CSRF_COOKIE_SECURE = True
+    SESSION_COOKIE_SECURE = True
+    CORS_ALLOWED_ORIGINS = [
+        "https://umichwargame.vercel.app",
+    ]
+    CSRF_TRUSTED_ORIGINS = [
+        "https://umichwargame.vercel.app",
+    ]
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/

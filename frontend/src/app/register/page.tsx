@@ -35,8 +35,11 @@ export default function RegisterForm() {
             }
 
             router.push("/"); // back to login after register
-        } catch (err) {
+        } catch (err: unknown) {
             console.error(err);
+            if (err instanceof Error) {
+                alert(err.message);
+            }
         } finally {
             setLoading(false);
         }

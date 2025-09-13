@@ -16,7 +16,7 @@ export default function UsersList({ socketRef, socketReady, roleInstance, roleIn
     const authedFetch = useAuthedFetch();
     const [deletingRoleInstance, setDeletingRoleInstance] = useState<number | null>(null);
     const addedUsersMessageListener = useRef<boolean>(false);
-    const [isOpen, setIsOpen] = useState(true);
+    const [open, setOpen] = useState<boolean>(true);
 
     // WebSocket setup
     useEffect(() => {
@@ -129,20 +129,18 @@ export default function UsersList({ socketRef, socketReady, roleInstance, roleIn
     return (
         <div className="bg-neutral-700 p-4 rounded-lg shadow-lg w-full max-w-md max-h-md">
             {/* Header with collapse toggle */}
-            <div
-                className="flex items-center justify-between cursor-pointer"
-                onClick={() => setIsOpen(!isOpen)}
-            >
-                <h3 className="text-lg font-semibold mb-2">Connected Players</h3>
+            <div className="flex justify-between items-center mb-2">
+                <h3 className="text-lg font-semibold">Connected Players</h3>
                 <button
-                    className="text-sm px-2 py-1 rounded bg-neutral-600 hover:bg-neutral-500"
+                    onClick={() => setOpen(!open)}
+                    className="text-sm bg-neutral-600 px-2 py-1 rounded cursor-pointer hover:bg-neutral-500"
                 >
-                    {isOpen ? "-" : "+"}
+                    {open ? '-' : '+'}
                 </button>
             </div>
 
             {/* Collapsible content */}
-            {isOpen && (
+            {open && (
                 <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
                     {Object.keys(grouped).sort().map((team) => (
                         <div key={team}>

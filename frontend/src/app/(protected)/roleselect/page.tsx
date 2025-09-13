@@ -147,11 +147,23 @@ export default function RoleSelectPage() {
     };
 
     const handleLogout = async () => {
-        setLoggingOut(true);
-        localStorage.removeItem('accessToken');
-        localStorage.removeItem('refreshToken');
-        sessionStorage.clear();
-        router.push("/login");
+        try {
+            setLoggingOut(true);
+
+            await authedFetch("/api/auth/logout/", {
+                method: "POST"
+            });
+
+            sessionStorage.clear();
+            router.push("/login");
+        } catch (err: unknown) {
+            console.error(err);
+            if (err instanceof Error) {
+                alert(err.message);
+            }
+        } finally {
+            setLoggingOut(false);
+        }
     };
 
     return (
