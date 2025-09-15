@@ -32,12 +32,6 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 
 DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1", "t", "yes")
 
-ALLOWED_HOSTS = [
-    "umichwargame.onrender.com",
-    "localhost",
-    "127.0.0.1"
-]
-
 CONN_MAX_AGE = None
 
 # Application definition
@@ -185,6 +179,11 @@ CACHES = {
 CORS_ALLOW_CREDENTIALS = True
 
 if DEBUG:
+    ALLOWED_HOSTS = [
+        "localhost",
+        "127.0.0.1"
+    ]
+
     SESSION_COOKIE_SECURE = False
     CORS_ALLOWED_ORIGIN_REGEXES = [
         r"^http://localhost:\d+$",
@@ -199,6 +198,10 @@ if DEBUG:
         "http://127.0.0.1",
     ]
 else:
+    ALLOWED_HOSTS = [
+        "umichwargame.onrender.com",
+    ]
+
     SESSION_COOKIE_SECURE = True
     CORS_ALLOWED_ORIGINS = [
         "https://umichwargame.vercel.app",
@@ -210,6 +213,10 @@ else:
     CSRF_TRUSTED_ORIGINS = [
         "https://umichwargame.vercel.app",
     ]
+
+    SECURE_HSTS_SECONDS = 10
+    SECURE_SSL_REDIRECT = True
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/

@@ -3,7 +3,7 @@ from rest_framework_simplejwt.exceptions import ExpiredTokenError, InvalidToken,
 
 class CookieJWTAuthentication(JWTAuthentication):
     """
-    Reads the access token from a cookie instead of the Authorization header.
+    Reads the JWT access token from a cookie.
     """
     def authenticate(self, request):
         raw_token = request.COOKIES.get("access_token")
