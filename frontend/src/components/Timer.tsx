@@ -37,7 +37,7 @@ export default function Timer({ socketRef, socketReady, timer, setTimer }: Timer
                 }
             } catch (err) {
                 // ignore parse errors
-                // console.error('timer msg parse error', err);
+                console.error('timer msg parse error', err);
             }
         };
 
