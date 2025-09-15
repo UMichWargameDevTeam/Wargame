@@ -183,26 +183,30 @@ CACHES = {
 }
 
 CORS_ALLOW_CREDENTIALS = True
-CSRF_COOKIE_HTTPONLY = False
-CSRF_COOKIE_SAMESITE = "Lax"
 
 if DEBUG:
-    CSRF_COOKIE_SECURE = False
     SESSION_COOKIE_SECURE = False
     CORS_ALLOWED_ORIGIN_REGEXES = [
         r"^http://localhost:\d+$",
         r"^http://127\.0\.0\.1:\d+$",
     ]
+
+    CSRF_COOKIE_HTTPONLY = False
+    CSRF_COOKIE_SAMESITE = "Lax"
+    CSRF_COOKIE_SECURE = False
     CSRF_TRUSTED_ORIGINS = [
         "http://localhost",
         "http://127.0.0.1",
     ]
 else:
-    CSRF_COOKIE_SECURE = True
     SESSION_COOKIE_SECURE = True
     CORS_ALLOWED_ORIGINS = [
         "https://umichwargame.vercel.app",
     ]
+
+    CSRF_COOKIE_HTTPONLY = True
+    CSRF_COOKIE_SAMESITE = "None"
+    CSRF_COOKIE_SECURE = True
     CSRF_TRUSTED_ORIGINS = [
         "https://umichwargame.vercel.app",
     ]

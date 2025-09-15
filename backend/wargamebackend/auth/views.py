@@ -25,6 +25,7 @@ def csrf_token(request):
 
 
 class RegisterView(APIView):
+    authentication_classes = []
     permission_classes = [AllowAny]
 
     def post(self, request):
@@ -48,8 +49,8 @@ class RegisterView(APIView):
             str(access),
             httponly=True,
             secure=not DEBUG,
-            samesite="Lax",
-            max_age=7*24*60*60
+            samesite="Lax" if DEBUG else "None",
+            max_age=24*60*60,
         )
 
         response.set_cookie(
@@ -57,14 +58,19 @@ class RegisterView(APIView):
             str(refresh),
             httponly=True,
             secure=not DEBUG,
-            samesite="Lax",
-            max_age=7*24*60*60
+            samesite="Lax" if DEBUG else "None",
+            max_age=7*24*60*60,
         )
 
         return response
 
 
 class CookieTokenObtainPairView(TokenObtainPairView):
+    # The parent class TokenObtainPairView already sets permission_classes to AllowAny,
+    # But this makes it more explicit and readable.
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
     def post(self, request, *args, **kwargs):
         response = super().post(request, *args, **kwargs)
         data = response.data
@@ -81,20 +87,28 @@ class CookieTokenObtainPairView(TokenObtainPairView):
                 access,
                 httponly=True,
                 secure=not DEBUG,
-                samesite="Lax",
+                samesite="Lax" if DEBUG else "None",
+                max_age=24*60*60,
             )
+
             response.set_cookie(
                 "refresh_token",
                 refresh,
                 httponly=True,
                 secure=not DEBUG,
-                samesite="Lax",
+                samesite="Lax" if DEBUG else "None",
+                max_age=7*24*60*60,
             )
 
         return response
 
 
 class CookieTokenRefreshView(TokenRefreshView):
+    # The parent class TokenRefreshView already sets permission_classes to AllowAny,
+    # But this makes it more explicit and readable.
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
     def post(self, request, *args, **kwargs):
         # Grab refresh token from cookie, not body
         refresh = request.COOKIES.get("refresh_token")
@@ -112,7 +126,8 @@ class CookieTokenRefreshView(TokenRefreshView):
                 access,
                 httponly=True,
                 secure=not DEBUG,
-                samesite="Lax",
+                samesite="Lax" if DEBUG else "None",
+                max_age=24*60*60,
             )
             response.data = {"detail": "Access token refreshed"}
 
@@ -132,6 +147,9 @@ class MeView(APIView):
 
 
 class LogoutView(APIView):
+    authentication_classes = []
+    permission_classes = [AllowAny]
+
     def post(self, request):
         response = Response({"detail": "Logged out"})
         response.delete_cookie("access_token")

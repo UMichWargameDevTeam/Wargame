@@ -21,6 +21,8 @@ export default function LoginForm() {
         const checkLoggedIn = async () => {
             const res = await authedFetch("/api/auth/me/");
             if (res.ok) {
+                const data = await res.json();
+                sessionStorage.setItem("username", data.username);
                 router.push("/roleselect");
             }
         };
@@ -47,7 +49,6 @@ export default function LoginForm() {
                 throw new Error(data.error || data.detail || data.message || "Login failed");
             }
 
-            sessionStorage.setItem("username", username);
             router.push("/roleselect");
         } catch (err: unknown) {
             console.error(err);

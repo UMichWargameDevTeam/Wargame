@@ -12,6 +12,7 @@ export function useAuthedFetch() {
         try {
             const method = options?.method?.toUpperCase() || "GET";
             const headers: Record<string, string> = { ...(options?.headers as Record<string, string> || {}) };
+            // add the CSRF token to headers if the request is non-safe
             if (["POST", "PUT", "PATCH", "DELETE"].includes(method)) {
                 if (!csrfTokenRef.current) {
                     csrfTokenRef.current = await getCsrfToken();
@@ -26,21 +27,41 @@ export function useAuthedFetch() {
             });
 
             if (res.status === 401) {
-                const refreshRes = await fetch(`${BACKEND_URL}/api/auth/token/refresh/`, {
-                    method: "POST",
-                    credentials: "include",
-                });
+                // check whether the 401 was due to not having a valid access token
+                try {
+                    const data = await res.json();
+                    // if the user doesn't have an access token, redirect them to the login page
+                    if (data.detail == "no_token") {
+                        router.push("/login");
+                        return res;
+                    }
 
-                if (refreshRes.ok) {
-                    // retry original
-                    res = await fetch(`${BACKEND_URL}${url}`, {
-                        ...options,
-                        credentials: "include",
-                        headers,
-                    });
-                } else {
-                    router.push("/login");
-                    return res;
+                    // if the user has an access token but it's expired or invalid, 
+                    // try to refresh the access token using the refresh token, then retry the original request
+                    if (data.detail == "expired_token" || data.detail == "invalid_token") {
+                        const refreshRes = await fetch(`${BACKEND_URL}/api/auth/token/refresh/`, {
+                            method: "POST",
+                            credentials: "include",
+                        });
+
+                        if (refreshRes.ok) {
+                            res = await fetch(`${BACKEND_URL}${url}`, {
+                                ...options,
+                                credentials: "include",
+                                headers,
+                            });
+                        // if the refresh token is expired or invalid, redirect them to the login page
+                        } else {
+                            router.push("/login");
+                            return res;
+                        }
+                    }
+                } catch (err: unknown) {
+                    // if the 401 was not because the user didn't have a valid access token,
+                    // simply return the request's response.
+                    if (err instanceof SyntaxError) {
+                        return res;
+                    }
                 }
             }
 

@@ -28,6 +28,8 @@ export default function AuthGuard({children, redirectTo = '/login', publicPaths=
                 if (!res.ok) {
                     router.replace(redirectTo);
                 } else {
+                    const data = await res.json();
+                    sessionStorage.setItem("username", data.username);
                     setLoading(false);
                 }
             } catch (err: unknown) {
