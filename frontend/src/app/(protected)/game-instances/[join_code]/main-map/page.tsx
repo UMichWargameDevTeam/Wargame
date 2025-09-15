@@ -80,57 +80,111 @@ export default function MainMapPage() {
 
         const fetchData = async (roleInstance: RoleInstance) => {
             try {
-                const storedMap = sessionStorage.getItem('mapSrc');
+                // restore map from sessionStorage if available
+                const storedMap = sessionStorage.getItem("mapSrc");
                 if (storedMap) {
                     setMapSrc(storedMap);
                 }
 
-                const storedUnits = sessionStorage.getItem('unitInstanceDisplay');
-                if (storedUnits) setSelectedUnitInstances(prev => ({ ...prev, ...JSON.parse(storedUnits) }));
+                // restore selected units from sessionStorage if available
+                const storedUnits = sessionStorage.getItem("unitInstanceDisplay");
+                if (storedUnits) {
+                    setSelectedUnitInstances(prev => ({
+                        ...prev,
+                        ...JSON.parse(storedUnits),
+                    }));
+                }
 
-                // fetch data in parallel
-                const [
-                    unitInstancesData,
-                    teamInstanceRolePointsData,
-                    teamsData,
-                    unitsData,
-                    attackData
-                ] =
-                    await Promise.all([
-                        authedFetch(`/api/game-instances/${joinCode}/unit-instances/`)
-                            .then(res => res.ok ? res.json() : Promise.reject(`UnitInstance fetch failed with ${res.status}`)),
-                        authedFetch(`/api/game-instances/${joinCode}/team-instances/${roleInstance.team_instance.team.name}/role/${roleInstance.role.name}/points/`)
-                            .then(res => res.ok ? res.json() : Promise.reject(`TeamInstanceRolePoints fetch failed with ${res.status}`)),
-                        getSessionStorageOrFetch<Team[]>('teams', async () => {
+                console.log("Fetching initial data for map...");
+
+                // Fetch each dataset one at a time with clear error handling
+                let unitInstancesData: UnitInstance[] = [];
+                try {
+                    const res = await authedFetch(
+                        `/api/game-instances/${joinCode}/unit-instances/`
+                    );
+                    if (!res.ok)
+                        throw new Error(
+                            `UnitInstance fetch failed with ${res.status}`
+                        );
+                    unitInstancesData = await res.json();
+                    setUnitInstances(unitInstancesData);
+                } catch (err) {
+                    console.error("Error fetching unit instances:", err);
+                }
+
+                try {
+                    const res = await authedFetch(
+                        `/api/game-instances/${joinCode}/team-instances/${roleInstance.team_instance.team.name}/role/${roleInstance.role.name}/points/`
+                    );
+                    if (!res.ok)
+                        throw new Error(
+                            `TeamInstanceRolePoints fetch failed with ${res.status}`
+                        );
+                    const data = await res.json();
+                    setTeamInstanceRolePoints(data.supply_points);
+                } catch (err) {
+                    console.error("Error fetching role points:", err);
+                }
+
+                try {
+                    const teamsData = await getSessionStorageOrFetch<Team[]>(
+                        "teams",
+                        async () => {
                             const res = await authedFetch("/api/teams/");
-                            if (!res.ok) throw new Error(`Team fetch failed with ${res.status}`);
+                            if (!res.ok)
+                                throw new Error(
+                                    `Team fetch failed with ${res.status}`
+                                );
                             return res.json();
-                        }),
-                        getSessionStorageOrFetch<Unit[]>('units', async () => {
+                        }
+                    );
+                    setTeams(teamsData);
+                } catch (err) {
+                    console.error("Error fetching teams:", err);
+                }
+
+                try {
+                    const unitsData = await getSessionStorageOrFetch<Unit[]>(
+                        "units",
+                        async () => {
                             const res = await authedFetch("/api/units/");
-                            if (!res.ok) throw new Error(`Unit fetch failed with ${res.status}`);
+                            if (!res.ok)
+                                throw new Error(
+                                    `Unit fetch failed with ${res.status}`
+                                );
                             return res.json();
-                        }),
-                        getSessionStorageOrFetch<Attack[]>('attacks', async () => {
+                        }
+                    );
+                    setUnits(unitsData);
+                } catch (err) {
+                    console.error("Error fetching units:", err);
+                }
+
+                try {
+                    const attackData = await getSessionStorageOrFetch<Attack[]>(
+                        "attacks",
+                        async () => {
                             const res = await authedFetch("/api/attacks/");
-                            if (!res.ok) throw new Error(`Attack fetch failed with ${res.status}`);
+                            if (!res.ok)
+                                throw new Error(
+                                    `Attack fetch failed with ${res.status}`
+                                );
                             return res.json();
-                        })
-                    ]);
-
-                setUnitInstances(unitInstancesData);
-                setTeamInstanceRolePoints(teamInstanceRolePointsData.supply_points);
-                setTeams(teamsData);
-                setUnits(unitsData);
-                setAttacks(attackData);
-
+                        }
+                    );
+                    setAttacks(attackData);
+                } catch (err) {
+                    console.error("Error fetching attacks:", err);
+                }
             } catch (err: unknown) {
-                console.error(err);
+                console.error("Unexpected error in fetchData:", err);
                 if (err instanceof Error) {
                     setValidationError(err.message);
                 }
             }
         };
+
 
         const connectToWebSocket = () => {
             if (socketRef.current) return;
