@@ -1,5 +1,6 @@
 import rest_framework.decorators
 from rest_framework import viewsets
+from auth.authentication import CookieJWTAuthentication
 from rest_framework.permissions import IsAuthenticated, IsAdminUser, SAFE_METHODS
 from django.shortcuts import get_object_or_404
 from wargamelogic.models.static import (
@@ -109,6 +110,7 @@ class TileViewSet(viewsets.ModelViewSet):
 
 # dynamic model view sets
 class GameInstanceViewSet(viewsets.ModelViewSet):
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
     queryset = GameInstance.objects.all()
     serializer_class = GameInstanceSerializer
@@ -139,6 +141,7 @@ class GameInstanceViewSet(viewsets.ModelViewSet):
 
 
 class TeamInstanceViewSet(viewsets.ModelViewSet):
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
     queryset = TeamInstance.objects.all()
     serializer_class = TeamInstanceSerializer
@@ -173,6 +176,7 @@ class TeamInstanceViewSet(viewsets.ModelViewSet):
         return super().destroy(request, *args, **kwargs)
 
 class RoleInstanceViewSet(viewsets.ModelViewSet):
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
     queryset = RoleInstance.objects.all()
     serializer_class = RoleInstanceSerializer
@@ -200,6 +204,7 @@ class RoleInstanceViewSet(viewsets.ModelViewSet):
         return super().destroy(request, *args, **kwargs)
 
 class TeamInstanceRolePointsViewSet(viewsets.ModelViewSet):
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
     queryset = RoleInstance.objects.all()
     serializer_class = RoleInstanceSerializer
@@ -218,6 +223,7 @@ class TeamInstanceRolePointsViewSet(viewsets.ModelViewSet):
         return super().partial_update(request, *args, **kwargs)
 
 class UnitInstanceViewSet(viewsets.ModelViewSet):
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
     queryset = UnitInstance.objects.all()
     serializer_class = UnitInstanceSerializer
@@ -253,6 +259,7 @@ class UnitInstanceViewSet(viewsets.ModelViewSet):
 
 
 class LandmarkInstanceViewSet(viewsets.ModelViewSet):
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
     queryset = LandmarkInstance.objects.all()
     serializer_class = LandmarkInstanceSerializer
@@ -287,6 +294,7 @@ class LandmarkInstanceViewSet(viewsets.ModelViewSet):
         return super().destroy(request, *args, **kwargs)
 
 class LandmarkInstanceTileViewSet(viewsets.ModelViewSet):
+    authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
     queryset = LandmarkInstanceTile.objects.all()
     serializer_class = LandmarkInstanceTileSerializer

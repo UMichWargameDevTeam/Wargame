@@ -21,8 +21,11 @@ export default function JTFMenu() {
 
                 setBranches(data);
                 setActiveTab(data.length > 0 ? data[0].name : null);
-            } catch (err) {
-                console.error("Failed to get branches", err);
+            } catch (err: unknown) {
+                console.error(err);
+                if (err instanceof Error) {
+                    alert(err.message);
+                }
             }
         };
 

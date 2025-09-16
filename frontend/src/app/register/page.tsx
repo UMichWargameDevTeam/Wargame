@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import React, { useState } from "react";
-import {BACKEND_URL } from '@/lib/utils';
+import { BACKEND_URL, isValidName } from '@/lib/utils';
 
 export default function RegisterForm() {
     const router = useRouter();
@@ -26,6 +26,7 @@ export default function RegisterForm() {
                         "Content-Type": "application/json",
                     },
                     body: JSON.stringify({ username, password }),
+                    credentials: "include",
                 }
             );
 
@@ -34,9 +35,13 @@ export default function RegisterForm() {
                 throw new Error(data.error || data.detail || data.message || "Registration failed. Username may already be taken.");
             }
 
+            sessionStorage.setItem("username", username);
             router.push("/"); // back to login after register
-        } catch (err) {
+        } catch (err: unknown) {
             console.error(err);
+            if (err instanceof Error) {
+                alert(err.message);
+            }
         } finally {
             setLoading(false);
         }
@@ -89,8 +94,13 @@ export default function RegisterForm() {
 
                     <button
                         type="submit"
-                        disabled={loading}
-                        className="w-full bg-blue-600 text-white py-2 rounded-lg cursor-pointer hover:bg-blue-700 transition duration-200"
+                        disabled={!isValidName(username) || password.length == 0 || loading}
+                        className={`w-full text-white py-2 rounded-lg transition duration-200
+                            ${(!isValidName(username) || password.length == 0 || loading)
+                                ? "bg-gray-500 cursor-not-allowed"
+                                : "bg-blue-600 cursor-pointer hover:bg-blue-700"
+                            }
+                        `}
                     >
                         {loading ? "Registering..." : "Register"}
                     </button>

@@ -16,6 +16,7 @@ export default function GamemasterMenu({ joinCode, socketRef, socketReady, roleI
     const authedFetch = useAuthedFetch();
 
     const [deletingGame, setDeletingGame] = useState<boolean>(false);
+    const [open, setOpen] = useState<boolean>(true);
 
     const handleDeleteGame = async () => {
         if (!socketReady || !socketRef.current) return;
@@ -54,22 +55,33 @@ export default function GamemasterMenu({ joinCode, socketRef, socketReady, roleI
 
     return (
         <div className="bg-neutral-700 rounded-lg p-4 mt-4 text-white">
-            <h3 className="text-lg font-semibold mb-2">Gamemaster Menu</h3>
-            {/* Delete Game */}
-            <div>
+            <div className="flex justify-between items-center mb-2">
+                <h3 className="text-lg font-semibold">Gamemaster Menu</h3>
                 <button
-                    onClick={handleDeleteGame}
-                    disabled={deletingGame}
-                    className={`px-3 py-2 rounded transition
-                        ${deletingGame
-                            ? "bg-gray-500 cursor-not-allowed"
-                            : "bg-red-600 cursor-pointer hover:bg-red-500"
-                        }
-                    `}
+                    onClick={() => setOpen(!open)}
+                    className="text-sm bg-neutral-600 px-2 py-1 rounded cursor-pointer hover:bg-neutral-500"
                 >
-                    {deletingGame ? "Deleting Game..." : "Delete Game"}
+                    {open ? '-' : '+'}
                 </button>
             </div>
+
+            {open && (
+                // Delete Game
+                <div>
+                    <button
+                        onClick={handleDeleteGame}
+                        disabled={deletingGame}
+                        className={`px-3 py-2 rounded transition
+                            ${deletingGame
+                                ? "bg-gray-500 cursor-not-allowed"
+                                : "bg-red-600 cursor-pointer hover:bg-red-500"
+                            }
+                        `}
+                    >
+                        {deletingGame ? "Deleting Game..." : "Delete Game"}
+                    </button>
+                </div>
+            )}
         </div>
     );
 };

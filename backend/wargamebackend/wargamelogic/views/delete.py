@@ -1,5 +1,6 @@
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from auth.authentication import CookieJWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
@@ -12,6 +13,7 @@ from wargamelogic.check_roles import (
 )
 
 @api_view(["DELETE"])
+@authentication_classes([CookieJWTAuthentication])
 @permission_classes([IsAuthenticated])
 @require_role_instance({
     'team_instance.game_instance.join_code': lambda request, kwargs: kwargs['join_code'],

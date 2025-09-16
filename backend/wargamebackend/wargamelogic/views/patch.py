@@ -1,5 +1,6 @@
 from rest_framework import status
-from rest_framework.decorators import api_view, permission_classes
+from rest_framework.decorators import api_view, authentication_classes, permission_classes
+from auth.authentication import CookieJWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from django.shortcuts import get_object_or_404
@@ -20,6 +21,7 @@ from ..gamelogic.objects import *
 from ..gamelogic.attack import *
 
 @api_view(['PATCH'])
+@authentication_classes([CookieJWTAuthentication])
 @permission_classes([IsAuthenticated])
 @require_any_role_instance([
     {
@@ -105,6 +107,7 @@ def send_points(request, join_code, team_name, role_name):
 
 
 @api_view(['PATCH'])
+@authentication_classes([CookieJWTAuthentication])
 @permission_classes([IsAuthenticated])
 @require_any_role_instance([
     {
@@ -129,6 +132,7 @@ def move_unit_instance(request, pk, row, column):
 
 
 @api_view(['PATCH'])
+@authentication_classes([CookieJWTAuthentication])
 @permission_classes([IsAuthenticated])
 @require_any_role_instance([
     {

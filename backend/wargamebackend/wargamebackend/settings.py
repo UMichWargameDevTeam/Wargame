@@ -32,20 +32,6 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 
 DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1", "t", "yes")
 
-ALLOWED_HOSTS = [
-    "umichwargame.onrender.com",
-    "localhost",
-    "127.0.0.1"
-]
-
-CSRF_TRUSTED_ORIGINS = [
-    "https://umichwargame.onrender.com"
-]
-
-CSRF_COOKIE_SECURE = True
-
-SESSION_COOKIE_SECURE = True
-
 CONN_MAX_AGE = None
 
 # Application definition
@@ -126,9 +112,12 @@ else:
     }
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "auth.authentication.CookieJWTAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
 }
 
 # Password validation
@@ -187,7 +176,46 @@ CACHES = {
     }
 }
 
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOW_CREDENTIALS = True
+
+if DEBUG:
+    ALLOWED_HOSTS = [
+        "localhost",
+        "127.0.0.1"
+    ]
+
+    SESSION_COOKIE_SECURE = False
+    CORS_ALLOWED_ORIGIN_REGEXES = [
+        r"^http://localhost:\d+$",
+        r"^http://127\.0\.0\.1:\d+$",
+    ]
+
+    CSRF_COOKIE_HTTPONLY = False
+    CSRF_COOKIE_SAMESITE = "Lax"
+    CSRF_COOKIE_SECURE = False
+    CSRF_TRUSTED_ORIGINS = [
+        "http://localhost",
+        "http://127.0.0.1",
+    ]
+else:
+    ALLOWED_HOSTS = [
+        "umichwargame.onrender.com",
+    ]
+
+    SESSION_COOKIE_SECURE = True
+    CORS_ALLOWED_ORIGINS = [
+        "https://umichwargame.vercel.app",
+    ]
+
+    CSRF_COOKIE_HTTPONLY = True
+    CSRF_COOKIE_SAMESITE = "None"
+    CSRF_COOKIE_SECURE = True
+    CSRF_TRUSTED_ORIGINS = [
+        "https://umichwargame.vercel.app",
+    ]
+
+    SECURE_HSTS_SECONDS = 10
+    SECURE_SSL_REDIRECT = True
 
 
 # Static files (CSS, JavaScript, Images)

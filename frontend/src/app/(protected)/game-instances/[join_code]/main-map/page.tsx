@@ -79,118 +79,60 @@ export default function MainMapPage() {
         }
 
         const fetchData = async (roleInstance: RoleInstance) => {
-            try {
-                // restore map from sessionStorage if available
-                const storedMap = sessionStorage.getItem("mapSrc");
-                if (storedMap) {
-                    setMapSrc(storedMap);
-                }
-
-                // restore selected units from sessionStorage if available
-                const storedUnits = sessionStorage.getItem("unitInstanceDisplay");
-                if (storedUnits) {
-                    setSelectedUnitInstances(prev => ({
-                        ...prev,
-                        ...JSON.parse(storedUnits),
-                    }));
-                }
-
-                console.log("Fetching initial data for map...");
-
-                // Fetch each dataset one at a time with clear error handling
-                let unitInstancesData: UnitInstance[] = [];
-                try {
-                    const res = await authedFetch(
-                        `/api/game-instances/${joinCode}/unit-instances/`
-                    );
-                    if (!res.ok)
-                        throw new Error(
-                            `UnitInstance fetch failed with ${res.status}`
-                        );
-                    unitInstancesData = await res.json();
-                    setUnitInstances(unitInstancesData);
-                } catch (err) {
-                    console.error("Error fetching unit instances:", err);
-                }
-
-                try {
-                    const res = await authedFetch(
-                        `/api/game-instances/${joinCode}/team-instances/${roleInstance.team_instance.team.name}/role/${roleInstance.role.name}/points/`
-                    );
-                    if (!res.ok)
-                        throw new Error(
-                            `TeamInstanceRolePoints fetch failed with ${res.status}`
-                        );
-                    const data = await res.json();
-                    setTeamInstanceRolePoints(data.supply_points);
-                } catch (err) {
-                    console.error("Error fetching role points:", err);
-                }
-
-                try {
-                    const teamsData = await getSessionStorageOrFetch<Team[]>(
-                        "teams",
-                        async () => {
-                            const res = await authedFetch("/api/teams/");
-                            if (!res.ok)
-                                throw new Error(
-                                    `Team fetch failed with ${res.status}`
-                                );
-                            return res.json();
-                        }
-                    );
-                    setTeams(teamsData);
-                } catch (err) {
-                    console.error("Error fetching teams:", err);
-                }
-
-                try {
-                    const unitsData = await getSessionStorageOrFetch<Unit[]>(
-                        "units",
-                        async () => {
-                            const res = await authedFetch("/api/units/");
-                            if (!res.ok)
-                                throw new Error(
-                                    `Unit fetch failed with ${res.status}`
-                                );
-                            return res.json();
-                        }
-                    );
-                    setUnits(unitsData);
-                } catch (err) {
-                    console.error("Error fetching units:", err);
-                }
-
-                try {
-                    const attackData = await getSessionStorageOrFetch<Attack[]>(
-                        "attacks",
-                        async () => {
-                            const res = await authedFetch("/api/attacks/");
-                            if (!res.ok)
-                                throw new Error(
-                                    `Attack fetch failed with ${res.status}`
-                                );
-                            return res.json();
-                        }
-                    );
-                    setAttacks(attackData);
-                } catch (err) {
-                    console.error("Error fetching attacks:", err);
-                }
-            } catch (err: unknown) {
-                console.error("Unexpected error in fetchData:", err);
-                if (err instanceof Error) {
-                    setValidationError(err.message);
-                }
+            const storedMap = sessionStorage.getItem('mapSrc');
+            if (storedMap) {
+                setMapSrc(storedMap);
             }
+
+            const storedUnits = sessionStorage.getItem('unitInstanceDisplay');
+            if (storedUnits) setSelectedUnitInstances(prev => ({ ...prev, ...JSON.parse(storedUnits) }));
+
+            // fetch data in parallel
+            await Promise.all([
+                authedFetch(`/api/game-instances/${joinCode}/unit-instances/`)
+                    .then(res => res.ok
+                        ? res.json()
+                        : Promise.reject(`UnitInstance fetch failed with ${res.status}`))
+                    .then(data => setUnitInstances(data)),
+
+                authedFetch(`/api/game-instances/${joinCode}/team-instances/${roleInstance.team_instance.team.name}/role/${roleInstance.role.name}/points/`)
+                    .then(res => res.ok
+                        ? res.json()
+                        : Promise.reject(`TeamInstanceRolePoints fetch failed with ${res.status}`))
+                    .then(data => setTeamInstanceRolePoints(data.supply_points)),
+
+                getSessionStorageOrFetch<Team[]>('teams', async () => {
+                    const res = await authedFetch("/api/teams/");
+                    return res.ok
+                        ? res.json()
+                        : Promise.reject(`Team fetch failed with ${res.status}`);
+                })
+                    .then(data => setTeams(data)),
+
+                getSessionStorageOrFetch<Unit[]>('units', async () => {
+                    const res = await authedFetch("/api/units/");
+                    return res.ok
+                        ? res.json()
+                        : Promise.reject(`Unit fetch failed with ${res.status}`);
+                })
+                    .then(data => setUnits(data)),
+
+                getSessionStorageOrFetch<Attack[]>('attacks', async () => {
+                    const res = await authedFetch("/api/attacks/");
+                    return res.ok
+                        ? res.json()
+                        : Promise.reject(`Attack fetch failed with ${res.status}`);
+                })
+                    .then(data => setAttacks(data)),
+            ])
+                .catch(errMessage => setValidationError(errMessage))
         };
 
 
         const connectToWebSocket = () => {
             if (socketRef.current) return;
 
-            const token = localStorage.getItem("accessToken");
-            socketRef.current = new WebSocket(`${WS_URL}/game-instances/${joinCode}/?token=${token}`);
+            socketRef.current = new WebSocket(`${WS_URL}/game-instances/${joinCode}/`);
 
             socketRef.current.onopen = () => {
                 setSocketReady(true);
@@ -356,6 +298,8 @@ export default function MainMapPage() {
             <div className="flex-1 h-full bg-neutral-800 space-y-4 rounded-lg p-4 overflow-y-auto">
                 <h2 className="text-lg mb-2">Team: {roleInstance?.team_instance.team.name || 'Unknown'}</h2>
                 <h2 className="text-lg mb-2">Role: {roleInstance?.role.name || 'Unknown'}</h2>
+                <h2 className="text-lg mb-2">User: {roleInstance?.user.username || 'Unknown'}</h2>
+
                 {/* Menu for Ops/Logs */}
                 {(roleInstance?.role.is_operations || roleInstance?.role.is_logistics) && (
                     <>
@@ -421,6 +365,13 @@ export default function MainMapPage() {
                             teamInstanceRolePoints={teamInstanceRolePoints}
                             setTeamInstanceRolePoints={setTeamInstanceRolePoints}
                         />
+                        <MapSelector
+                            initialMap={mapSrc}
+                            onMapChange={(path) => {
+                                setMapSrc(path);
+                                sessionStorage.setItem('mapSrc', path);
+                            }}
+                        />
                         <UnitInstanceDisplay
                             selectedUnitInstances={selectedUnitInstances}
                             setSelectedUnitInstances={setSelectedUnitInstances}
@@ -448,6 +399,13 @@ export default function MainMapPage() {
                             socketReady={socketReady}
                             viewerRoleInstance={roleInstance}
                         />
+                        <MapSelector
+                            initialMap={mapSrc}
+                            onMapChange={(path) => {
+                                setMapSrc(path);
+                                sessionStorage.setItem('mapSrc', path);
+                            }}
+                        />
                     </>
                 )}
                 {/* Menu for Combatant Commander */}
@@ -472,6 +430,13 @@ export default function MainMapPage() {
                             viewerRoleInstance={roleInstance}
                             teamInstanceRolePoints={teamInstanceRolePoints}
                             setTeamInstanceRolePoints={setTeamInstanceRolePoints}
+                        />
+                        <MapSelector
+                            initialMap={mapSrc}
+                            onMapChange={(path) => {
+                                setMapSrc(path);
+                                sessionStorage.setItem('mapSrc', path);
+                            }}
                         />
                         <JTFMenu />
                     </>
