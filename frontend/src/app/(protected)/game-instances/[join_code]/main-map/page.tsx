@@ -126,8 +126,8 @@ export default function MainMapPage() {
                     .then(data => setAttacks(data)),
             ])
                 .catch(errMessage => setValidationError(errMessage))
-
         };
+
 
         const connectToWebSocket = () => {
             if (socketRef.current) return;
