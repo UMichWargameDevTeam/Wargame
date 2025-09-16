@@ -1,3 +1,7 @@
+# The purpose of this file is similar to that of authentication.py,
+# but this one is specifically for authenticating WebSocket connections.
+# It is used in asgi.py.
+
 from django.contrib.auth.models import AnonymousUser
 from rest_framework_simplejwt.tokens import UntypedToken
 from rest_framework_simplejwt.authentication import JWTAuthentication
@@ -5,15 +9,9 @@ from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from channels.db import database_sync_to_async
 from http.cookies import SimpleCookie
 
-# For WebSocket authentication, I had ChatGPT generate this custom authentication
-# as opposed to the built-in AuthMiddlewareStack because that used sessions instead of JWT.
-# It made sense to make its authentication work the same way as it does for DRF,
-# i.e using JWT. This way, scope["user"] in a consumer should work the same way 
-# as request.user in DRF.
-class JWTAuthMiddleware:
+class CookieJWTAuthenticationWebSocketMiddleware:
     """
-    WebSocket middleware that authenticates users via JWT stored in cookies,
-    using SimpleJWT for validation (like DRF).
+    Authentication class for WebSockets that reads the JWT access token from a cookie.
     """
     def __init__(self, app):
         self.app = app

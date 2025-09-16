@@ -1,3 +1,8 @@
+# This file defines an authentication class 
+# That specifies how the user who sent an HTTP request is identified.
+# It can determine whether a user isn't logged in
+# or has expired or invalid authentication credentials.
+
 from rest_framework_simplejwt.authentication import JWTAuthentication
 from rest_framework_simplejwt.exceptions import ExpiredTokenError, InvalidToken, AuthenticationFailed
 

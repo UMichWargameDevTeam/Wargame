@@ -13,7 +13,7 @@ from wargamelogic.models.dynamic import (
 from wargamelogic.serializers import (
     TeamInstanceRolePointsSerializer, UnitInstanceSerializer
 )
-from wargamelogic.check_roles import (
+from auth.authorization import (
     require_any_role_instance, get_object_and_related_with_cache_or_404, get_user_role_instances
 )
 

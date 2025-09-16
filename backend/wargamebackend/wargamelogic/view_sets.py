@@ -13,7 +13,7 @@ from wargamelogic.serializers import (
     TeamSerializer, BranchSerializer, RoleSerializer, UnitSerializer, UnitBranchSerializer, AttackSerializer, AbilitySerializer, TileSerializer, LandmarkSerializer,
     GameInstanceSerializer, TeamInstanceSerializer, RoleInstanceSerializer, TeamInstanceRolePointsSerializer, UnitInstanceSerializer, LandmarkInstanceSerializer, LandmarkInstanceTileSerializer,
 )
-from wargamelogic.check_roles import (
+from auth.authorization import (
     require_role_instance, require_any_role_instance, get_object_and_related_with_cache_or_404
 )
 

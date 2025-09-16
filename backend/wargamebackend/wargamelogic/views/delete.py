@@ -8,7 +8,7 @@ from wargamelogic.consumers import get_redis_client
 from wargamelogic.models.dynamic import (
     GameInstance
 )
-from wargamelogic.check_roles import (
+from auth.authorization import (
     require_role_instance
 )
 
