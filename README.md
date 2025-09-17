@@ -2,10 +2,10 @@
 
 A real-time web-based wargame map viewer and command tool. Built with:
 
-- **Next.js** frontend, hosted on Vercel at https://long-term-wargame.vercel.app
-- **Django + Channels (Daphne)** backend, hosted on Render
+- **Next.js** frontend, hosted on Vercel at https://umichwargame.vercel.app
+- **Django + Channels (Daphne)** backend, hosted on Render at https://umichwargame.onrender.com
 - **PostgreSQL** database, hosted on Neon
-- WebSocket support for live communication between roles/devices, hosted on redis cloud
+- **Redis** WebSocket backend, hosted at wss://umichwargame.onrender.com
 
 ---
 
@@ -28,6 +28,7 @@ LongTermWargame/
 │   └── wargamebackend/
 ├── frontend/             # Next.js frontend
 ├── Makefile              # Easy commands for running dev servers
+├── .env                  # gitignore'd. Info on what it contains below
 ```
 
 ---
@@ -84,12 +85,22 @@ make front
 In the root of the project, create a file named .env with the following structure:
 
 ```
-# Initially obtained from backend/wargamebackend/wargamebackend/settings.py
+# Generate with $ openssl rand -base64 48
 SECRET_KEY='your django secret key here'
 # Obtained by going to the Neon project's dashboard, clicking Connect, selecting Django, enable Connection Pooling, and looking at the .env tab
 DATABASE_URL='your neon database connection url, with connection pooling enabled, here'
 # Should be True in development, False in production
 DEBUG=True
+# These two should only be specified in production, and omitted in development
+NEXT_PUBLIC_BACKEND_URL='your backend server URL here'
+NEXT_PUBLIC_WS_URL='your WebSocket server URL here'
+# Will be emailed in production when there are internal server errors
+ADMINS='examplename:example@gmail.com,examplename2:example2@gmail.com'
+# Credentials of the email that will be used to send emails to admins when there are internal server errors
+# These are only necessary in production.
+EMAIL_HOST_USER='example3@gmail.com'
+# Obtained by generating an app password in google account settings
+EMAIL_HOST_PASSWORD='your password here'
 ```
 
 ---
@@ -103,19 +114,18 @@ DEBUG=True
 
 ## 💡 Role System
 
-- The root page (`/`) shows a role selector.
-- When a user selects a role (Commander, Observer, Field Unit), it's stored in `sessionStorage`.
-- This allows each device/tab to act independently.
+- `/roleselect` shows a role selector.
 - After role selection, users are redirected to `/game-instances/<join_code>/main-map/`, where the map is shown and role-specific UI can be rendered.
+- Users may only sign up for one role per game. They cannot sign up for a new role in a game unless a Gamemaster deletes their old role.
 
 ---
 
-## 📡 WebSocket Messaging (Optional)
+## 📡 WebSocket Messaging
 
-WebSocket code is included but currently disabled in the frontend. It supports:
+WebSocket code is included in the frontend. It supports:
 
-- Bi-directional real-time messaging via `/ws/game-instances/<join_code>/main-map/`
-- Broadcast to all connected devices
+- Bi-directional real-time messaging
+- Broadcast to connected devices
 - Handled by Django Channels + Daphne using ASGI
 
 ---

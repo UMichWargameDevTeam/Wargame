@@ -15,12 +15,12 @@ os.environ.setdefault("DJANGO_SETTINGS_MODULE", "wargamebackend.settings")
 django.setup()
 
 from channels.routing import ProtocolTypeRouter, URLRouter
-from auth.middleware import JWTAuthMiddleware
+from auth.middleware import CookieJWTAuthenticationWebSocketMiddleware 
 import wargamelogic.routing
 
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),
-    "websocket": JWTAuthMiddleware(
+    "websocket": CookieJWTAuthenticationWebSocketMiddleware(
         URLRouter(wargamelogic.routing.websocket_urlpatterns)
     ),
 })

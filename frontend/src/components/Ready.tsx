@@ -19,6 +19,9 @@ export default function Ready({ socket, socketReady, roleInstance }: ReadyProps)
     const toggleReady = () => {
         if (!socketReady || !socket || !roleInstance) return;
 
+        // TODO: send an HTTP request, and only send data over socket
+        // upon successful response
+
         const newReady = !ready;
         setReady(newReady);
 

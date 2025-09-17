@@ -1,9 +1,14 @@
-import inspect
-from rest_framework import status
-from rest_framework.response import Response
+# This file provides two decorators, require_role_instance and require_any_role_instance
+# that can be used to specify which users are authorized to access an endpoint,
+# based on what role they have in the given game.
+# note that staff/superusers bypass all checks.
+
 from django.db.models import Model, QuerySet
 from django.shortcuts import get_object_or_404
+from rest_framework import status
+from rest_framework.response import Response
 from functools import wraps
+import inspect
 from datetime import datetime
 from wargamelogic.models import (
     RoleInstance
