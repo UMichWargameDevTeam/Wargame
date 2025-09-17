@@ -176,6 +176,12 @@ CACHES = {
     }
 }
 
+raw_admins = os.getenv("ADMINS", "")
+ADMINS = [
+    tuple(admin.split(":", 1)) 
+    for admin in raw_admins.split(",") if admin
+]
+
 CORS_ALLOW_CREDENTIALS = True
 
 if DEBUG:
@@ -197,6 +203,9 @@ if DEBUG:
         "http://localhost",
         "http://127.0.0.1",
     ]
+
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
 else:
     ALLOWED_HOSTS = [
         "umichwargame.onrender.com",
@@ -216,6 +225,33 @@ else:
 
     SECURE_HSTS_SECONDS = 10
     SECURE_SSL_REDIRECT = True
+
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    # This assumes you're using a gmail account to send emails
+    EMAIL_HOST = "smtp.gmail.com"
+    EMAIL_PORT = 587
+    EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+    EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+    EMAIL_USE_TLS = True
+
+    LOGGING = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "handlers": {
+            "mail_admins": {
+                "level": "ERROR",
+                "class": "django.utils.log.AdminEmailHandler",
+                "include_html": True,
+            },
+        },
+        "loggers": {
+            "django.request": {
+                "handlers": ["mail_admins"],
+                "level": "ERROR",
+                "propagate": True,
+            },
+        },
+    }
 
 
 # Static files (CSS, JavaScript, Images)
