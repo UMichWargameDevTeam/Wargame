@@ -230,6 +230,10 @@ class GameConsumer(AsyncWebsocketConsumer):
         redis_client.hset(role_key, user.id, json.dumps(data))
 
         return self.team_group, data
+    
+
+    async def handle_users_update_ready(self, data):
+        return self.team_group, data
 
 
     async def handle_timer_get_finish_time(self, data):
@@ -412,10 +416,11 @@ def get_user_transfer_groups(join_code, teams, roles, role_instance):
 
     if user_role_name == "Gamemaster":
         transfer_to_groups += [(t.name, r.name) for r in roles if r.name != "Gamemaster" for t in teams if t.name != gamemaster_team_name]
+    else:
+        transfer_from_groups += [(gamemaster_team_name, "Gamemaster")]
 
     if user_role_name == "Combatant Commander":
         transfer_to_groups += [(user_team_name, r.name) for r in roles if r.is_chief_of_staff]
-        transfer_from_groups += [(gamemaster_team_name, "Gamemaster")]
 
     if role_instance["role"]["is_chief_of_staff"]:
         transfer_to_groups += [(user_team_name, r.name) for r in roles if r.is_logistics and r.is_commander and r.branch.name == role_instance["role"]["branch"]["name"]]

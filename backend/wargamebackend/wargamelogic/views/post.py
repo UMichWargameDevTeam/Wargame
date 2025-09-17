@@ -22,6 +22,7 @@ from auth.authorization import (
 @api_view(['POST'])
 @authentication_classes([CookieJWTAuthentication])
 @permission_classes([IsAuthenticated])
+@transaction.atomic
 def create_game_instance(request):
     join_code = request.data.get("join_code")
     if not join_code:

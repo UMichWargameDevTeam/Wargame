@@ -58,7 +58,11 @@ export default function TurnSystem({ socket, socketReady, roleInstance, roleInst
     // Increment turn
     const goToNextTurn = () => {
         if (!socketReady || !socket) return;
+        // TODO: should probably make it so only a gamemaster actually increments this
+
         const newTurn = turn + 1;
+        // TODO: send an HTTP request, and only send data over socket
+        // upon successful response
 
         socket.send(JSON.stringify({
             channel: "turns",
