@@ -1,14 +1,15 @@
+from django.shortcuts import get_object_or_404
+from django.db import transaction
 from rest_framework import status
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from auth.authentication import CookieJWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django.shortcuts import get_object_or_404
 from wargamelogic.models.static import (
-    Team, Role, Tile, Attack
+    Tile, Attack
 )
 from wargamelogic.models.dynamic import (
-    TeamInstance, TeamInstanceRolePoints, UnitInstance
+    TeamInstanceRolePoints, UnitInstance
 )
 from wargamelogic.serializers import (
     TeamInstanceRolePointsSerializer, UnitInstanceSerializer
@@ -46,6 +47,7 @@ from ..gamelogic.attack import *
         ).team_instance
     }
 ])
+@transaction.atomic
 def send_points(request, join_code, team_name, role_name):
     sender_team_instance_role_points = get_object_and_related_with_cache_or_404(
         request,
@@ -77,7 +79,6 @@ def send_points(request, join_code, team_name, role_name):
 
     recipients = []
 
-    # potential race condition here but we're ignoring that lol
     for transfer in transfers:
         recipient_team_name = transfer["team_name"]
         recipient_role_name = transfer["role_name"]
@@ -146,6 +147,7 @@ def move_unit_instance(request, pk, row, column):
         "role.is_logistics": lambda request, kwargs: get_object_and_related_with_cache_or_404(request, UnitInstance, pk=kwargs["pk"]).unit.is_logistic,
     }
 ])
+@transaction.atomic
 def use_attack(request, pk, attack_name):
     attacker_id = request.data.get("attacker_id")
     target_id = request.data.get("target_id")

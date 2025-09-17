@@ -1,9 +1,10 @@
+from django.shortcuts import get_object_or_404
+from django.db import transaction
 from rest_framework import status
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from auth.authentication import CookieJWTAuthentication
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
-from django.shortcuts import get_object_or_404
 from wargamelogic.models.static import (
     Team, Role, Unit, Tile
 )
@@ -177,6 +178,7 @@ def create_role_instance(request):
         'team_instance.team.name': lambda request, kwargs: request.data.get("team_name"),
     }
 ])
+@transaction.atomic
 def create_unit_instance(request):
     join_code = request.data.get("join_code")
     team_name = request.data.get("team_name")
