@@ -16,7 +16,7 @@ interface InteractiveMapProps {
 
 const BASE_CELL_SIZE = 80;
 const MIN_ZOOM = 0.5;
-const MAX_ZOOM = 5;
+const MAX_ZOOM = 50;
 
 // NEW: use the finest cell size as a canonical world-grid cell (80 / 4 = 20)
 const MAX_GRID_LEVEL = 2;

@@ -26,7 +26,7 @@ export default function MainMapPage() {
 
     const joinCode = params.join_code as string;
 
-    const [mapSrc, setMapSrc] = useState<string>('/maps/taiwan_middle_clean.png');
+    const [mapSrc, setMapSrc] = useState<string>('/maps/BasePhilippines.png');
     const defaultState: Record<string, boolean> = {
         Air: true,
         Ground: true,

@@ -44,7 +44,9 @@ export default function MapSelector({ onMapChange, initialMap }: MapSelectorProp
                         className="w-full p-2 bg-neutral-800 text-white rounded"
                     >
                         <option value="">-- Select a map --</option>
+                        <option value="/maps/BasePhilippines.png">Philippines PNG</option>
                         <option value="/maps/taiwan_middle_clean.png">Taiwan (Clean)</option>
+                        <option value="/maps/BasePhilippines.svg">Philippines SVG</option>
                     </select>
                 </div>
             )}
