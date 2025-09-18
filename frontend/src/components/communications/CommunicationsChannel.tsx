@@ -190,7 +190,7 @@ export default function CommunicationsChannel({
                     <button
                         type="submit"
                         disabled={sendingMessage || input.length > MAX_MESSAGE_LENGTH}
-                        className={`px-4 py-2 rounded-lg font-medium transition 
+                        className={`px-4 py-2 rounded-lg font-medium 
                             ${sendingMessage || input.length > MAX_MESSAGE_LENGTH
                                 ? "bg-gray-600 cursor-not-allowed text-gray-300"
                                 : "bg-green-600 cursor-pointer hover:bg-green-500 text-white"

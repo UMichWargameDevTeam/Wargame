@@ -8,7 +8,7 @@ interface GameMasterMenuProps {
     joinCode: string;
     socketRef: RefObject<WebSocket | null>;
     socketReady: boolean;
-    roleInstance: RoleInstance;
+    roleInstance: RoleInstance | null;
 }
 
 export default function GamemasterMenu({ joinCode, socketRef, socketReady, roleInstance }: GameMasterMenuProps) {
@@ -19,13 +19,13 @@ export default function GamemasterMenu({ joinCode, socketRef, socketReady, roleI
     const [open, setOpen] = useState<boolean>(true);
 
     const handleDeleteGame = async () => {
-        if (!socketReady || !socketRef.current) return;
+        if (!joinCode || !socketReady || !socketRef.current || !roleInstance) return;
         if (!confirm("Are you sure you want to delete this game?\nThis is irreversible.")) return;
         const socket = socketRef.current;
 
         try {
             setDeletingGame(true);
-            const res = await authedFetch(`/api/game-instances/delete/${roleInstance.team_instance.game_instance.join_code}/`, {
+            const res = await authedFetch(`/api/game-instances/delete/${roleInstance?.team_instance.game_instance.join_code}/`, {
                 method: 'DELETE'
             });
 
@@ -69,9 +69,9 @@ export default function GamemasterMenu({ joinCode, socketRef, socketReady, roleI
                 // Delete Game
                 <div>
                     <button
-                        onClick={handleDeleteGame}
+                        onClick={() => handleDeleteGame()}
                         disabled={deletingGame}
-                        className={`px-3 py-2 rounded transition
+                        className={`px-3 py-2 rounded  
                             ${deletingGame
                                 ? "bg-gray-500 cursor-not-allowed"
                                 : "bg-red-600 cursor-pointer hover:bg-red-500"

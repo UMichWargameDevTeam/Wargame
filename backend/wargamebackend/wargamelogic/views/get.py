@@ -12,7 +12,7 @@ from wargamelogic.models.dynamic import (
 )
 from wargamelogic.serializers import (
     TeamSerializer, RoleSerializer, UnitSerializer, AttackSerializer, AbilitySerializer, LandmarkSerializer, TileSerializer,
-    TeamInstanceSerializer, RoleInstanceSerializer, TeamInstanceRolePointsSerializer, UnitInstanceSerializer, LandmarkInstanceSerializer,
+    GameInstanceSerializer, TeamInstanceSerializer, RoleInstanceSerializer, TeamInstanceRolePointsSerializer, UnitInstanceSerializer, LandmarkInstanceSerializer,
 )
 from auth.authorization import (
     require_role_instance, require_any_role_instance
@@ -102,6 +102,13 @@ def get_tile_by_coords(request, row, column):
     return Response(serializer.data)
 
 # GET dynamic table data
+@api_view(['GET'])
+@authentication_classes([CookieJWTAuthentication])
+@permission_classes([IsAuthenticated])
+def get_game_by_join_code(request, join_code):
+    game_instance = get_object_or_404(GameInstance, join_code=join_code)
+    serializer = GameInstanceSerializer(game_instance)
+    return Response(serializer.data)
 
 @api_view(['GET'])
 @authentication_classes([CookieJWTAuthentication])
@@ -222,9 +229,8 @@ def get_game_unit_instances_by_team_name_and_branch(request, join_code, team_nam
 @api_view(['GET'])
 @authentication_classes([CookieJWTAuthentication])
 @permission_classes([IsAuthenticated])
-def get_game_tiles_for_landmark_instance_by_id(request, join_code, pk):
-    game_instance = get_object_or_404(GameInstance, join_code=join_code)
-    landmark_instance = get_object_or_404(LandmarkInstance, pk=pk, game_instance=game_instance)
+def get_game_tiles_for_landmark_instance_by_id(request, pk):
+    landmark_instance = get_object_or_404(LandmarkInstance, pk=pk)
     landmark_instance_tiles = get_list_or_404(LandmarkInstanceTile, landmark_instance=landmark_instance)
     tiles = [lit.tile for lit in landmark_instance_tiles]
     serializer = TileSerializer(tiles, many=True)

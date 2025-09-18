@@ -200,11 +200,11 @@ export default function Communications({ socketRef, socketReady, viewerRoleInsta
         const viewerTeamName = viewerRoleInstance.team_instance.team.name;
         const viewerRoleName = viewerRoleInstance.role.name;
 
-        if (viewerTeamName == senderTeamName && viewerRoleName == senderRoleName) {
+        if (viewerTeamName === senderTeamName && viewerRoleName === senderRoleName) {
             return [recipientTeamName, recipientRoleName];
         }
 
-        if (viewerTeamName == recipientTeamName && viewerRoleName == recipientRoleName) {
+        if (viewerTeamName === recipientTeamName && viewerRoleName === recipientRoleName) {
             return [senderTeamName, senderRoleName];
         }
 

@@ -28,7 +28,6 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
     const containerRef = useRef<HTMLDivElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const imageRef = useRef<HTMLImageElement | null>(null);
-    const addedUnitsMessageListener = useRef<boolean>(false);
 
     const [zoom, setZoom] = useState<number>(1);
     const [offset, setOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
@@ -37,6 +36,8 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
     const [elementDragId, setElementDragId] = useState<number>(0); // id of unit being dragged (toggle)
     const [showGrid, setShowGrid] = useState<boolean>(true);
+
+    const addedUnitsMessageListener = useRef<boolean>(false);
 
     useEffect(() => {
         const savedZoom = sessionStorage.getItem('map_zoom');
@@ -318,12 +319,12 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
                 }
 
                 if (socket.readyState === WebSocket.OPEN) {
-                    const unitInstance: UnitInstance = data;
+                    const updatedUnitInstance: UnitInstance = data;
 
                     socket.send(JSON.stringify({
                         channel: "units",
                         action: "move",
-                        data: unitInstance
+                        data: updatedUnitInstance
                     }));
                 }
             } catch (err: unknown) {
@@ -350,10 +351,13 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
         <div
             className="relative w-full h-full overflow-hidden"
             ref={containerRef}
-            onClick={handleBackgroundClick}
+            onClick={(e) => handleBackgroundClick(e)}
         >
             <button
-                onClick={() => { setShowGrid(!showGrid); draw(); }}
+                onClick={() => {
+                    setShowGrid(!showGrid);
+                    draw();
+                }}
                 className="absolute top-2 left-2 z-50 bg-neutral-700 text-white px-3 py-1 rounded cursor-pointer hover:bg-neutral-600"
             >Toggle Grid</button>
 

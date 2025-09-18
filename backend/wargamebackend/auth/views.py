@@ -25,6 +25,12 @@ def csrf_token(request):
 
 
 class RegisterView(APIView):
+    """
+    data: {
+        username: string,
+        boolean: string
+    }
+    """
     authentication_classes = []
     permission_classes = [AllowAny]
 

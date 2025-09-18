@@ -12,14 +12,113 @@ from wargamelogic.models.dynamic import (
     TeamInstanceRolePoints, UnitInstance
 )
 from wargamelogic.serializers import (
-    TeamInstanceRolePointsSerializer, UnitInstanceSerializer
+    GameInstanceSerializer, RoleInstanceSerializer, TeamInstanceRolePointsSerializer, UnitInstanceSerializer
 )
 from auth.authorization import (
-    require_any_role_instance, get_object_and_related_with_cache_or_404, get_user_role_instances
+    require_role_instance, require_any_role_instance, get_object_and_related_with_cache_or_404, get_user_role_instances
 )
-
 from ..gamelogic.objects import *
 from ..gamelogic.attack import *
+
+
+@api_view(['PATCH'])
+@authentication_classes([CookieJWTAuthentication])
+@permission_classes([IsAuthenticated])
+@require_role_instance({
+    'id': lambda request, kwargs: kwargs['pk']
+})
+def toggle_ready(request, pk):
+    """
+    body: {
+        ready: boolean
+    }
+    """
+    ready = request.data.get("ready")
+
+    if not isinstance(ready, bool):
+        return Response({"detail": "missing boolean 'ready' in payload"}, status=status.HTTP_400_BAD_REQUEST)
+
+    role_instance = get_object_and_related_with_cache_or_404(
+        request,
+        RoleInstance, 
+        pk=pk
+    )
+
+    role_instance.ready = ready
+    role_instance.save(update_fields=['ready'])
+
+    serializer = RoleInstanceSerializer(role_instance)
+    return Response(serializer.data)
+
+
+@api_view(['PATCH'])
+@authentication_classes([CookieJWTAuthentication])
+@permission_classes([IsAuthenticated])
+@require_role_instance({
+    "team_instance.game_instance.join_code": lambda request, kwargs: kwargs["join_code"],
+    "role.name": "Gamemaster",
+})
+def set_turn(request, join_code):
+    """
+    body: {
+        turn: int,
+        turn_finish_time: int
+    }
+    """
+    turn = request.data.get("turn")
+    turn_finish_time = request.data.get("turn_finish_time")
+
+    if not isinstance(turn, int) or not isinstance(turn_finish_time, int):
+        return Response({"detail": "missing integer 'turn' or integer 'turn_finish_time' in payload"}, status=status.HTTP_400_BAD_REQUEST)
+
+    game_instance = get_object_and_related_with_cache_or_404(
+        request,
+        GameInstance, 
+        join_code=join_code
+    )
+
+    game_instance.turn = turn
+    game_instance.turn_finish_time = turn_finish_time
+    game_instance.save(update_fields=['turn', 'turn_finish_time'])
+
+    RoleInstance.objects.filter(
+        team_instance__game_instance__join_code=join_code
+    ).update(ready=False)
+
+    serializer = GameInstanceSerializer(game_instance)
+    return Response(serializer.data)
+
+
+@api_view(['PATCH'])
+@authentication_classes([CookieJWTAuthentication])
+@permission_classes([IsAuthenticated])
+@require_role_instance({
+    "team_instance.game_instance.join_code": lambda request, kwargs: kwargs["join_code"],
+    "role.name": "Gamemaster",
+})
+def set_timer(request, join_code):
+    """
+    body: {
+        turn_finish_time: BigInt | None
+    }
+    """
+    turn_finish_time = request.data.get("turn_finish_time")
+
+    if turn_finish_time is not None and not isinstance(turn_finish_time, int):
+        return Response({"detail": "missing integer 'turn_finish_time' in payload"}, status=status.HTTP_400_BAD_REQUEST)
+
+    game_instance = get_object_and_related_with_cache_or_404(
+        request,
+        GameInstance, 
+        join_code=join_code
+    )
+
+    game_instance.turn_finish_time = turn_finish_time
+    game_instance.save(update_fields=['turn_finish_time'])
+
+    serializer = GameInstanceSerializer(game_instance)
+    return Response(serializer.data)
+
 
 @api_view(['PATCH'])
 @authentication_classes([CookieJWTAuthentication])
@@ -49,6 +148,18 @@ from ..gamelogic.attack import *
 ])
 @transaction.atomic
 def send_points(request, join_code, team_name, role_name):
+    """
+    body: {
+        transfers: [
+            {
+                team_name: string,
+                role_name: string,
+                num_supply_points: float
+            },
+            ...
+        ]
+    }
+    """
     sender_team_instance_role_points = get_object_and_related_with_cache_or_404(
         request,
         TeamInstanceRolePoints, 
@@ -129,7 +240,7 @@ def move_unit_instance(request, pk, row, column):
     unit_instance.save()
 
     serializer = UnitInstanceSerializer(unit_instance)
-    return Response(serializer.data, status=status.HTTP_200_OK)
+    return Response(serializer.data)
 
 
 @api_view(['PATCH'])
@@ -149,6 +260,13 @@ def move_unit_instance(request, pk, row, column):
 ])
 @transaction.atomic
 def use_attack(request, pk, attack_name):
+    """
+    body: {
+        attacker_id: int,
+        target_id: int,
+        attack_name: string
+    }
+    """
     attacker_id = request.data.get("attacker_id")
     target_id = request.data.get("target_id")
     attack_name = request.data.get("attack_name")

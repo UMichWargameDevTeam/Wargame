@@ -14,13 +14,10 @@ import InteractiveMap from '@/components/InteractiveMap';
 import JTFMenu from '@/components/JTFMenu';
 import GamemasterMenu from '@/components/GamemasterMenu';
 import UnitAttackDisplay from '@/components/UnitAttackDisplay';
-import Timer from '@/components/Timer';
-import Ready from '@/components/Ready';
-import TurnSystem from '@/components/TurnSystem';
-import TimerControls from '@/components/TimerControls';
+import TurnSystem from '@/components/turnSystem/TurnSystem';
 import UsersList from '@/components/UsersList';
 import Communications from '@/components/communications/Communications';
-import { Team, Unit, RoleInstance, UnitInstance, Attack } from '@/lib/Types'
+import { Team, Unit, RoleInstance, UnitInstance, Attack, GameInstance } from '@/lib/Types'
 
 
 export default function MainMapPage() {
@@ -55,7 +52,8 @@ export default function MainMapPage() {
     const [validationError, setValidationError] = useState<string | null>(null);
 
     const [showAttack, setShowAttack] = useState(false);
-    const [timeRemaining, setTimeRemaining] = useState<number>(600);
+    const [gameInstance, setGameInstance] = useState<GameInstance | null>(null);
+
     useEffect(() => {
 
         const validateAccess = async () => {
@@ -65,8 +63,11 @@ export default function MainMapPage() {
                 if (!res.ok) {
                     throw new Error(data.error || data.detail || "Access denied");
                 }
-                sessionStorage.setItem('role_instance', JSON.stringify(data));
-                setRoleInstance(data);
+
+                const roleInstanceData: RoleInstance = data;
+                sessionStorage.setItem('role_instance', JSON.stringify(roleInstanceData));
+                setRoleInstance(roleInstanceData);
+                setGameInstance(roleInstanceData.team_instance.game_instance);
 
                 return data;
             } catch (err: unknown) {
@@ -85,7 +86,9 @@ export default function MainMapPage() {
             }
 
             const storedUnits = sessionStorage.getItem('unitInstanceDisplay');
-            if (storedUnits) setSelectedUnitInstances(prev => ({ ...prev, ...JSON.parse(storedUnits) }));
+            if (storedUnits) {
+                setSelectedUnitInstances(prev => ({ ...prev, ...JSON.parse(storedUnits) }));
+            }
 
             // fetch data in parallel
             await Promise.all([
@@ -194,56 +197,22 @@ export default function MainMapPage() {
             {/* Map + Header + Footer */}
             <div className="flex flex-col w-[70%] h-full space-y-4">
                 {/* Header */}
-                {(roleInstance?.role.name != "Gamemaster") && (
-                    <div className="flex space-x-4 w-full items-stretch overflow-x-auto overflow-y-hidden">
-                        <div className="flex-grow">
-                            <CommandersIntent roleInstance={roleInstance} />
-                        </div>
-                        <div className="flex-shrink-0">
-                            <Timer
-                                socketRef={socketRef}
-                                socketReady={socketReady}
-                                timer={timeRemaining}
-                                setTimer={setTimeRemaining}
-                            />
-                        </div>
-                        <TurnSystem
-                            socket={socketRef.current}
-                            socketReady={socketReady}
-                            roleInstance={roleInstance}
-                            roleInstances={roleInstances}
-                            timer={timeRemaining} // pass from your Timer
-                        />
+                <div className="flex w-full space-x-2">
+                    <TurnSystem
+                        joinCode={joinCode}
+                        socketRef={socketRef}
+                        socketReady={socketReady}
+                        roleInstance={roleInstance}
+                        gameInstance={gameInstance}
+                        setGameInstance={setGameInstance}
+                        roleInstances={roleInstances}
+                        setRoleInstances={setRoleInstances}
+                    />
+                    {(roleInstance?.role.name !== "Gamemaster") && (
+                        <CommandersIntent roleInstance={roleInstance} />
+                    )}
+                </div>
 
-                        <div className="flex-shrink-0">
-                            <Ready socket={socketRef.current} socketReady={socketReady} roleInstance={roleInstance} />
-                        </div>
-                    </div>
-                )}
-                {/* Gamemaster Header */}
-                {(roleInstance?.role.name == "Gamemaster") && (
-                    <div className="flex space-x-4 w-full items-stretch">
-                        <div className="flex-shrink-0">
-                            <Timer
-                                socketRef={socketRef}
-                                socketReady={socketReady}
-                                timer={timeRemaining}
-                                setTimer={setTimeRemaining}
-                            />
-                        </div>
-                        <div className="flex-shrink-0">
-                            <TimerControls socketRef={socketRef} socketReady={socketReady} />
-                        </div>
-                        <TurnSystem
-                            socket={socketRef.current}
-                            socketReady={socketReady}
-                            roleInstance={roleInstance}
-                            roleInstances={roleInstances}
-                            timer={timeRemaining} // pass from your Timer
-                        />
-
-                    </div>
-                )}
                 <div className="w-full h-full bg-neutral-800 rounded-lg overflow-hidden">
                     <InteractiveMap
                         socketRef={socketRef}
@@ -278,7 +247,7 @@ export default function MainMapPage() {
 
                         {/* Attack popup menu */}
                         {showAttack && (
-                            <div className="absolute bottom-full left-0 mb-0 rounded shadow-lg min-w-[550px]">
+                            <div className="absolute bottom-full left-0 mb-0 rounded min-w-[550px]">
                                 <UnitAttackDisplay
                                     open={showAttack}
                                     onClose={() => setShowAttack(false)}
@@ -291,7 +260,6 @@ export default function MainMapPage() {
                         )}
                     </div>
                 )}
-
             </div>
 
             {/* Sidebar */}
@@ -385,7 +353,7 @@ export default function MainMapPage() {
                     </>
                 )}
                 {/* Menu for Ambassador */}
-                {roleInstance?.role.name == "Ambassador" && (
+                {roleInstance?.role.name === "Ambassador" && (
                     <>
                         <UsersList
                             socketRef={socketRef}
@@ -409,7 +377,7 @@ export default function MainMapPage() {
                     </>
                 )}
                 {/* Menu for Combatant Commander */}
-                {roleInstance?.role.name == "Combatant Commander" && (
+                {roleInstance?.role.name === "Combatant Commander" && (
                     <>
                         <UsersList
                             socketRef={socketRef}
@@ -442,7 +410,7 @@ export default function MainMapPage() {
                     </>
                 )}
                 {/* Menu for Gamemaster */}
-                {roleInstance?.role.name == "Gamemaster" && (
+                {roleInstance?.role.name === "Gamemaster" && (
                     <>
                         <UsersList
                             socketRef={socketRef}
