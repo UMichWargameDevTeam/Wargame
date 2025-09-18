@@ -7,6 +7,7 @@ import TimerControls from '@/components/turnSystem/TimerControls';
 import Ready from '@/components/turnSystem/Ready';
 import { GameInstance, RoleInstance } from "@/lib/Types";
 
+
 interface TurnSystemProps {
     joinCode: string;
     socketRef: RefObject<WebSocket | null>;
@@ -16,15 +17,16 @@ interface TurnSystemProps {
     setGameInstance: React.Dispatch<React.SetStateAction<GameInstance | null>>;
     roleInstances: RoleInstance[];
     setRoleInstances: React.Dispatch<React.SetStateAction<RoleInstance[]>>;
-}
+};
 
 export default function TurnSystem({ joinCode, socketRef, socketReady, roleInstance, gameInstance, setGameInstance, roleInstances, setRoleInstances }: TurnSystemProps) {
     const turnDuration = 600;
 
     const [timer, setTimer] = useState<number>(turnDuration);
+
     const addedTurnMessageListener = useRef<boolean>(false);
 
-    // Listen for WebSocket updates
+    // WebSocket setup
     useEffect(() => {
         if (!socketReady || !socketRef.current || addedTurnMessageListener.current) return;
         addedTurnMessageListener.current = true;
@@ -32,12 +34,15 @@ export default function TurnSystem({ joinCode, socketRef, socketReady, roleInsta
 
         const handleTurnMessage = (event: MessageEvent) => {
             const msg = JSON.parse(event.data);
+
             if (msg.channel === "turn") {
                 switch (msg.action) {
+
                     case "set":
                         setGameInstance(msg.data);
                         setRoleInstances(prev => prev.map(r => ({ ...r, ready: false })));
                         break;
+
                     case "set_turn_finish_time":
                         setGameInstance(msg.data);
                         break;
@@ -53,11 +58,9 @@ export default function TurnSystem({ joinCode, socketRef, socketReady, roleInsta
     }, [socketRef, socketReady, setGameInstance, setRoleInstances]);
 
     return (
-        <div className="flex items-center gap-4 rounded-lg px-6 py-3 bg-neutral-800 text-white text-lg font-bold whitespace-nowrap">
-
+        <div className="flex items-center gap-4 rounded-lg px-6 py-3 bg-neutral-800 text-white text-lg font-semibold whitespace-nowrap">
             <div className="flex items-center gap-2">
                 <p>Turn {gameInstance?.turn || 0}</p>
-
                 {roleInstance?.role.name === "Gamemaster" && (
                     <TurnControls
                         joinCode={joinCode}
@@ -71,7 +74,6 @@ export default function TurnSystem({ joinCode, socketRef, socketReady, roleInsta
                     />
                 )}
             </div>
-
             <div className="flex items-center gap-2">
                 <Timer
                     gameInstance={gameInstance}

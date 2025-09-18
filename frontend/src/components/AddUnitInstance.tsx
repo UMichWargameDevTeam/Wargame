@@ -4,6 +4,7 @@ import { useState, RefObject } from 'react';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 import { Team, Unit, RoleInstance, UnitInstance } from '@/lib/Types';
 
+
 interface AddUnitInstanceProps {
     joinCode: string;
     socketRef: RefObject<WebSocket | null>;
@@ -11,12 +12,12 @@ interface AddUnitInstanceProps {
     roleInstance: RoleInstance | null;
     units: Unit[];
     teams: Team[];
-}
+};
 
 export default function AddUnitInstance({ joinCode, socketRef, socketReady, roleInstance, units, teams }: AddUnitInstanceProps) {
     const authedFetch = useAuthedFetch();
+
     const [open, setOpen] = useState<boolean>(true);
-    
     const [unitName, setUnitName] = useState<string>('');
     const [teamName, setTeamName] = useState<string>('');
     const [row, setRow] = useState<string>('');
@@ -26,9 +27,10 @@ export default function AddUnitInstance({ joinCode, socketRef, socketReady, role
     const handleAddUnitInstance = async () => {
         if (!joinCode || !socketReady || !socketRef.current || !roleInstance) return;
         const socket = socketRef.current;
-    
+
         try {
             setCreatingUnitInstance(true);
+
             const res = await authedFetch(`/api/unit-instances/create/`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -41,6 +43,7 @@ export default function AddUnitInstance({ joinCode, socketRef, socketReady, role
                 })
             });
             const data = await res.json();
+
             if (!res.ok) {
                 throw new Error(data.error || data.detail || 'Failed to add unit instance.');
             }
@@ -87,7 +90,6 @@ export default function AddUnitInstance({ joinCode, socketRef, socketReady, role
                         timestamp: Date.now(),
                     }
                 }));
-
             }
 
             setUnitName('');
@@ -97,12 +99,15 @@ export default function AddUnitInstance({ joinCode, socketRef, socketReady, role
 
         } catch (err: unknown) {
             console.error(err);
+
             if (err instanceof Error) {
                 alert(err.message);
             }
+
         } finally {
             setCreatingUnitInstance(false);
         }
+
     };
 
     return (
@@ -116,7 +121,6 @@ export default function AddUnitInstance({ joinCode, socketRef, socketReady, role
                     {open ? '-' : '+'}
                 </button>
             </div>
-
             {open && (
                 <form
                     onSubmit={(e) => {
@@ -141,7 +145,6 @@ export default function AddUnitInstance({ joinCode, socketRef, socketReady, role
                                 ))}
                             </select>
                         </div>
-
                         <div>
                             <label className="block text-sm text-gray-300 mb-1">Team</label>
                             <select
@@ -158,7 +161,6 @@ export default function AddUnitInstance({ joinCode, socketRef, socketReady, role
                             </select>
                         </div>
                     </div>
-
                     {/* Row + Column Inputs */}
                     <div className="grid grid-cols-2 gap-4 mb-4">
                         <div>
@@ -182,12 +184,11 @@ export default function AddUnitInstance({ joinCode, socketRef, socketReady, role
                             />
                         </div>
                     </div>
-
                     {/* Add Button */}
                     <button
                         type="submit"
                         disabled={creatingUnitInstance}
-                        className={`w-full py-2 rounded-lg font-medium 
+                        className={`w-full py-2 rounded-lg font-medium
                             ${creatingUnitInstance
                                 ? "bg-gray-600 cursor-not-allowed text-gray-300"
                                 : "bg-green-600 cursor-pointer hover:bg-green-500 text-white"

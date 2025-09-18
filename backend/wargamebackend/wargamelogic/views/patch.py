@@ -14,11 +14,11 @@ from wargamelogic.models.dynamic import (
 from wargamelogic.serializers import (
     GameInstanceSerializer, RoleInstanceSerializer, TeamInstanceRolePointsSerializer, UnitInstanceSerializer
 )
+from wargamelogic.gamelogic.objects import *
+from wargamelogic.gamelogic.attack import *
 from auth.authorization import (
     require_role_instance, require_any_role_instance, get_object_and_related_with_cache_or_404, get_user_role_instances
 )
-from ..gamelogic.objects import *
-from ..gamelogic.attack import *
 
 
 @api_view(['PATCH'])
@@ -40,7 +40,7 @@ def toggle_ready(request, pk):
 
     role_instance = get_object_and_related_with_cache_or_404(
         request,
-        RoleInstance, 
+        RoleInstance,
         pk=pk
     )
 
@@ -49,7 +49,6 @@ def toggle_ready(request, pk):
 
     serializer = RoleInstanceSerializer(role_instance)
     return Response(serializer.data)
-
 
 @api_view(['PATCH'])
 @authentication_classes([CookieJWTAuthentication])
@@ -73,7 +72,7 @@ def set_turn(request, join_code):
 
     game_instance = get_object_and_related_with_cache_or_404(
         request,
-        GameInstance, 
+        GameInstance,
         join_code=join_code
     )
 
@@ -87,7 +86,6 @@ def set_turn(request, join_code):
 
     serializer = GameInstanceSerializer(game_instance)
     return Response(serializer.data)
-
 
 @api_view(['PATCH'])
 @authentication_classes([CookieJWTAuthentication])
@@ -109,7 +107,7 @@ def set_timer(request, join_code):
 
     game_instance = get_object_and_related_with_cache_or_404(
         request,
-        GameInstance, 
+        GameInstance,
         join_code=join_code
     )
 
@@ -119,7 +117,6 @@ def set_timer(request, join_code):
     serializer = GameInstanceSerializer(game_instance)
     return Response(serializer.data)
 
-
 @api_view(['PATCH'])
 @authentication_classes([CookieJWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -127,10 +124,10 @@ def set_timer(request, join_code):
     {
         "team_instance.game_instance": lambda request, kwargs: get_object_and_related_with_cache_or_404(
             request,
-            TeamInstanceRolePoints, 
+            TeamInstanceRolePoints,
             team_instance__game_instance__join_code=kwargs["join_code"],
             team_instance__team__name=kwargs["team_name"],
-            role__name=kwargs["role_name"], 
+            role__name=kwargs["role_name"],
             select_related=['team_instance__game_instance', 'role']
         ).team_instance.game_instance,
         "role.name": "Gamemaster",
@@ -138,10 +135,10 @@ def set_timer(request, join_code):
     {
         "team_instance": lambda request, kwargs: get_object_and_related_with_cache_or_404(
             request,
-            TeamInstanceRolePoints, 
+            TeamInstanceRolePoints,
             team_instance__game_instance__join_code=kwargs["join_code"],
             team_instance__team__name=kwargs["team_name"],
-            role__name=kwargs["role_name"], 
+            role__name=kwargs["role_name"],
             select_related=['team_instance__game_instance', 'role']
         ).team_instance
     }
@@ -162,7 +159,7 @@ def send_points(request, join_code, team_name, role_name):
     """
     sender_team_instance_role_points = get_object_and_related_with_cache_or_404(
         request,
-        TeamInstanceRolePoints, 
+        TeamInstanceRolePoints,
         team_instance__game_instance__join_code=join_code,
         team_instance__team__name=team_name,
         role__name=role_name,
@@ -170,6 +167,7 @@ def send_points(request, join_code, team_name, role_name):
     )
 
     transfers = request.data.get("transfers", [])
+
     if not isinstance(transfers, list) or not transfers:
         return Response({"detail": "Invalid transfers payload"}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -182,7 +180,7 @@ def send_points(request, join_code, team_name, role_name):
 
         if not recipient_team_name or not recipient_role_name or num_supply_points < 0:
             return Response({"error": f"Invalid transfer: {transfer}"}, status=status.HTTP_400_BAD_REQUEST)
-        
+
         total_supply_points += num_supply_points
 
     if sender_team_instance_role_points.supply_points < total_supply_points:
@@ -205,7 +203,7 @@ def send_points(request, join_code, team_name, role_name):
         recipient.supply_points += num_supply_points
         recipient.save(update_fields=["supply_points"])
         recipients.append(recipient)
-    
+
     sender_team_instance_role_points.supply_points -= total_supply_points
     sender_team_instance_role_points.save(update_fields=["supply_points"])
 
@@ -216,7 +214,6 @@ def send_points(request, join_code, team_name, role_name):
         recipient_data["supply_points"] = transfer["supply_points"]
 
     return Response(data, status=status.HTTP_200_OK)
-
 
 @api_view(['PATCH'])
 @authentication_classes([CookieJWTAuthentication])
@@ -230,7 +227,7 @@ def send_points(request, join_code, team_name, role_name):
         "team_instance": lambda request, kwargs: get_object_and_related_with_cache_or_404(request, UnitInstance, pk=kwargs["pk"]).team_instance,
         "role.branch": lambda request, kwargs: get_object_and_related_with_cache_or_404(request, UnitInstance, pk=kwargs["pk"]).unit.branches.all(),
         "role.is_operations": lambda request, kwargs: not get_object_and_related_with_cache_or_404(request, UnitInstance, pk=kwargs["pk"]).unit.is_logistic,
-        "role.is_logistics": lambda request, kwargs: get_object_and_related_with_cache_or_404(request, UnitInstance, pk=kwargs["pk"]).unit.is_logistic 
+        "role.is_logistics": lambda request, kwargs: get_object_and_related_with_cache_or_404(request, UnitInstance, pk=kwargs["pk"]).unit.is_logistic
     }
 ])
 def move_unit_instance(request, pk, row, column):
@@ -241,7 +238,6 @@ def move_unit_instance(request, pk, row, column):
 
     serializer = UnitInstanceSerializer(unit_instance)
     return Response(serializer.data)
-
 
 @api_view(['PATCH'])
 @authentication_classes([CookieJWTAuthentication])
@@ -286,6 +282,7 @@ def use_attack(request, pk, attack_name):
         (ri for ri in role_instances if ri.team_instance_id == attacker_instance.team_instance_id),
         None
     )
+
     if role_instance is None:
         return Response({"error": "You do not control this unit."}, status=status.HTTP_403_FORBIDDEN)
 
@@ -300,6 +297,7 @@ def use_attack(request, pk, attack_name):
     attacker = GameUnit.from_models(attacker_instance, attacker_instance.unit)
 
     success, message = conduct_attack(attacker, target, atk)
+
     if not success:
         return Response({"error": message}, status=status.HTTP_400_BAD_REQUEST)
 

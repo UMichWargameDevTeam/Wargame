@@ -2,15 +2,15 @@
 
 import { Message, RoleInstance } from '@/lib/Types';
 
+
 interface CommunicationsMessageProps {
     recipientTeamName: string;
     viewerRoleInstance: RoleInstance;
     message: Message;
     previousMessage: Message | null;
-}
+};
 
 export default function CommunicationsMessage({ recipientTeamName, viewerRoleInstance, message, previousMessage }: CommunicationsMessageProps) {
-
     const timestampText = new Date(message.timestamp).toLocaleTimeString([], {
         hour: '2-digit',
         minute: '2-digit',
@@ -37,8 +37,8 @@ export default function CommunicationsMessage({ recipientTeamName, viewerRoleIns
 
     return (
         <div
-            className={`flex flex-col w-full 
-                ${isSameSenderAsPrevious ? 'mt-1' : 'mt-3'} 
+            className={`flex flex-col w-full
+                ${isSameSenderAsPrevious ? 'mt-1' : 'mt-3'}
                 ${isViewerMessage ? 'items-end' : 'items-start'}
             `}
         >
@@ -48,9 +48,8 @@ export default function CommunicationsMessage({ recipientTeamName, viewerRoleIns
                     <p className="font-semibold">{message.sender_role_instance.user.username}</p>
                 </div>
             )}
-
             <div
-                className={`flex items-end gap-2 w-full 
+                className={`flex items-end gap-2 w-full
                     ${isViewerMessage
                         ? 'justify-end'
                         : 'justify-start'
@@ -62,9 +61,8 @@ export default function CommunicationsMessage({ recipientTeamName, viewerRoleIns
                         {timestampText}
                     </span>
                 )}
-
                 <div
-                    className={`px-3 py-2 rounded-lg break-words whitespace-pre-wrap flex-shrink 
+                    className={`px-3 py-2 rounded-lg break-words whitespace-pre-wrap flex-shrink
                         ${isViewerMessage
                             ? 'bg-blue-600 text-white rounded-br-none'
                             : 'bg-neutral-600 text-white rounded-bl-none'
@@ -74,7 +72,6 @@ export default function CommunicationsMessage({ recipientTeamName, viewerRoleIns
                 >
                     {message.text}
                 </div>
-
                 {!isViewerMessage && (
                     <span className="text-xs text-gray-400 flex-shrink-0">
                         {timestampText}

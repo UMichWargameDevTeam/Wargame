@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
-import { WS_URL, getSessionStorageOrFetch } from '@/lib/utils';
 import MapSelector from '@/components/MapSelector';
 import UnitInstanceDisplay from '@/components/UnitInstanceDisplay';
 import AvailableUnitInstances from '@/components/AvailableUnitInstances';
@@ -17,6 +16,7 @@ import UnitAttackDisplay from '@/components/UnitAttackDisplay';
 import TurnSystem from '@/components/turnSystem/TurnSystem';
 import UsersList from '@/components/UsersList';
 import Communications from '@/components/communications/Communications';
+import { WS_URL, getSessionStorageOrFetch } from '@/lib/utils';
 import { Team, Unit, RoleInstance, UnitInstance, Attack, GameInstance } from '@/lib/Types'
 
 
@@ -25,41 +25,35 @@ export default function MainMapPage() {
     const authedFetch = useAuthedFetch();
 
     const joinCode = params.join_code as string;
-
-    const [mapSrc, setMapSrc] = useState<string>('/maps/taiwan_middle_clean.png');
     const defaultState: Record<string, boolean> = {
         Air: true,
         Ground: true,
         Sea: true,
     };
-    const [selectedUnitInstances, setSelectedUnitInstances] = useState<Record<string, boolean>>(defaultState);
 
     const socketRef = useRef<WebSocket | null>(null);
     const [socketReady, setSocketReady] = useState<boolean>(false);
 
+    const [mapSrc, setMapSrc] = useState<string>('/maps/taiwan_middle_clean.png');
+    const [selectedUnitInstances, setSelectedUnitInstances] = useState<Record<string, boolean>>(defaultState);
     const [teams, setTeams] = useState<Team[]>([]);
     const [units, setUnits] = useState<Unit[]>([]);
     const [attacks, setAttacks] = useState<Attack[]>([]);
     // const [abilities, setAbilities] = useState<Ability[]>([]);
-
-    // data about this user's role
     const [roleInstance, setRoleInstance] = useState<RoleInstance | null>(null);
     const [teamInstanceRolePoints, setTeamInstanceRolePoints] = useState<number>(0);
-    // data about roles of all users in this game
     const [roleInstances, setRoleInstances] = useState<RoleInstance[]>([]);
     const [unitInstances, setUnitInstances] = useState<UnitInstance[]>([]);
-
     const [validationError, setValidationError] = useState<string | null>(null);
-
     const [showAttack, setShowAttack] = useState(false);
     const [gameInstance, setGameInstance] = useState<GameInstance | null>(null);
 
     useEffect(() => {
-
         const validateAccess = async () => {
             try {
                 const res = await authedFetch(`/api/game-instances/${joinCode}/validate-map-access/`);
                 const data = await res.json();
+
                 if (!res.ok) {
                     throw new Error(data.error || data.detail || "Access denied");
                 }
@@ -70,22 +64,27 @@ export default function MainMapPage() {
                 setGameInstance(roleInstanceData.team_instance.game_instance);
 
                 return data;
+
             } catch (err: unknown) {
                 console.error(err);
+
                 if (err instanceof Error) {
                     setValidationError(err.message);
                 }
+
                 return null;
             }
         }
 
         const fetchData = async (roleInstance: RoleInstance) => {
             const storedMap = sessionStorage.getItem('mapSrc');
+
             if (storedMap) {
                 setMapSrc(storedMap);
             }
 
             const storedUnits = sessionStorage.getItem('unitInstanceDisplay');
+
             if (storedUnits) {
                 setSelectedUnitInstances(prev => ({ ...prev, ...JSON.parse(storedUnits) }));
             }
@@ -131,10 +130,8 @@ export default function MainMapPage() {
                 .catch(errMessage => setValidationError(errMessage))
         };
 
-
         const connectToWebSocket = () => {
             if (socketRef.current) return;
-
             socketRef.current = new WebSocket(`${WS_URL}/game-instances/${joinCode}/`);
 
             socketRef.current.onopen = () => {
@@ -146,8 +143,10 @@ export default function MainMapPage() {
 
         const handleGamesMessage = (event: MessageEvent) => {
             const msg = JSON.parse(event.data);
+
             if (msg.channel === "games") {
                 switch (msg.action) {
+
                     case "delete":
                         alert("This game was deleted.");
                         sessionStorage.clear();
@@ -159,8 +158,10 @@ export default function MainMapPage() {
 
         const handleRoleInstancesMessage = (event: MessageEvent) => {
             const msg = JSON.parse(event.data);
+
             if (msg.channel === "role_instances") {
                 switch (msg.action) {
+
                     case "delete":
                         alert("Your role in this game was deleted.");
                         sessionStorage.clear();
@@ -212,7 +213,7 @@ export default function MainMapPage() {
                         <CommandersIntent roleInstance={roleInstance} />
                     )}
                 </div>
-
+                {/* Map */}
                 <div className="w-full h-full bg-neutral-800 rounded-lg overflow-hidden">
                     <InteractiveMap
                         socketRef={socketRef}
@@ -223,28 +224,24 @@ export default function MainMapPage() {
                         selectedUnitInstances={selectedUnitInstances}
                     />
                 </div>
-
-
                 {/* Map controls bottom-left */}
                 {(roleInstance?.role.is_operations || roleInstance?.role.is_logistics) && (
-                    <div className="fixed bottom-8 left-4 z-50 flex flex-col items-start bg-neutral-800 rounded p-2 gap-0">
+                    <div className="text-sm fixed bottom-8 left-4 z-50 flex flex-col items-start bg-neutral-800 rounded p-2 gap-0">
                         {/* Buttons container */}
                         <div className="flex space-x-2 items-center">
-                            <button className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded text-sm">
+                            <button className="bg-blue-600 hover:bg-blue-500 text-white px-6 py-2 rounded">
                                 Request
                             </button>
-                            <button className="bg-green-600 hover:bg-green-500 text-white px-6 py-2 rounded text-sm">
+                            <button className="bg-green-600 hover:bg-green-500 text-white px-6 py-2 rounded">
                                 Move
                             </button>
-
                             <button
                                 onClick={() => setShowAttack((prev) => !prev)}
-                                className="bg-red-600 hover:bg-red-500 text-white px-6 py-2 rounded text-sm ml-2"
+                                className="bg-red-600 hover:bg-red-500 text-white px-6 py-2 rounded ml-2"
                             >
                                 Attack
                             </button>
                         </div>
-
                         {/* Attack popup menu */}
                         {showAttack && (
                             <div className="absolute bottom-full left-0 mb-0 rounded min-w-[550px]">
@@ -261,13 +258,13 @@ export default function MainMapPage() {
                     </div>
                 )}
             </div>
-
             {/* Sidebar */}
             <div className="flex-1 h-full bg-neutral-800 space-y-4 rounded-lg p-4 overflow-y-auto">
-                <h2 className="text-lg mb-2">Team: {roleInstance?.team_instance.team.name || 'Unknown'}</h2>
-                <h2 className="text-lg mb-2">Role: {roleInstance?.role.name || 'Unknown'}</h2>
-                <h2 className="text-lg mb-2">User: {roleInstance?.user.username || 'Unknown'}</h2>
-
+                <div className="text-lg font-bold mb-2">
+                    <h2>Team: {roleInstance?.team_instance.team.name || 'Unknown'}</h2>
+                    <h2>Role: {roleInstance?.role.name || 'Unknown'}</h2>
+                    <h2>User: {roleInstance?.user.username || 'Unknown'}</h2>
+                </div>
                 {/* Menu for Ops/Logs */}
                 {(roleInstance?.role.is_operations || roleInstance?.role.is_logistics) && (
                     <>
@@ -465,7 +462,6 @@ export default function MainMapPage() {
                         />
                     </>
                 )}
-
             </div>
         </div>
     );

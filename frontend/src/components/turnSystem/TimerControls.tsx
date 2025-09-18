@@ -4,6 +4,7 @@ import { useState, useCallback, RefObject } from "react";
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 import { GameInstance } from "@/lib/Types";
 
+
 interface TimerControlsProps {
     joinCode: string;
     socketRef: RefObject<WebSocket | null>;
@@ -13,7 +14,7 @@ interface TimerControlsProps {
 
 export default function TimerControls({ joinCode, socketRef, socketReady, turnDuration }: TimerControlsProps) {
     const authedFetch = useAuthedFetch();
- 
+
     const [minutes, setMinutes] = useState(Math.floor(turnDuration / 60));
     const [seconds, setSeconds] = useState(0);
     const [settingTimer, setSettingTimer] = useState<boolean>(false);
@@ -33,6 +34,7 @@ export default function TimerControls({ joinCode, socketRef, socketReady, turnDu
                 })
             });
             const data = await res.json();
+
             if (!res.ok) {
                 throw new Error(data.error || data.detail || 'Failed to set turn.');
             }
@@ -46,14 +48,18 @@ export default function TimerControls({ joinCode, socketRef, socketReady, turnDu
                     data: updatedGameInstance
                 }));
             }
+
         } catch (err: unknown) {
             console.error(err);
+
             if (err instanceof Error) {
                 alert(err.message);
             }
+
         } finally {
             setSettingTimer(false);
         }
+
     }, [authedFetch, joinCode, socketReady, socketRef]);
 
     const handleStart = () => {
@@ -90,7 +96,6 @@ export default function TimerControls({ joinCode, socketRef, socketReady, turnDu
                 onChange={(e) => setSeconds(Number(e.target.value))}
                 className="w-16 p-1 rounded bg-neutral-600 text-white text-center"
             />
-
             <button
                 type="submit"
                 disabled={settingTimer}

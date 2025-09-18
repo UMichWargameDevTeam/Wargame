@@ -8,6 +8,7 @@ from auth.views import (
     LogoutView
 )
 
+
 urlpatterns = [
     path("csrf-token/", csrf_token, name="csrf-token"),
     path("register/", RegisterView.as_view(), name="register"),

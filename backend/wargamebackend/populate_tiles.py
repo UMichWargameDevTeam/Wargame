@@ -1,11 +1,13 @@
 import os
 import django
 
+
 # Set up Django environment
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "wargamebackend.settings")
 django.setup()
 
 from wargamelogic.models import Tile
+
 
 def wipe_tiles():
     Tile.objects.all().delete()
@@ -15,7 +17,7 @@ def populate_tiles():
     for row in range(41):
         for column in range(81):
             tiles_to_create.append(Tile(row=row, column=column, terrain="Plains/Grasslands"))
-    
+
     Tile.objects.bulk_create(tiles_to_create)
     print(f"Inserted {len(tiles_to_create)} tiles.")
 
