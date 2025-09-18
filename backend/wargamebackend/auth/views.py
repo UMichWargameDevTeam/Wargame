@@ -28,7 +28,7 @@ class RegisterView(APIView):
     """
     data: {
         username: string,
-        boolean: string
+        password: string
     }
     """
     authentication_classes = []
