@@ -1,9 +1,8 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
-
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 import { getSessionStorageOrFetch, isValidName } from '@/lib/utils';
 import { Team, Branch, Role, RoleInstance } from '@/lib/Types'
@@ -17,28 +16,24 @@ export default function RoleSelectPage() {
     const [teams, setTeams] = useState<Team[]>([]);
     const [branches, setBranches] = useState<Branch[]>([]);
     const [roles, setRoles] = useState<Role[]>([]);
-
     const [selectedTeam, setSelectedTeam] = useState<string | null>(null);
     const [selectedBranch, setSelectedBranch] = useState<string | null>(null);
     const [selectedRole, setSelectedRole] = useState<string | null>(null);
-
     const [createCode, setCreateCode] = useState<string>('');
     const [creatingGame, setCreatingGame] = useState<boolean>(false);
     const [createError, setCreateError] = useState<string | null>(null);
-
     const [joinCode, setJoinCode] = useState<string>('');
     const [joiningGame, setJoiningGame] = useState<boolean>(false);
     const [joinError, setJoinError] = useState<string | null>(null);
-
     const [loggingOut, setLoggingOut] = useState<boolean>(false);
     const [dropdownOpen, setDropdownOpen] = useState(false);
+    const [sessionRoleInstance, setSessionRoleInstance] = useState<RoleInstance | null>(null);
 
     const dropdownRef = useRef<HTMLDivElement>(null);
 
-    const [sessionRoleInstance, setSessionRoleInstance] = useState<RoleInstance | null>(null);
-
     useEffect(() => {
         const storedUsername = sessionStorage.getItem("username");
+
         if (storedUsername) {
             setUsername(storedUsername);
         }
@@ -49,7 +44,7 @@ export default function RoleSelectPage() {
                 return res.json();
             })
                 .then(data => setTeams(data));
-          
+
         getSessionStorageOrFetch<Branch[]>('branches', async () => {
                 const res = await authedFetch("/api/branches/");
                 if (!res.ok) throw new Error(`Branch fetch failed with ${res.status}`);
@@ -63,8 +58,9 @@ export default function RoleSelectPage() {
                 return res.json();
             })
                 .then(data => setRoles(data));
-        
+
         const roleInstanceStr = sessionStorage.getItem("role_instance");
+
         if (roleInstanceStr) {
             const roleInstance: RoleInstance = JSON.parse(roleInstanceStr);
             setSessionRoleInstance(roleInstance);
@@ -79,9 +75,10 @@ export default function RoleSelectPage() {
                 setDropdownOpen(false);
             }
         };
+
         document.addEventListener("mousedown", handleClickOutside);
 
-        return () => document.removeEventListener("mousedown", handleClickOutside); 
+        return () => document.removeEventListener("mousedown", handleClickOutside);
 
     }, [authedFetch]);
 
@@ -116,9 +113,11 @@ export default function RoleSelectPage() {
 
         } catch (err: unknown) {
             console.error(err);
+
             if (err instanceof Error) {
                 setCreateError(err.message);
             }
+
             setCreatingGame(false);
         }
     };
@@ -153,9 +152,11 @@ export default function RoleSelectPage() {
 
         } catch (err: unknown) {
             console.error(err);
+
             if (err instanceof Error) {
                 setJoinError(err.message);
             }
+
             setJoiningGame(false);
         }
     };
@@ -170,11 +171,14 @@ export default function RoleSelectPage() {
 
             sessionStorage.clear();
             router.push("/login");
+
         } catch (err: unknown) {
             console.error(err);
+
             if (err instanceof Error) {
                 alert(err.message);
             }
+
             setLoggingOut(false);
         }
     };
@@ -184,18 +188,16 @@ export default function RoleSelectPage() {
             {/* Header */}
             <div className="flex h-[80px] items-center justify-between bg-neutral-800 border-b border-neutral-700">
                 <div className="flex-1 h-[80px]">
-                    <Image 
+                    <Image
                         src="/wargamedevteam.png"
                         height={80}
                         width={80}
                         alt="Logo"
                     />
                 </div>
-
                 <div className="flex-[4] text-3xl font-bold text-center flex-1">
                     Welcome to the Digital Wargame
                 </div>
-                
                 <div className="relative flex-1" ref={dropdownRef}>
                     <button
                         onClick={() => setDropdownOpen(!dropdownOpen)}
@@ -203,7 +205,6 @@ export default function RoleSelectPage() {
                     >
                         {username || "Unknown user"}
                     </button>
-
                     {dropdownOpen && (
                         <div className="absolute z-10 w-full">
                             <button
@@ -222,7 +223,6 @@ export default function RoleSelectPage() {
                     )}
                 </div>
             </div>
-
             <div className="flex flex-1 overflow-auto">
                 {/* LEFT SIDE */}
                 <div className="w-1/2 p-6 overflow-y-auto border-r border-neutral-700">
@@ -239,7 +239,6 @@ export default function RoleSelectPage() {
                         <p>🧭 Always remember your mission objectives and team strategy.</p>
                     </div>
                 </div>
-
                 {/* RIGHT SIDE */}
                 <div className="w-1/2 p-6 flex flex-col overflow-y-auto gap-6">
                     <form
@@ -262,7 +261,7 @@ export default function RoleSelectPage() {
                             <button
                                 type="submit"
                                 disabled={!isValidName(createCode) || creatingGame}
-                                className={`px-4 py-2 rounded 
+                                className={`px-4 py-2 rounded
                                     ${(!isValidName(createCode) || creatingGame)
                                         ? "bg-gray-500 cursor-not-allowed"
                                         : "bg-purple-700 cursor-pointer hover:bg-purple-600"
@@ -272,11 +271,10 @@ export default function RoleSelectPage() {
                                 {creatingGame ? "Creating Game..." : "Create Game"}
                             </button>
                         </div>
-                        {createError && 
+                        {createError &&
                             <p className="text-red-400 mb-2">{createError}</p>
                         }
                     </form>
-
                     <form
                         onSubmit={(e) => {
                             e.preventDefault();
@@ -303,7 +301,6 @@ export default function RoleSelectPage() {
                                 Click <strong>Join Game</strong> to continue.
                             </p>
                         )}
-
                         <div className="mt-4">
                             {/* Team Selector */}
                             <h3 className="text-lg font-semibold mb-1">Select Your Team</h3>
@@ -321,7 +318,6 @@ export default function RoleSelectPage() {
                                         </button>
                                     ))}
                             </div>
-
                             {/* Branch-neutral role selector */}
                             <h3 className="text-lg font-semibold mb-1">Branch-neutral Roles</h3>
                             <div className="flex flex-wrap gap-2 mb-3">
@@ -338,7 +334,6 @@ export default function RoleSelectPage() {
                                         </button>
                                     ))}
                             </div>
-
                             <div className="mb-6">
                                 <h3 className="text-lg font-semibold mb-2">Branch-specific Roles</h3>
                                 <div className="mb-2">
@@ -359,7 +354,6 @@ export default function RoleSelectPage() {
                                         }
                                     </div>
                                 </div>
-
                                 <div>
                                     {/* Branch-specific role selector */}
                                     <h4 className="text-md font-medium mb-1">Role</h4>
@@ -383,15 +377,13 @@ export default function RoleSelectPage() {
                                     </div>
                                 </div>
                             </div>
-
                         </div>
-
                         {/* Join game button */}
                         <div className="mt-4 flex">
                             <button
                                 type="submit"
                                 disabled={!isValidName(joinCode) || joiningGame}
-                                className={`flex-1 px-4 py-2 rounded 
+                                className={`flex-1 px-4 py-2 rounded
                                     ${(!isValidName(joinCode) || joiningGame)
                                         ? "bg-gray-500 cursor-not-allowed"
                                         : "bg-blue-600 cursor-pointer hover:bg-blue-700"
@@ -401,7 +393,7 @@ export default function RoleSelectPage() {
                                 {joiningGame ? "Joining Game..." : "Join Game"}
                             </button>
                         </div>
-                        {joinError && 
+                        {joinError &&
                             <p className="text-red-400 mb-2">{joinError}</p>
                         }
                     </form>

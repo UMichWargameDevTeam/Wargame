@@ -9,6 +9,7 @@ from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from channels.db import database_sync_to_async
 from http.cookies import SimpleCookie
 
+
 class CookieJWTAuthenticationWebSocketMiddleware:
     """
     Authentication class for WebSockets that reads the JWT access token from a cookie.
@@ -31,8 +32,10 @@ class CookieJWTAuthenticationWebSocketMiddleware:
 
                 User = await database_sync_to_async(jwt_auth.get_user)(validated_token)
                 scope["user"] = User
+
             except (InvalidToken, TokenError, Exception):
                 scope["user"] = AnonymousUser()
+
         else:
             scope["user"] = AnonymousUser()
 

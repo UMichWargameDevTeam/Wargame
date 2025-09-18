@@ -1,5 +1,6 @@
 from dataclasses import dataclass
-from ..models import *
+from wargamelogic.models import *
+
 
 ATTACK_TYPES = [
         ("Light", "Light"),

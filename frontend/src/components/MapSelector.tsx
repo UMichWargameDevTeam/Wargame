@@ -2,10 +2,11 @@
 
 import { useState, useEffect } from 'react';
 
+
 interface MapSelectorProps {
     onMapChange: (mapPath: string) => void;
     initialMap: string;
-}
+};
 
 export default function MapSelector({ onMapChange, initialMap }: MapSelectorProps) {
     const [open, setOpen] = useState<boolean>(true);

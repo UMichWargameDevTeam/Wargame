@@ -1,16 +1,17 @@
 'use client';
 
-import { useEffect, useState, useRef, RefObject } from 'react';
+import { useState, useEffect, useRef, RefObject } from 'react';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 import CommunicationsChannel from './CommunicationsChannel';
 import { getSessionStorageOrFetch, arraysEqual } from '@/lib/utils';
 import { Team, Role, RoleInstance, Message } from '@/lib/Types';
 
+
 interface CommunicationsProps {
     socketRef: RefObject<WebSocket | null>;
     socketReady: boolean;
     viewerRoleInstance: RoleInstance
-}
+};
 
 export default function Communications({ socketRef, socketReady, viewerRoleInstance }: CommunicationsProps) {
     const authedFetch = useAuthedFetch();
@@ -33,8 +34,10 @@ export default function Communications({ socketRef, socketReady, viewerRoleInsta
 
         const handleCommunicationsMessage = (event: MessageEvent) => {
             const msg = JSON.parse(event.data);
+
             if (msg.channel === "communications") {
                 switch (msg.action) {
+
                     case "send":
                         const receivedMessage: Message = msg.data;
                         const viewerIsSender = receivedMessage.sender_role_instance.user.id === viewerRoleInstance.user.id;
@@ -48,13 +51,14 @@ export default function Communications({ socketRef, socketReady, viewerRoleInsta
                                 [viewerRoleName]: [...(prev[viewerTeamName]?.[viewerRoleName] || []), receivedMessage]
                             }
                         }));
-                        
+
                         if (!arraysEqual(viewerChannel, activeChannel || [])
                          || (activeChannel && !viewerIsSender && !wasAtBottomRef.current)) {
                             setUnreadChannels(prev =>
                                 prev.some(c => arraysEqual(c, viewerChannel)) ? prev : [...prev, viewerChannel]
                             );
                         }
+
                         break;
                 }
             }
@@ -97,8 +101,10 @@ export default function Communications({ socketRef, socketReady, viewerRoleInsta
                         return acc;
                     }, {})
                 );
+
             } catch (err: unknown) {
                 console.error(err);
+
                 if (err instanceof Error) {
                     alert(err.message);
                 }
@@ -222,7 +228,6 @@ export default function Communications({ socketRef, socketReady, viewerRoleInsta
                     {open ? '-' : '+'}
                 </button>
             </div>
-
             {open && (
                 <div className="flex flex-col max-h-[80vh]">
                     {activeChannel ? (
@@ -266,7 +271,7 @@ export default function Communications({ socketRef, socketReady, viewerRoleInsta
                                                 </>
                                             )}
                                         </li>
-                                    )
+                                    );
                                 })}
                             </ul>
                         </div>

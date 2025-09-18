@@ -1,6 +1,7 @@
 from django.db import models
 from django.core.exceptions import ValidationError
 
+
 class Team(models.Model):
     name = models.CharField(max_length=100, unique=True)
 
@@ -42,15 +43,17 @@ class Role(models.Model):
         # Enforce at most one of CoS / CC / CV
         duty_flags = [self.is_chief_of_staff, self.is_commander, self.is_vice_commander]
         duty_flags_sum = sum(flag for flag in duty_flags if flag)
+
         if duty_flags_sum > 1:
             raise ValidationError("A role can only be one of: Chief of Staff, Commander, Vice Commander.")
 
         # Enforce at most one of Ops / Log
         ops_logs_flags = [self.is_operations, self.is_logistics]
         ops_logs_flags_sum = sum(flag for flag in ops_logs_flags if flag)
+
         if ops_logs_flags_sum > 1:
             raise ValidationError("A role can only be one of: Operations, Logistics.")
-        
+
         if self.branch is not None and duty_flags_sum == 0 or ops_logs_flags_sum == 0:
             raise ValidationError("A role in a branch must have a duty within that branch.")
 
@@ -100,7 +103,7 @@ class UnitBranch(models.Model):
         constraints = [
             models.UniqueConstraint(fields=["unit", "branch"], name="unique_unit_branch")
         ]
-    
+
     def __str__(self):
         return f"{self.unit.name} - {self.branch.name}"
 

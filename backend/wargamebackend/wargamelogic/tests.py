@@ -11,6 +11,7 @@ from wargamelogic.models.dynamic import (
     GameInstance, TeamInstance, RoleInstance, UnitInstance, LandmarkInstance, LandmarkInstanceTile
 )
 
+
 class GetEndpointTests(TestCase):
     def setUp(self):
         self.client = APIClient()
@@ -67,7 +68,7 @@ class GetEndpointTests(TestCase):
         unit_name = quote("B-2 Spirit")
         response = self.client.get(f"/api/units/{unit_name}/")
         self.assertEqual(response.status_code, 200)
-    
+
     def test_get_unit_instances_by_team_and_branch(self):
         url = f"/api/game-instances/{self.game_instance.join_code}/team-instances/{self.team.name}/branch/{self.unit.branches.all()[0].name}/unit-instances/"
         response = self.client.get(url)
@@ -217,7 +218,6 @@ class RoleRequiredTests(TestCase):
         wrong_team_url = f"/api/game-instances/{self.game_instance.join_code}/team-instances/{other_team.name}/unit-instances/"
         response = self.client.get(wrong_team_url)
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-    
 
     def test_navy_commander_cannot_access(self):
         self.client.force_authenticate(user=self.navy_commander_user)
@@ -249,7 +249,6 @@ class RoleRequiredTests(TestCase):
         response = self.client.get(self.url)
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertTrue(len(response.data) > 0)
-
 
 class UseAttackQueryCountTests(TestCase):
     def setUp(self):
@@ -350,9 +349,9 @@ class UseAttackQueryCountTests(TestCase):
             self.assertEqual(resp.status_code, 200)
             self.assertIn("attack_used", resp.json())
 
-# ----------------------------
-# ViewSet tests
-# ----------------------------
+# ---------------------------- #
+# ViewSet tests                #
+# ---------------------------- #
 
 class BaseInstanceViewSetTestCase(TestCase):
     """
@@ -373,7 +372,7 @@ class BaseInstanceViewSetTestCase(TestCase):
         self.blue_user = User.objects.create_user(username="blue_user", password="x")
 
         # Branches
-        self.air_force_branch = Branch.objects.create(name="Air Force") 
+        self.air_force_branch = Branch.objects.create(name="Air Force")
 
         # Roles
         self.role_gm = Role.objects.create(name="Gamemaster")
@@ -462,9 +461,9 @@ class BaseInstanceViewSetTestCase(TestCase):
     def auth(self, user):
         self.client.force_authenticate(user=user)
 
-# ----------------------------
-# RoleInstanceViewSet tests
-# ----------------------------
+# ---------------------------- #
+# RoleInstanceViewSet tests    #
+# ---------------------------- #
 class RoleInstanceViewSetTests(BaseInstanceViewSetTestCase):
     # The following 3 tests are not testing an endpoint defined by the viewset.
 
@@ -549,11 +548,11 @@ class RoleInstanceViewSetTests(BaseInstanceViewSetTestCase):
         resp = self.client.delete(url)
         self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
 
-# ----------------------------
-# UnitInstanceViewSet tests
-# ----------------------------
+# ---------------------------- #
+# UnitInstanceViewSet tests    #
+# ---------------------------- #
 class UnitInstanceViewSetTests(BaseInstanceViewSetTestCase):
-    
+
     def test_partial_update_unit_instance_permissions(self):
         # Underprivileged user (blue team)
         self.auth(self.blue_user)
@@ -596,9 +595,9 @@ class UnitInstanceViewSetTests(BaseInstanceViewSetTestCase):
         resp = self.client.delete(f"/api/unit-instances/{self.ui_blue.id}/")
         self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
 
-# ----------------------------
-# LandmarkInstanceViewSet tests
-# ----------------------------
+# ------------------------------ #
+# LandmarkInstanceViewSet tests  #
+# ------------------------------ #
 class LandmarkInstanceViewSetTests(BaseInstanceViewSetTestCase):
 
     def test_destroy_denied_for_non_gm(self):
@@ -613,9 +612,9 @@ class LandmarkInstanceViewSetTests(BaseInstanceViewSetTestCase):
         resp = self.client.delete(url)
         self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
 
-# ------------------------------------
-# LandmarkInstanceTileViewSet tests
-# ------------------------------------
+# ------------------------------------ #
+# LandmarkInstanceTileViewSet tests    #
+# ------------------------------------ #
 class LandmarkInstanceTileViewSetTests(BaseInstanceViewSetTestCase):
 
     def test_destroy_denied_for_non_gm(self):
@@ -630,9 +629,9 @@ class LandmarkInstanceTileViewSetTests(BaseInstanceViewSetTestCase):
         resp = self.client.delete(url)
         self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
 
-# ----------------------------
-# GameInstanceViewSet tests
-# ----------------------------
+# ---------------------------- #
+# GameInstanceViewSet tests    #
+# ---------------------------- #
 class GameInstanceViewSetTests(BaseInstanceViewSetTestCase):
 
     def test_destroy_denied_for_non_gm(self):
@@ -647,9 +646,9 @@ class GameInstanceViewSetTests(BaseInstanceViewSetTestCase):
         resp = self.client.delete(url)
         self.assertEqual(resp.status_code, status.HTTP_204_NO_CONTENT)
 
-# ----------------------------
-# TeamInstanceViewSet tests
-# ----------------------------
+# ---------------------------- #
+# TeamInstanceViewSet tests    #
+# ---------------------------- #
 class TeamInstanceViewSetTests(BaseInstanceViewSetTestCase):
 
     def test_create_denied_for_non_gm(self):
@@ -675,7 +674,7 @@ class TeamInstanceViewSetTests(BaseInstanceViewSetTestCase):
         resp = self.client.post(url, data, format="json")
 
         self.assertEqual(resp.status_code, status.HTTP_201_CREATED)
-       
+
     def test_destroy_denied_for_non_gm(self):
         self.auth(self.red_user)
         url = f"/api/team-instances/{self.ti_red.id}/"

@@ -4,6 +4,7 @@ from wargamelogic.models.static import (
     Team, Role, Unit, Landmark, Tile
 )
 
+
 class GameInstance(models.Model):
     join_code = models.CharField(max_length=20, unique=True)
     created_at = models.DateTimeField(auto_now_add=True)
@@ -39,7 +40,7 @@ class RoleInstance(models.Model):
         constraints = [
             models.UniqueConstraint(fields=["user", "team_instance"], name="unique_user_team_instance_pair")
         ]
-    
+
     def __str__(self):
         return f"GameInstance: {self.team_instance.game_instance.join_code} | Team: {self.team_instance.team.name} | Role: {self.role.name} | User: {self.user.username} "
 
@@ -53,7 +54,7 @@ class TeamInstanceRolePoints(models.Model):
         constraints = [
             models.UniqueConstraint(fields=["team_instance", "role"], name="unique_team_instance_role_pair")
         ]
-    
+
     def __str__(self):
         return f"GameInstance: {self.team_instance.game_instance.join_code} | Team: {self.team_instance.team.name} | Role: {self.role.name}"
 
@@ -79,7 +80,7 @@ class LandmarkInstance(models.Model):
         return f"id: {self.id} | GameInstance: {self.game_instance.join_code} | Team: {team_name} | Landmark: {self.landmark.name}"
 
 # My current understanding is that multiple tiles can be part of a landmark,
-# And possibly that a tile can be part of multiple landmarks. 
+# And possibly that a tile can be part of multiple landmarks.
 # If this is not the case, like if a tile can only be part of one landmark,
 # this code and the corresponding view can be changed to assume
 # that for a given row and column, there is either 0 or 1 corresponding LandmarkInstanceTiles.

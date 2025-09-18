@@ -1,8 +1,9 @@
 'use client';
 
-import React, { useEffect, useState, useRef, RefObject } from 'react';
+import React, { useState, useEffect, useRef, RefObject } from 'react';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 import { RoleInstance } from '@/lib/Types'
+
 
 interface UsersListProps {
     socketRef: RefObject<WebSocket | null>;
@@ -10,7 +11,7 @@ interface UsersListProps {
     roleInstance: RoleInstance | null;
     roleInstances: RoleInstance[];
     setRoleInstances: React.Dispatch<React.SetStateAction<RoleInstance[]>>;
-}
+};
 
 export default function UsersList({ socketRef, socketReady, roleInstance, roleInstances, setRoleInstances }: UsersListProps) {
     const authedFetch = useAuthedFetch();
@@ -28,10 +29,13 @@ export default function UsersList({ socketRef, socketReady, roleInstance, roleIn
 
         const handleUsersMessage = (event: MessageEvent) => {
             const msg = JSON.parse(event.data);
+
             if (msg.channel === "users") {
                 switch (msg.action) {
+
                     case "list":
                         setRoleInstances(() => msg.data);
+
                         if (!msg.data.some((ri: RoleInstance) => ri.user.id === roleInstance.user.id)) {
                             socket.send(JSON.stringify({
                                 channel: "users",
@@ -39,13 +43,17 @@ export default function UsersList({ socketRef, socketReady, roleInstance, roleIn
                                 data: roleInstance
                             }));
                         }
+
                         break;
+
                     case "join":
                         setRoleInstances(prev => [...prev, msg.data]);
                         break;
+
                     case "leave":
                         setRoleInstances(prev => prev.filter(r => r.id !== msg.data.id));
                         break;
+
                     case "ready":
                         setRoleInstances(prev =>
                             prev.map(r =>
@@ -105,14 +113,16 @@ export default function UsersList({ socketRef, socketReady, roleInstance, roleIn
 
         } catch (err: unknown) {
             console.error(err);
+
             if (err instanceof Error) {
                 alert(err.message);
             }
+
         } finally {
             setDeletingRoleInstance(null);
         }
-    };
 
+    };
 
     // Group by team > branch > role
     const grouped = roleInstances.reduce((acc, ri) => {
@@ -148,7 +158,6 @@ export default function UsersList({ socketRef, socketReady, roleInstance, roleIn
                     {open ? '-' : '+'}
                 </button>
             </div>
-
             {/* Collapsible content */}
             {open && (
                 <div className="space-y-3 max-h-64 overflow-y-auto pr-2">
@@ -183,7 +192,7 @@ export default function UsersList({ socketRef, socketReady, roleInstance, roleIn
                                                                 <button
                                                                     onClick={() => handleDeleteRoleInstance(ri.id)}
                                                                     disabled={deletingRoleInstance === ri.id}
-                                                                    className={`px-2 py-0.5 rounded text-xs 
+                                                                    className={`px-2 py-0.5 rounded text-xs
                                                                         ${deletingRoleInstance === ri.id
                                                                             ? "bg-gray-500 cursor-not-allowed"
                                                                             : "bg-red-600 cursor-pointer hover:bg-red-500"
@@ -192,7 +201,8 @@ export default function UsersList({ socketRef, socketReady, roleInstance, roleIn
                                                                 >
                                                                     {deletingRoleInstance === ri.id
                                                                         ? "Deleting..."
-                                                                        : "Delete"}
+                                                                        : "Delete"
+                                                                    }
                                                                 </button>
                                                             )}
                                                         </li>

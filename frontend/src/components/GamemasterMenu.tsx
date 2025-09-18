@@ -4,19 +4,19 @@ import { useState, RefObject } from 'react';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 import { RoleInstance } from '@/lib/Types';
 
+
 interface GameMasterMenuProps {
     joinCode: string;
     socketRef: RefObject<WebSocket | null>;
     socketReady: boolean;
     roleInstance: RoleInstance | null;
-}
+};
 
 export default function GamemasterMenu({ joinCode, socketRef, socketReady, roleInstance }: GameMasterMenuProps) {
-
     const authedFetch = useAuthedFetch();
 
-    const [deletingGame, setDeletingGame] = useState<boolean>(false);
     const [open, setOpen] = useState<boolean>(true);
+    const [deletingGame, setDeletingGame] = useState<boolean>(false);
 
     const handleDeleteGame = async () => {
         if (!joinCode || !socketReady || !socketRef.current || !roleInstance) return;
@@ -43,12 +43,14 @@ export default function GamemasterMenu({ joinCode, socketRef, socketReady, roleI
                     }
                 }));
             }
-            
+
         } catch (err: unknown) {
             console.error(err);
+
             if (err instanceof Error) {
                 alert(err.message);
             }
+
             setDeletingGame(false);
         }
     };
@@ -64,14 +66,13 @@ export default function GamemasterMenu({ joinCode, socketRef, socketReady, roleI
                     {open ? '-' : '+'}
                 </button>
             </div>
-
             {open && (
                 // Delete Game
                 <div>
                     <button
                         onClick={() => handleDeleteGame()}
                         disabled={deletingGame}
-                        className={`px-3 py-2 rounded  
+                        className={`px-3 py-2 rounded
                             ${deletingGame
                                 ? "bg-gray-500 cursor-not-allowed"
                                 : "bg-red-600 cursor-pointer hover:bg-red-500"

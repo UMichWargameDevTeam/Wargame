@@ -10,6 +10,8 @@ class WargamelogicConfig(AppConfig):
 
         redis_client = get_redis_client()
         keys = redis_client.keys("game_*")
+
         if keys:
             redis_client.delete(*keys)
+
         print("Redis game_ keys cleared on startup")

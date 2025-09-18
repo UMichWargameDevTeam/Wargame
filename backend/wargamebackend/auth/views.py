@@ -23,7 +23,6 @@ def csrf_token(request):
     token = get_token(request)  # generates or returns existing CSRF token
     return Response({"csrfToken": token})
 
-
 class RegisterView(APIView):
     """
     data: {
@@ -70,7 +69,6 @@ class RegisterView(APIView):
 
         return response
 
-
 class CookieTokenObtainPairView(TokenObtainPairView):
     # The parent class TokenObtainPairView already sets permission_classes to AllowAny,
     # But this makes it more explicit and readable.
@@ -108,7 +106,6 @@ class CookieTokenObtainPairView(TokenObtainPairView):
 
         return response
 
-
 class CookieTokenRefreshView(TokenRefreshView):
     # The parent class TokenRefreshView already sets permission_classes to AllowAny,
     # But this makes it more explicit and readable.
@@ -118,6 +115,7 @@ class CookieTokenRefreshView(TokenRefreshView):
     def post(self, request, *args, **kwargs):
         # Grab refresh token from cookie, not body
         refresh = request.COOKIES.get("refresh_token")
+
         if not refresh:
             return Response({"detail": "No refresh token"}, status=401)
 
@@ -126,6 +124,7 @@ class CookieTokenRefreshView(TokenRefreshView):
         data = response.data
 
         access = data.get("access")
+
         if access:
             response.set_cookie(
                 "access_token",
@@ -139,7 +138,6 @@ class CookieTokenRefreshView(TokenRefreshView):
 
         return response
 
-
 class MeView(APIView):
     authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -150,7 +148,6 @@ class MeView(APIView):
             "id": user.id,
             "username": user.username
         })
-
 
 class LogoutView(APIView):
     authentication_classes = []

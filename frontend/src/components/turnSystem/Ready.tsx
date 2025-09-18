@@ -4,6 +4,7 @@ import { useState, RefObject } from "react";
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 import { RoleInstance } from "@/lib/Types";
 
+
 interface ReadyProps {
     socketRef: RefObject<WebSocket | null>;
     socketReady: boolean;
@@ -31,6 +32,7 @@ export default function Ready({ socketRef, socketReady, roleInstance, roleInstan
                 })
             });
             const data = await res.json();
+
             if (!res.ok) {
                 throw new Error(data.error || data.detail || 'Failed to toggle ready state.');
             }
@@ -47,14 +49,18 @@ export default function Ready({ socketRef, socketReady, roleInstance, roleInstan
                 );
 
             }
+
         } catch (err: unknown) {
             console.error(err);
+
             if (err instanceof Error) {
                 alert(err.message);
             }
+
         } finally {
             setTogglingReady(false);
         }
+
     };
 
     return (
@@ -72,7 +78,7 @@ export default function Ready({ socketRef, socketReady, roleInstance, roleInstan
                     }
                 `}
             >
-                {togglingReady 
+                {togglingReady
                     ? "Toggling Ready..."
                     : (roleInstances.find(r => r.id === roleInstance?.id)?.ready
                         ? "Ready ✅"
@@ -81,5 +87,5 @@ export default function Ready({ socketRef, socketReady, roleInstance, roleInstan
                 }
             </button>
         </>
-    )
+    );
 }

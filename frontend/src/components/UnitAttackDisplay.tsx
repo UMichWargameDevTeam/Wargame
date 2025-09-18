@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 import { Attack, UnitInstance, RoleInstance } from '@/lib/Types';
 
+
 interface Props {
     open: boolean;
     onClose: () => void;
@@ -11,23 +12,18 @@ interface Props {
     unitInstances: UnitInstance[];
     attacks: Attack[];
     onAttackSuccess: (data: JSON) => void;
-}
+};
 
-export default function UnitAttackDropdown({
-    open,
-    onClose,
-    roleInstance,
-    unitInstances,
-    attacks,
-    onAttackSuccess,
-}: Props) {
+export default function UnitAttackDropdown({ open, onClose, roleInstance, unitInstances, attacks, onAttackSuccess }: Props) {
     const authedFetch = useAuthedFetch();
+
     const [attackerId, setAttackerId] = useState<string>('');
     const [targetId, setTargetId] = useState<string>('');
     const [attackName, setAttackName] = useState<string>('');
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
     const [successMessage, setSuccessMessage] = useState<string | null>(null);
+
     const dropdownRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
@@ -47,9 +43,11 @@ export default function UnitAttackDropdown({
                 onClose();
             }
         };
+
         if (open) {
             document.addEventListener('mousedown', handleClickOutside);
         }
+
         return () => document.removeEventListener('mousedown', handleClickOutside);
     }, [open, onClose]);
 
@@ -58,6 +56,7 @@ export default function UnitAttackDropdown({
             setError('Attacker, target, and attack are required.');
             return;
         }
+
         setLoading(true);
         setError(null);
 
@@ -81,16 +80,21 @@ export default function UnitAttackDropdown({
 
             onAttackSuccess(data);
             setSuccessMessage(data.message);
+
         } catch (err: unknown) {
+
             if (err instanceof Error) {
                 setError(err.message);
             }
+
             else {
                 setError("Unknown fetch error")
             }
+
         } finally {
             setLoading(false);
         }
+
     };
 
     const filteredAttacks =
@@ -114,7 +118,7 @@ export default function UnitAttackDropdown({
     return (
         <div
             ref={dropdownRef}
-            className={`absolute bottom-full right-0 mb-1 bg-neutral-800 rounded-md p-3 text-white flex space-x-3 z-50 
+            className={`absolute bottom-full right-0 mb-1 bg-neutral-800 rounded-md p-3 text-white flex space-x-3 z-50
         transition-transform duration-200 ease-out
         ${open ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'}
       `}
@@ -138,7 +142,6 @@ export default function UnitAttackDropdown({
                             ))}
                         </select>
                     </div>
-
                     <div>
                         <label className="block mb-1 text-sm font-semibold">Target</label>
                         <select
@@ -154,7 +157,6 @@ export default function UnitAttackDropdown({
                             ))}
                         </select>
                     </div>
-
                     <div>
                         <label className="block mb-1 text-sm font-semibold">Attack</label>
                         <select
@@ -170,7 +172,6 @@ export default function UnitAttackDropdown({
                             ))}
                         </select>
                     </div>
-
                     <div className="flex items-end">
                         <button
                             onClick={() => handleSubmit()}
@@ -182,7 +183,6 @@ export default function UnitAttackDropdown({
                     </div>
                 </>
             )}
-
             {error && <p className="text-red-400 text-xs absolute bottom-0 left-1/2 -translate-x-1/2">{error}</p>}
         </div>
     );
