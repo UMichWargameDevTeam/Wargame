@@ -5,6 +5,7 @@ import CommunicationsMessage from './CommunicationsMessage';
 import { arraysEqual } from '@/lib/utils';
 import { Message, RoleInstance } from '@/lib/Types';
 
+
 interface CommunicationsChannelProps {
     socketRef: RefObject<WebSocket | null>;
     socketReady: boolean;
@@ -15,15 +16,14 @@ interface CommunicationsChannelProps {
     setActiveChannel: React.Dispatch<React.SetStateAction<[string, string] | null>>;
     wasAtBottomRef: RefObject<boolean>;
     messages: Message[];
-}
+};
 
-export default function CommunicationsChannel({ 
-    socketRef, socketReady, viewerRoleInstance, 
-    unreadChannels, setUnreadChannels, channel, setActiveChannel, wasAtBottomRef, 
-    messages
-}: CommunicationsChannelProps) {
+export default function CommunicationsChannel({ socketRef, socketReady, viewerRoleInstance, unreadChannels, setUnreadChannels, channel, setActiveChannel, wasAtBottomRef, messages }: CommunicationsChannelProps) {
     const MAX_MESSAGE_LENGTH = 400;
     const SEND_DEBOUNCE_MS = 2000;
+    const [recipientTeamName, recipientRoleName] = channel;
+    const channelKey = `${recipientTeamName} ${recipientRoleName}`;
+    const channelDisplayName = recipientRoleName === "Gamemaster" ? recipientRoleName : channelKey;
 
     const [input, setInput] = useState("");
     const [sendingMessage, setSendingMessage] = useState<boolean>(false);
@@ -31,10 +31,6 @@ export default function CommunicationsChannel({
     const messagesDivRef = useRef<HTMLDivElement | null>(null);
     const textareaRef = useRef<HTMLTextAreaElement | null>(null);
     const lastSendTimeRef = useRef<number>(0);
-
-    const [recipientTeamName, recipientRoleName] = channel;
-    const channelKey = `${recipientTeamName} ${recipientRoleName}`;
-    const channelDisplayName = recipientRoleName === "Gamemaster" ? recipientRoleName : channelKey;
 
     // attach an event listener to the messages div that updates wasAtBottomRef.current dynamically
     useEffect(() => {
@@ -82,8 +78,15 @@ export default function CommunicationsChannel({
 
         if (value.length <= MAX_MESSAGE_LENGTH) {
             setInput(value);
-        } else {
+        }
+
+        else {
             setInput(value.slice(0, MAX_MESSAGE_LENGTH));
+        }
+
+        if (textareaRef.current) {
+            textareaRef.current.style.height = "auto";
+            textareaRef.current.style.height = `${textareaRef.current.scrollHeight}px`;
         }
 
         if (container && isAtBottom) {
@@ -100,7 +103,7 @@ export default function CommunicationsChannel({
             return;
         }
         lastSendTimeRef.current = now;
-    
+
         try {
             setSendingMessage(true);
 
@@ -129,11 +132,12 @@ export default function CommunicationsChannel({
             if (err instanceof Error) {
                 alert(err.message);
             }
+
         } finally {
             setSendingMessage(false);
         }
-    };
 
+    };
 
     return (
         <>
@@ -150,7 +154,6 @@ export default function CommunicationsChannel({
                     # {channelDisplayName}
                 </h4>
             </div>
-
             <div ref={messagesDivRef} className="overflow-y-auto">
                 {messages.length == 0 && (
                     <p className="text-sm text-gray-400">Be the first to send a message in this channel...</p>
@@ -165,7 +168,6 @@ export default function CommunicationsChannel({
                     />
                 ))}
             </div>
-
             <form
                 onSubmit={(e) => {
                     e.preventDefault();
@@ -190,7 +192,7 @@ export default function CommunicationsChannel({
                     <button
                         type="submit"
                         disabled={sendingMessage || input.length > MAX_MESSAGE_LENGTH}
-                        className={`px-4 py-2 rounded-lg font-medium 
+                        className={`px-4 py-2 rounded-lg font-medium
                             ${sendingMessage || input.length > MAX_MESSAGE_LENGTH
                                 ? "bg-gray-600 cursor-not-allowed text-gray-300"
                                 : "bg-green-600 cursor-pointer hover:bg-green-500 text-white"

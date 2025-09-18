@@ -1,8 +1,9 @@
 'use client'
 
-import { useRouter } from "next/navigation"
 import { useState, useEffect } from "react"
+import { useRouter } from "next/navigation"
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
+
 
 type AuthGuardProps = {
     children: React.ReactNode
@@ -13,6 +14,7 @@ type AuthGuardProps = {
 export default function AuthGuard({children, redirectTo = '/login', publicPaths= ['/register', '/login']}: AuthGuardProps) {
     const router = useRouter();
     const authedFetch = useAuthedFetch();
+
     const [loading, setLoading] = useState<boolean>(true);
 
     useEffect(() => {
@@ -27,11 +29,14 @@ export default function AuthGuard({children, redirectTo = '/login', publicPaths=
 
                 if (!res.ok) {
                     router.replace(redirectTo);
-                } else {
+                }
+
+                else {
                     const data = await res.json();
                     sessionStorage.setItem("username", data.username);
                     setLoading(false);
                 }
+
             } catch (err: unknown) {
                 console.error(err);
                 router.replace(redirectTo);
@@ -46,7 +51,8 @@ export default function AuthGuard({children, redirectTo = '/login', publicPaths=
             <div className="flex items-center justify-center h-screen text-white bg-neutral-900">
                 <h1 className="text-xl font-bold">Validating access...</h1>
             </div>
-        )
+        );
     };
+
     return <>{children}</>;
 }

@@ -8,6 +8,7 @@ from wargamelogic.view_sets import (
     GameInstanceViewSet, TeamInstanceViewSet, RoleInstanceViewSet, UnitInstanceViewSet, LandmarkInstanceViewSet, LandmarkInstanceTileViewSet
 )
 
+
 router = DefaultRouter()
 router.register(r'teams', TeamViewSet)
 router.register(r'branches', BranchViewSet)
@@ -26,7 +27,6 @@ router.register(r'unit-instances', UnitInstanceViewSet)
 router.register(r'landmark-instances', LandmarkInstanceViewSet)
 router.register(r'landmark-instance-tiles', LandmarkInstanceTileViewSet)
 
-
 urlpatterns = [
     path('api/game-instances/<str:join_code>/main-map/', get.main_map, name='main_map'),
     path('api/game-instances/<str:join_code>/validate-map-access/', get.validate_map_access, name='validate-map-access'),
@@ -38,7 +38,7 @@ urlpatterns = [
     path('api/units/<str:unit_name>/', get.get_unit_by_name, name='get_unit_by_name'),
     path('api/landmarks/<str:name>/', get.get_landmark_by_name, name='get_landmark_by_name'),
     path('api/tiles/<int:row>/<int:column>/', get.get_tile_by_coords, name='get_tile_by_coords'),
-    path('api/landmark-instances/<int:pk>/tiles/', get.get_game_tiles_for_landmark_instance_by_id, name='get_tiles_for_landmark_instance_by_id'), 
+    path('api/landmark-instances/<int:pk>/tiles/', get.get_game_tiles_for_landmark_instance_by_id, name='get_tiles_for_landmark_instance_by_id'),
 
     path('api/game-instances/create/', post.create_game_instance, name='create_game_instance'),
     path('api/role-instances/create/', post.create_role_instance, name='create_role_instance'),

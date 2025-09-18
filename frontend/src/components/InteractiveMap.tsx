@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useEffect, useState, useRef, RefObject, useCallback } from 'react';
+import React, { useState, useEffect, useRef, RefObject, useCallback } from 'react';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 import DraggableUnitInstance from './DraggableUnitInstance';
 import { UnitInstance } from '@/lib/Types';
+
 
 interface InteractiveMapProps {
     socketRef: RefObject<WebSocket | null>;
@@ -12,7 +13,7 @@ interface InteractiveMapProps {
     unitInstances: UnitInstance[];
     setUnitInstances: React.Dispatch<React.SetStateAction<UnitInstance[]>>;
     selectedUnitInstances: Record<string, boolean>;
-}
+};
 
 const BASE_CELL_SIZE = 80;
 const MIN_ZOOM = 0.5;
@@ -22,21 +23,20 @@ const MAX_ZOOM = 5;
 const MAX_GRID_LEVEL = 2;
 const FINE_CELL_SIZE = BASE_CELL_SIZE / (2 ** MAX_GRID_LEVEL);
 
+
 export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitInstances, setUnitInstances, selectedUnitInstances }: InteractiveMapProps) {
     const authedFetch = useAuthedFetch();
-    
-    const containerRef = useRef<HTMLDivElement>(null);
-    const canvasRef = useRef<HTMLCanvasElement>(null);
-    const imageRef = useRef<HTMLImageElement | null>(null);
 
     const [zoom, setZoom] = useState<number>(1);
     const [offset, setOffset] = useState<{ x: number; y: number }>({ x: 0, y: 0 });
-
     const [dragging, setDragging] = useState<boolean>(false); // panning
     const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
     const [elementDragId, setElementDragId] = useState<number>(0); // id of unit being dragged (toggle)
     const [showGrid, setShowGrid] = useState<boolean>(true);
 
+    const containerRef = useRef<HTMLDivElement>(null);
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const imageRef = useRef<HTMLImageElement | null>(null);
     const addedUnitsMessageListener = useRef<boolean>(false);
 
     useEffect(() => {
@@ -59,18 +59,22 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
 
         const handleUnitsMessage = (event: MessageEvent) => {
             const msg  = JSON.parse(event.data);
+
             if (msg.channel === "units") {
                 switch (msg.action) {
 
                     case "attack":
                         // TODO
                         break;
+
                     case "create":
                         setUnitInstances(prev => [...prev, msg.data]);
                         break;
+
                     case "delete":
                         setUnitInstances(prev => prev.filter(u => u.id !== msg.data.id));
                         break;
+
                     case "move":
                         setUnitInstances(prev =>
                             prev.map(unitInstance =>
@@ -144,6 +148,7 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
                 ctx.lineTo(x, imgH);
                 ctx.stroke();
             }
+
             for (let y = 0; y <= imgH; y += cellSize) {
                 ctx.beginPath();
                 ctx.moveTo(0, y);
@@ -160,12 +165,16 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
 
                     if (level === 0) {
                         label = getLabelPart(row, col, false);
-                    } else if (level === 1) {
+                    }
+
+                    else if (level === 1) {
                         const parentRow = Math.floor(row / 2);
                         const parentCol = Math.floor(col / 2);
                         label = getLabelPart(parentRow, parentCol, false) +
                             getLabelPart(row % 2, col % 2, false);
-                    } else if (level === 2) {
+                    }
+
+                    else if (level === 2) {
                         const grandParentRow = Math.floor(row / 4);
                         const grandParentCol = Math.floor(col / 4);
                         const grandParentLabel = getLabelPart(grandParentRow, grandParentCol, false);
@@ -240,8 +249,8 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
     const handleWheel = (e: React.WheelEvent) => {
         const delta = -e.deltaY * 0.001;
         const newZoom = Math.min(Math.max(zoom + delta, MIN_ZOOM), MAX_ZOOM);
-
         const rect = containerRef.current?.getBoundingClientRect();
+
         if (rect) {
             const mouseX = e.clientX - rect.left;
             const mouseY = e.clientY - rect.top;
@@ -253,6 +262,7 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
                 y: offset.y - dy * (newZoom / zoom - 1),
             });
         }
+
         setZoom(newZoom);
     };
 
@@ -269,8 +279,11 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
                 x: e.clientX - dragStart.x,
                 y: e.clientY - dragStart.y,
             });
-        } else if (elementDragId) {
+        }
+
+        else if (elementDragId) {
             const rect = containerRef.current?.getBoundingClientRect();
+
             if (rect) {
                 const mouseX = (e.clientX - rect.left - offset.x) / zoom;
                 const mouseY = (e.clientY - rect.top - offset.y) / zoom;
@@ -314,6 +327,7 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
                     { method: "PATCH", headers: { "Content-Type": "application/json" } }
                 );
                 const data = await res.json();
+
                 if (!res.ok) {
                     throw new Error(data.error || data.detail || "Failed to move unit instance.");
                 }
@@ -327,13 +341,18 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
                         data: updatedUnitInstance
                     }));
                 }
+
             } catch (err: unknown) {
                 console.error(err);
+
                 if (err instanceof Error) {
                   alert(err.message);
                 }
             }
-        } else {
+
+        }
+
+        else {
             // start dragging this unit (will move on mousemove)
             setElementDragId(id);
         }
@@ -359,8 +378,9 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
                     draw();
                 }}
                 className="absolute top-2 left-2 z-50 bg-neutral-700 text-white px-3 py-1 rounded cursor-pointer hover:bg-neutral-600"
-            >Toggle Grid</button>
-
+            >
+                Toggle Grid
+            </button>
             <canvas
                 ref={canvasRef}
                 className="absolute top-0 left-0 w-full h-full"
@@ -369,7 +389,6 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
                 onMouseUp={handleMouseUp}
                 onWheel={handleWheel}
             />
-
             {/* UnitInstances rendered above canvas */}
             {unitInstances
                 .filter(unitInstance => selectedUnitInstances[unitInstance.unit.domain] === true)

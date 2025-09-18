@@ -15,13 +15,14 @@ from wargamelogic.models import (
 )
 
 
-# ------------------------
-# Request cache utilities
-# ------------------------
+# ------------------------ #
+# Request cache utilities  #
+# ------------------------ #
 
 def _get_request_cache(request):
     if not hasattr(request, "_role_check_cache"):
         request._role_check_cache = {}
+
     return request._role_check_cache
 
 def _normalize_select_related(sel):
@@ -36,7 +37,6 @@ def _normalize_select_related(sel):
             expanded.add("__".join(parts[:i]))
     return expanded
 
-
 def get_object_and_related_with_cache_or_404(request, model, *args, select_related=None, **kwargs):
     cache = _get_request_cache(request)
 
@@ -48,9 +48,10 @@ def get_object_and_related_with_cache_or_404(request, model, *args, select_relat
 
     if entry is None:
         qs = model.objects.all()
+
         if sel:
             qs = qs.select_related(*sel)
-        
+
         obj = get_object_or_404(qs, *args, **kwargs)
         cache[key] = {
             "obj": obj,
@@ -64,7 +65,7 @@ def get_object_and_related_with_cache_or_404(request, model, *args, select_relat
     if want_sel != entry["select_related"]:
         qs = model.objects.all()
         qs = qs.select_related(*sorted(want_sel))
-        
+
         obj = get_object_or_404(qs, *args, **kwargs)
         cache[key] = {
             "obj": obj,
@@ -74,10 +75,9 @@ def get_object_and_related_with_cache_or_404(request, model, *args, select_relat
 
     return entry["obj"]
 
-
-# ------------------------
-# Helpers
-# ------------------------
+# ------------------------ #
+# Helpers                  #
+# ------------------------ #
 
 def _extract_request(args, kwargs, view_func):
     """
@@ -91,8 +91,10 @@ def _extract_request(args, kwargs, view_func):
         bound_args.apply_defaults()
         request = bound_args.arguments.get('request', None)
         self_obj = bound_args.arguments.get('self', None)
+
         if request is not None:
             return self_obj, request
+
     except (TypeError, ValueError):
         pass  # Signature inspection failed, fall back to scanning.
 
@@ -103,51 +105,53 @@ def _extract_request(args, kwargs, view_func):
 
     return None, None
 
-
 def get_nested_attr(obj, attr, default=None):
     try:
         for part in attr.split('.'):
             obj = getattr(obj, part)
         return obj
+
     except AttributeError:
         return default
-
 
 def _json_safe(value):
     if value is None or isinstance(value, (bool, int, float, str)):
         return value
+
     if isinstance(value, datetime):
         return value.isoformat()
+
     if isinstance(value, Model):
         return str(value)
+
     if isinstance(value, QuerySet):
         return [str(v) for v in value]
+
     if isinstance(value, (list, set, tuple)):
         return [str(v) for v in value]
-    return str(value)
 
+    return str(value)
 
 def _json_safe_dict(d):
     return {k: _json_safe(v) for k, v in d.items()}
 
-
-# ------------------------
-# Core role checking
-# ------------------------
-
+# ------------------------ #
+# Core role checking       #
+# ------------------------ #
 def get_user_role_instances(request):
     """
     Fetch and cache the requesting user's RoleInstances for this request.
     """
     cache = _get_request_cache(request)
+
     if "role_instances" not in cache:
         cache["role_instances"] = list(
             RoleInstance.objects.filter(user=request.user).select_related(
                 "role", "team_instance__team", "team_instance__game_instance"
             )
         )
-    return cache["role_instances"]
 
+    return cache["role_instances"]
 
 def role_instance_matches(request, kwargs, criteria):
     if request.user.is_staff or request.user.is_superuser:
@@ -161,13 +165,17 @@ def role_instance_matches(request, kwargs, criteria):
         match = True
         for field, expected in criteria.items():
             actual_value = get_nested_attr(role_instance, field, None)
+
             if callable(expected):
+
                 try:
                     expected = expected(request, kwargs)
+
                 except Exception as e:
                     failed_fields[field] = f"<error: {e}>"
                     match = False
                     continue
+
             if isinstance(expected, (QuerySet, list, set, tuple)):
                 if actual_value not in expected:
                     failed_fields[field] = actual_value
@@ -178,12 +186,12 @@ def role_instance_matches(request, kwargs, criteria):
                     match = False
         if match:
             return True, {}
+
     return False, failed_fields
 
-
-# ------------------------
-# Decorators
-# ------------------------
+# ------------------------ #
+# Decorators               #
+# ------------------------ #
 
 def require_role_instance(criteria):
     def decorator(view_func):
@@ -192,17 +200,21 @@ def require_role_instance(criteria):
             self, request = _extract_request(args, kwargs, view_func)
             try:
                 matches, failed_fields = role_instance_matches(request, kwargs, criteria)
+
                 if matches:
                     return view_func(*args, **kwargs)
 
                 computed_criteria = {}
                 for k, v in criteria.items():
                     if callable(v):
+
                         try:
                             result = v(request, kwargs)
                             computed_criteria[k] = result
+
                         except Exception as e:
                             computed_criteria[k] = f"<error: {e}>"
+
                     else:
                         computed_criteria[k] = v
 
@@ -211,12 +223,13 @@ def require_role_instance(criteria):
                     "allowed_role": _json_safe_dict(computed_criteria),
                     "failed_fields": _json_safe_dict(failed_fields)
                 }, status=status.HTTP_403_FORBIDDEN)
+
             finally:
                 if hasattr(request, "_role_check_cache"):
                     delattr(request, "_role_check_cache")
+
         return _wrapped_view
     return decorator
-
 
 def require_any_role_instance(criteria_list):
     def decorator(view_func):
@@ -227,6 +240,7 @@ def require_any_role_instance(criteria_list):
                 all_failed_fields = []
                 for criteria in criteria_list:
                     matches, failed_fields = role_instance_matches(request, kwargs, criteria)
+
                     if matches:
                         return view_func(*args, **kwargs)
                     all_failed_fields.append(_json_safe_dict(failed_fields))
@@ -236,11 +250,14 @@ def require_any_role_instance(criteria_list):
                     computed_criteria = {}
                     for k, v in criteria.items():
                         if callable(v):
+
                             try:
                                 result = v(request, kwargs)
                                 computed_criteria[k] = result
+
                             except Exception as e:
                                 computed_criteria[k] = f"<error: {e}>"
+
                         else:
                             computed_criteria[k] = v
                     serialized_criteria_list.append(_json_safe_dict(computed_criteria))
@@ -250,8 +267,10 @@ def require_any_role_instance(criteria_list):
                     "allowed_roles": serialized_criteria_list,
                     "failed_fields": all_failed_fields
                 }, status=status.HTTP_403_FORBIDDEN)
+
             finally:
                 if hasattr(request, "_role_check_cache"):
                     delattr(request, "_role_check_cache")
+
         return _wrapped_view
     return decorator

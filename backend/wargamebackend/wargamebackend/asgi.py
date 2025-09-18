@@ -11,12 +11,14 @@ import os
 import django
 from django.core.asgi import get_asgi_application
 
+
 os.environ.setdefault("DJANGO_SETTINGS_MODULE", "wargamebackend.settings")
 django.setup()
 
 from channels.routing import ProtocolTypeRouter, URLRouter
-from auth.middleware import CookieJWTAuthenticationWebSocketMiddleware 
+from auth.middleware import CookieJWTAuthenticationWebSocketMiddleware
 import wargamelogic.routing
+
 
 application = ProtocolTypeRouter({
     "http": get_asgi_application(),

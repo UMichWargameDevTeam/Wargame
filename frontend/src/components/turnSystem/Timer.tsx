@@ -3,15 +3,15 @@
 import React, { useEffect } from "react";
 import { GameInstance } from "@/lib/Types";
 
+
 interface TimerProps {
     gameInstance: GameInstance | null;
     timer: number;
     turnDuration: number;
     setTimer: React.Dispatch<React.SetStateAction<number>>;
-}
+};
 
 export default function Timer({ gameInstance, timer, turnDuration, setTimer }: TimerProps) {
-
     // Drive the visible countdown and push value to parent via setTimer
     useEffect(() => {
         if (!gameInstance) return;
@@ -20,7 +20,9 @@ export default function Timer({ gameInstance, timer, turnDuration, setTimer }: T
         if (gameInstance?.turn_finish_time != null) {
             const now = Math.floor(Date.now() / 1000);
             setTimer(Math.max(gameInstance.turn_finish_time - now, 0));
-        } else {
+        }
+
+        else {
             setTimer(turnDuration);
         }
 

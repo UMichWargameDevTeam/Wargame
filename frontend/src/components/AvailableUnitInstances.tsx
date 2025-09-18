@@ -4,20 +4,21 @@ import { useState, RefObject } from 'react';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 import { RoleInstance, UnitInstance } from '@/lib/Types';
 
+
 interface AvailableUnitInstancesProps {
     socketRef: RefObject<WebSocket | null>;
     socketReady: boolean;
     roleInstance: RoleInstance | null;
     unitInstances: UnitInstance[];
-}
+};
 
 export default function AvailableUnitInstances({ socketRef, socketReady, roleInstance, unitInstances }: AvailableUnitInstancesProps) {
     const authedFetch = useAuthedFetch();
-    
-    const [open, setOpen] = useState<boolean>(true);
-    const [deletingUnitInstance, setDeletingUnitInstance] = useState<number | null>(null);
 
     const isGamemaster = roleInstance?.role.name === "Gamemaster";
+
+    const [open, setOpen] = useState<boolean>(true);
+    const [deletingUnitInstance, setDeletingUnitInstance] = useState<number | null>(null);
 
     const handleDeleteUnitInstance = async (unitId: number) => {
         if (!socketReady || !socketRef.current) return;
@@ -29,7 +30,7 @@ export default function AvailableUnitInstances({ socketRef, socketReady, roleIns
             const res = await authedFetch(`/api/unit-instances/${unitId}/`, {
                 method: 'DELETE'
             });
-            
+
             if (!res.ok) {
                 const data = await res.json();
                 throw new Error(data.error || data.detail || 'Failed to delete unit.');
@@ -44,15 +45,18 @@ export default function AvailableUnitInstances({ socketRef, socketReady, roleIns
                     }
                 }));
             }
-            
+
         } catch (err: unknown) {
             console.error(err);
+
             if (err instanceof Error) {
                 alert(err.message);
             }
+
         } finally {
             setDeletingUnitInstance(null);
         }
+
     };
 
     return (
@@ -87,7 +91,7 @@ export default function AvailableUnitInstances({ socketRef, socketReady, roleIns
                                 <button
                                     onClick={() => handleDeleteUnitInstance(unitInstance.id)}
                                     disabled={deletingUnitInstance === unitInstance.id}
-                                    className={`px-2 py-1 rounded text-sm 
+                                    className={`px-2 py-1 rounded text-sm
                                         ${deletingUnitInstance === unitInstance.id
                                             ? "bg-gray-400 cursor-not-allowed"
                                             : "bg-red-600 cursor-pointer hover:bg-red-500"

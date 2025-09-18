@@ -16,11 +16,11 @@ from pathlib import Path
 from dotenv import load_dotenv
 from urllib.parse import urlparse, parse_qsl
 
+
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -83,7 +83,6 @@ TEMPLATES = [
 ASGI_APPLICATION = 'wargamebackend.asgi.application'
 WSGI_APPLICATION = 'wargamebackend.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 # I use Postgres for our real DB and sqlite when testing,
@@ -138,7 +137,6 @@ AUTH_PASSWORD_VALIDATORS = [
     },
 ]
 
-
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
 
@@ -178,7 +176,7 @@ CACHES = {
 
 raw_admins = os.getenv("ADMINS", "")
 ADMINS = [
-    tuple(admin.split(":", 1)) 
+    tuple(admin.split(":", 1))
     for admin in raw_admins.split(",") if admin
 ]
 
@@ -252,7 +250,6 @@ else:
             },
         },
     }
-
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/
