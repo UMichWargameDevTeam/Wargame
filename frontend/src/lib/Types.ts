@@ -75,6 +75,8 @@ export interface GameInstance {
     join_code: string;
     created_at: string;
     is_started: boolean;
+    turn: number;
+    turn_finish_time: number | null;
 }
 
 export interface TeamInstance {

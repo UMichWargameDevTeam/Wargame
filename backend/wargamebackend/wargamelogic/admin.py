@@ -98,7 +98,7 @@ class TileAdmin(admin.ModelAdmin):
 
 @admin.register(GameInstance)
 class GameInstanceAdmin(admin.ModelAdmin):
-    list_display = ('join_code', 'created_at', 'is_started')
+    list_display = ('join_code', 'created_at', 'is_started', 'turn', 'turn_finish_time')
     list_filter = ('is_started', 'created_at')
     search_fields = ('join_code',)
     inlines = [TeamInstanceInline]

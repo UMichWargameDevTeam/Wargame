@@ -7,7 +7,7 @@ import { RoleInstance, UnitInstance } from '@/lib/Types';
 interface AvailableUnitInstancesProps {
     socketRef: RefObject<WebSocket | null>;
     socketReady: boolean;
-    roleInstance: RoleInstance;
+    roleInstance: RoleInstance | null;
     unitInstances: UnitInstance[];
 }
 
@@ -17,7 +17,7 @@ export default function AvailableUnitInstances({ socketRef, socketReady, roleIns
     const [open, setOpen] = useState<boolean>(true);
     const [deletingUnitInstance, setDeletingUnitInstance] = useState<number | null>(null);
 
-    const isGamemaster = roleInstance.role.name === "Gamemaster";
+    const isGamemaster = roleInstance?.role.name === "Gamemaster";
 
     const handleDeleteUnitInstance = async (unitId: number) => {
         if (!socketReady || !socketRef.current) return;

@@ -14,9 +14,11 @@ interface UsersListProps {
 
 export default function UsersList({ socketRef, socketReady, roleInstance, roleInstances, setRoleInstances }: UsersListProps) {
     const authedFetch = useAuthedFetch();
-    const [deletingRoleInstance, setDeletingRoleInstance] = useState<number | null>(null);
-    const addedUsersMessageListener = useRef<boolean>(false);
+
     const [open, setOpen] = useState<boolean>(true);
+    const [deletingRoleInstance, setDeletingRoleInstance] = useState<number | null>(null);
+
+    const addedUsersMessageListener = useRef<boolean>(false);
 
     // WebSocket setup
     useEffect(() => {
@@ -30,7 +32,7 @@ export default function UsersList({ socketRef, socketReady, roleInstance, roleIn
                 switch (msg.action) {
                     case "list":
                         setRoleInstances(() => msg.data);
-                        if (!msg.data.some((ri: RoleInstance) => ri.user.id == roleInstance.user.id)) {
+                        if (!msg.data.some((ri: RoleInstance) => ri.user.id === roleInstance.user.id)) {
                             socket.send(JSON.stringify({
                                 channel: "users",
                                 action: "join",
@@ -44,7 +46,7 @@ export default function UsersList({ socketRef, socketReady, roleInstance, roleIn
                     case "leave":
                         setRoleInstances(prev => prev.filter(r => r.id !== msg.data.id));
                         break;
-                    case "update_ready":
+                    case "ready":
                         setRoleInstances(prev =>
                             prev.map(r =>
                                 r.id === msg.data.id ? { ...r, ready: msg.data.ready } : r
@@ -56,6 +58,7 @@ export default function UsersList({ socketRef, socketReady, roleInstance, roleIn
         };
 
         socket.addEventListener("message", handleUsersMessage);
+
         if (socket.readyState === WebSocket.OPEN) {
             socket.send(JSON.stringify({
                 channel: "users",
@@ -134,7 +137,7 @@ export default function UsersList({ socketRef, socketReady, roleInstance, roleIn
     };
 
     return (
-        <div className="bg-neutral-700 p-4 rounded-lg shadow-lg w-full max-w-md max-h-md">
+        <div className="bg-neutral-700 p-4 rounded-lg w-full max-w-md max-h-md">
             {/* Header with collapse toggle */}
             <div className="flex justify-between items-center mb-2">
                 <h3 className="text-lg font-semibold">Connected Players</h3>
@@ -171,14 +174,16 @@ export default function UsersList({ socketRef, socketReady, roleInstance, roleIn
                                                             className="flex items-center gap-2 text-sm"
                                                         >
                                                             <span>{ri.user.username}</span>
-                                                            <span className={ri.ready ? "text-green-400" : "text-red-400"}>
-                                                                {ri.ready ? "Ready" : "Not Ready"}
-                                                            </span>
+                                                            {ri.role.name !== "Gamemaster" && (
+                                                                <span className={ri.ready ? "text-green-400" : "text-red-400"}>
+                                                                    {ri.ready ? "Ready" : "Not Ready"}
+                                                                </span>
+                                                            )}
                                                             {roleInstance?.role.name === "Gamemaster" && (
                                                                 <button
                                                                     onClick={() => handleDeleteRoleInstance(ri.id)}
                                                                     disabled={deletingRoleInstance === ri.id}
-                                                                    className={`px-2 py-0.5 rounded text-xs transition
+                                                                    className={`px-2 py-0.5 rounded text-xs 
                                                                         ${deletingRoleInstance === ri.id
                                                                             ? "bg-gray-500 cursor-not-allowed"
                                                                             : "bg-red-600 cursor-pointer hover:bg-red-500"

@@ -8,7 +8,7 @@ interface AddUnitInstanceProps {
     joinCode: string;
     socketRef: RefObject<WebSocket | null>;
     socketReady: boolean;
-    roleInstance: RoleInstance;
+    roleInstance: RoleInstance | null;
     units: Unit[];
     teams: Team[];
 }
@@ -23,8 +23,8 @@ export default function AddUnitInstance({ joinCode, socketRef, socketReady, role
     const [column, setColumn] = useState<string>('');
     const [creatingUnitInstance, setCreatingUnitInstance] = useState<boolean>(false);
 
-    const handleAddUnitInstance = async (joinCode: string, teamName: string, unitName: string, row: string, column: string) => {
-        if (!socketReady || !socketRef.current) return;
+    const handleAddUnitInstance = async () => {
+        if (!joinCode || !socketReady || !socketRef.current || !roleInstance) return;
         const socket = socketRef.current;
     
         try {
@@ -46,14 +46,14 @@ export default function AddUnitInstance({ joinCode, socketRef, socketReady, role
             }
 
             if (socket.readyState === WebSocket.OPEN) {
-                const unitInstance: UnitInstance = data;
-                const unitName = unitInstance.unit.name;
-                const unitCost = roleInstance.role.name == "Gamemaster" ? 0 : unitInstance.unit.cost;
+                const newUnitInstance: UnitInstance = data;
+                const unitName = newUnitInstance.unit.name;
+                const unitCost = roleInstance.role.name === "Gamemaster" ? 0 : newUnitInstance.unit.cost;
 
                 socket.send(JSON.stringify({
                     channel: "units",
                     action: "create",
-                    data: unitInstance
+                    data: newUnitInstance
                 }));
 
                 if (roleInstance.role.name != "Gamemaster") {
@@ -71,7 +71,7 @@ export default function AddUnitInstance({ joinCode, socketRef, socketReady, role
                 const messageSenderName = roleInstance.user.username;
                 const messageSenderTeamName = roleInstance.team_instance.team.name;
                 const messageSenderRoleName = roleInstance.role.name;
-                const messageRoleDisplayName = messageSenderTeamName == "Gamemasters" ? messageSenderRoleName : `${messageSenderTeamName} ${messageSenderRoleName}`;
+                const messageRoleDisplayName = messageSenderTeamName === "Gamemasters" ? messageSenderRoleName : `${messageSenderTeamName} ${messageSenderRoleName}`;
                 const messageText = `${messageRoleDisplayName} ${messageSenderName} spent ${unitCost} supply points to spawn a ${unitName}.`
 
                 socket.send(JSON.stringify({
@@ -121,7 +121,7 @@ export default function AddUnitInstance({ joinCode, socketRef, socketReady, role
                 <form
                     onSubmit={(e) => {
                         e.preventDefault();
-                        handleAddUnitInstance(joinCode, teamName, unitName, row, column);
+                        handleAddUnitInstance();
                     }}
                 >
                     {/* Unit + Team Selectors */}
@@ -187,7 +187,7 @@ export default function AddUnitInstance({ joinCode, socketRef, socketReady, role
                     <button
                         type="submit"
                         disabled={creatingUnitInstance}
-                        className={`w-full py-2 rounded-lg font-medium transition 
+                        className={`w-full py-2 rounded-lg font-medium 
                             ${creatingUnitInstance
                                 ? "bg-gray-600 cursor-not-allowed text-gray-300"
                                 : "bg-green-600 cursor-pointer hover:bg-green-500 text-white"

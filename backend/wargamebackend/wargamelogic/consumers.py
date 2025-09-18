@@ -96,7 +96,7 @@ class GameConsumer(AsyncWebsocketConsumer):
         """
         text_data JSON format:
         {
-            "channel": "communications" | "points" | "timer" | "units" | "users" | ...,
+            "channel": "communications" | "points" | "turn" | "units" | "users" | ...,
             "action": "send" | "start" | "move" | ...,
             "data": {...}
         }
@@ -232,39 +232,8 @@ class GameConsumer(AsyncWebsocketConsumer):
         return self.team_group, data
     
 
-    async def handle_users_update_ready(self, data):
+    async def handle_users_ready(self, data):
         return self.team_group, data
-
-
-    async def handle_timer_get_finish_time(self, data):
-        target_group = self.user_group
-
-        timer_key = f"game_{self.join_code}_timer"
-        redis_client = get_redis_client()
-
-        if not redis_client.exists(timer_key):
-            return target_group, data
-
-        data["finish_time"] = int(redis_client.get(timer_key))
-        return target_group, data
-
-
-    async def handle_timer_set_finish_time(self, data):
-        timer_key = f"game_{self.join_code}_timer"
-        redis_client = get_redis_client()
-
-        finish_time = data.get("finish_time")
-
-        if finish_time is None:
-            # Reset timer
-            redis_client.delete(timer_key)
-            print(f"Timer for game {self.join_code} has been reset.")
-        else:
-            # Set timer explicitly
-            redis_client.set(timer_key, int(finish_time))
-            print(f"Timer for game {self.join_code} set to end at {finish_time}.")
-
-        return self.game_group, {"finish_time": finish_time}
 
 
     async def handle_role_instances_delete(self, data):

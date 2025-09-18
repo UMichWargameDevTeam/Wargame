@@ -39,12 +39,12 @@ export default function SupplyPoints({ joinCode, socketRef, socketReady, viewerR
                     case "send":
                         const transfer: Message = msg.data;
                         const transferAmount = Number(transfer.text);
-                        if (transfer.recipient_team_name == viewerRoleInstance.team_instance.team.name
-                         && transfer.recipient_role_name == viewerRoleInstance.role.name) {
+                        if (transfer.recipient_team_name === viewerRoleInstance.team_instance.team.name
+                         && transfer.recipient_role_name === viewerRoleInstance.role.name) {
                             setTeamInstanceRolePoints(prev => prev + transferAmount);
                         }
-                        else if (transfer.sender_role_instance.team_instance.team.name == viewerRoleInstance.team_instance.team.name
-                              && transfer.sender_role_instance.role.name == viewerRoleInstance.role.name) {
+                        else if (transfer.sender_role_instance.team_instance.team.name === viewerRoleInstance.team_instance.team.name
+                              && transfer.sender_role_instance.role.name === viewerRoleInstance.role.name) {
                             setTeamInstanceRolePoints(prev => prev - transferAmount);
                         }
                         else {
@@ -175,7 +175,7 @@ export default function SupplyPoints({ joinCode, socketRef, socketReady, viewerR
     };
 
     const handleSendPoints = async (joinCode: string) => {
-        if (!socketReady || !socketRef.current || !viewerRoleInstance) return;
+        if (!joinCode || !socketReady || !socketRef.current || !viewerRoleInstance) return;
         const socket = socketRef.current;
 
         try {
@@ -225,7 +225,7 @@ export default function SupplyPoints({ joinCode, socketRef, socketReady, viewerR
                     const messageSenderName = viewerRoleInstance.user.username;
                     const messageSenderTeamName = viewerRoleInstance.team_instance.team.name;
                     const messageSenderRoleName = viewerRoleInstance.role.name;
-                    const messageRoleDisplayName = messageSenderTeamName == "Gamemasters" ? messageSenderRoleName : `${messageSenderTeamName} ${messageSenderRoleName}`;
+                    const messageRoleDisplayName = messageSenderTeamName === "Gamemasters" ? messageSenderRoleName : `${messageSenderTeamName} ${messageSenderRoleName}`;
                     const messageText = `${messageRoleDisplayName} ${messageSenderName} transferred ${transfer.supply_points} supply points to ${messageRecipientTeamName} ${messageRecipientRoleName}s.`
     
                     socket.send(JSON.stringify({
@@ -324,7 +324,7 @@ export default function SupplyPoints({ joinCode, socketRef, socketReady, viewerR
                             <button
                                 type="submit"
                                 disabled={sendingPoints || !validTransferValues}
-                                className={`w-full py-2 rounded-lg font-medium transition 
+                                className={`w-full py-2 rounded-lg font-medium 
                                     ${sendingPoints || !validTransferValues
                                         ? "bg-gray-600 cursor-not-allowed text-gray-300"
                                         : "bg-green-600 cursor-pointer hover:bg-green-500 text-white"

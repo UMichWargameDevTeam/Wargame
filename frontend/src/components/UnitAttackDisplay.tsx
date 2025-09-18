@@ -114,7 +114,7 @@ export default function UnitAttackDropdown({
     return (
         <div
             ref={dropdownRef}
-            className={`absolute bottom-full right-0 mb-1 bg-neutral-800 rounded-md p-3 text-white flex space-x-3 z-50 shadow-lg
+            className={`absolute bottom-full right-0 mb-1 bg-neutral-800 rounded-md p-3 text-white flex space-x-3 z-50 
         transition-transform duration-200 ease-out
         ${open ? 'translate-y-0 opacity-100' : 'translate-y-2 opacity-0'}
       `}
@@ -173,7 +173,7 @@ export default function UnitAttackDropdown({
 
                     <div className="flex items-end">
                         <button
-                            onClick={handleSubmit}
+                            onClick={() => handleSubmit()}
                             disabled={loading}
                             className="mt-2 px-4 py-1 rounded bg-red-600 hover:bg-red-500 text-sm"
                         >

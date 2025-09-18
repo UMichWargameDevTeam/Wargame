@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState } from 'react';
+import { useState } from 'react';
 
 export default function FooterControls() {
   const [showAttackPopup, setShowAttackPopup] = useState<boolean>(false);

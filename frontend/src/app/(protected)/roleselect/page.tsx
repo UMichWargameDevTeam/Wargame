@@ -175,7 +175,6 @@ export default function RoleSelectPage() {
             if (err instanceof Error) {
                 alert(err.message);
             }
-        } finally {
             setLoggingOut(false);
         }
     };
@@ -208,7 +207,7 @@ export default function RoleSelectPage() {
                     {dropdownOpen && (
                         <div className="absolute z-10 w-full">
                             <button
-                                onClick={handleLogout}
+                                onClick={() => handleLogout()}
                                 disabled={loggingOut}
                                 className={`h-[80px] w-full
                                     ${loggingOut
@@ -263,7 +262,7 @@ export default function RoleSelectPage() {
                             <button
                                 type="submit"
                                 disabled={!isValidName(createCode) || creatingGame}
-                                className={`px-4 py-2 rounded transition
+                                className={`px-4 py-2 rounded 
                                     ${(!isValidName(createCode) || creatingGame)
                                         ? "bg-gray-500 cursor-not-allowed"
                                         : "bg-purple-700 cursor-pointer hover:bg-purple-600"
@@ -392,7 +391,7 @@ export default function RoleSelectPage() {
                             <button
                                 type="submit"
                                 disabled={!isValidName(joinCode) || joiningGame}
-                                className={`flex-1 px-4 py-2 rounded transition
+                                className={`flex-1 px-4 py-2 rounded 
                                     ${(!isValidName(joinCode) || joiningGame)
                                         ? "bg-gray-500 cursor-not-allowed"
                                         : "bg-blue-600 cursor-pointer hover:bg-blue-700"

@@ -65,7 +65,7 @@ export default function DraggableUnitInstance({ unitInstance, cellSize, zoom, of
                         zIndex: 100,
                         width: 200
                     }}
-                    onClick={e => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
                 >
                     <div><b>Team:</b> {unitInstance.team_instance.team.name}</div>
                     <div><b>Unit:</b> {unitInstance.unit.name}</div>

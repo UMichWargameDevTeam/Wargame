@@ -24,6 +24,11 @@ from auth.authorization import (
 @permission_classes([IsAuthenticated])
 @transaction.atomic
 def create_game_instance(request):
+    """
+    body: {
+        join_code: string
+    }
+    """
     join_code = request.data.get("join_code")
     if not join_code:
         return Response({"error": "join_code is required."}, status=status.HTTP_400_BAD_REQUEST)
@@ -111,6 +116,13 @@ def create_game_instance(request):
 @authentication_classes([CookieJWTAuthentication])
 @permission_classes([IsAuthenticated])
 def create_role_instance(request):
+    """
+    body: {
+        join_code: string,
+        team_name: string,
+        role_name: string
+    }
+    """
     join_code = request.data.get('join_code')
     team_name = request.data.get('team_name')
     role_name = request.data.get('role_name')
@@ -131,7 +143,7 @@ def create_role_instance(request):
 
     if existing_role_instance:
         serializer = RoleInstanceSerializer(existing_role_instance)
-        return Response(serializer.data, status=status.HTTP_200_OK)
+        return Response(serializer.data)
 
     # Resolve Team and Role in parallel
     try:
@@ -181,6 +193,15 @@ def create_role_instance(request):
 ])
 @transaction.atomic
 def create_unit_instance(request):
+    """
+    body: {
+        join_code: string,
+        team_name: string, 
+        unit_name: string,
+        row: int,
+        column: int
+    }
+    """
     join_code = request.data.get("join_code")
     team_name = request.data.get("team_name")
     unit_name = request.data.get("unit_name")

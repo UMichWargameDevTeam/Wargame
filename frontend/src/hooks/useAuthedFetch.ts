@@ -31,14 +31,14 @@ export function useAuthedFetch() {
                 try {
                     const data = await res.json();
                     // if the user doesn't have an access token, redirect them to the login page
-                    if (data.detail == "no_token") {
+                    if (data.detail === "no_token") {
                         router.push("/login");
                         return res;
                     }
 
                     // if the user has an access token but it's expired or invalid, 
                     // try to refresh the access token using the refresh token, then retry the original request
-                    if (data.detail == "expired_token" || data.detail == "invalid_token") {
+                    if (data.detail === "expired_token" || data.detail === "invalid_token") {
                         const refreshRes = await fetch(`${BACKEND_URL}/api/auth/token/refresh/`, {
                             method: "POST",
                             credentials: "include",
