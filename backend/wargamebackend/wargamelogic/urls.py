@@ -40,6 +40,10 @@ urlpatterns = [
     path('api/tiles/<int:row>/<int:column>/', get.get_tile_by_coords, name='get_tile_by_coords'),
     path('api/landmark-instances/<int:pk>/tiles/', get.get_game_tiles_for_landmark_instance_by_id, name='get_tiles_for_landmark_instance_by_id'), 
 
+    path('api/game-instances/create/', post.create_game_instance, name='create_game_instance'),
+    path('api/role-instances/create/', post.create_role_instance, name='create_role_instance'),
+    path('api/unit-instances/create/', post.create_unit_instance, name='create_unit_instance'),
+
     path('api/game-instances/<str:join_code>/', get.get_game_by_join_code, name='get_game_by_join_code'),
     path('api/game-instances/<str:join_code>/team-instances/<str:team_name>/', get.get_game_team_instance_by_name, name='get_game_team_instance_by_name'),
     path('api/game-instances/<str:join_code>/role-instances/', get.get_game_role_instances, name='get_game_role_instances'),
@@ -50,10 +54,6 @@ urlpatterns = [
     path('api/game-instances/<str:join_code>/team-instances/<str:team_name>/unit-instances/', get.get_game_unit_instances_by_team_name, name='get_game_unit_instances_by_team_name'),
     path('api/game-instances/<str:join_code>/team-instances/<str:team_name>/branch/<str:branch>/unit-instances/', get.get_game_unit_instances_by_team_name_and_branch, name='get.get_game_unit_instances_by_team_name_and_branch'),
     path('api/game-instances/<str:join_code>/tiles/<int:row>/<int:column>/landmark-instances/', get.get_game_landmark_instances_for_tile_by_coords, name='get_landmark_instances_for_tile_by_coords'),
-
-    path('api/game-instances/create/', post.create_game_instance, name='create_game_instance'),
-    path('api/role-instances/create/', post.create_role_instance, name='create_role_instance'),
-    path('api/unit-instances/create/', post.create_unit_instance, name='create_unit_instance'),
 
     path('api/game-instances/<str:join_code>/set-turn/', patch.set_turn, name='set_turn'),
     path('api/game-instances/<str:join_code>/set-timer/', patch.set_timer, name='set_timer'),
