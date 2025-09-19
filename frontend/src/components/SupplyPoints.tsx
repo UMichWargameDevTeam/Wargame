@@ -2,24 +2,24 @@
 
 import { useState, useEffect, useRef, RefObject } from 'react';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
+import ReconnectingWebSocket from "reconnecting-websocket";
 import { getSessionStorageOrFetch } from '@/lib/utils';
 import { Team, Role, RoleInstance, TeamInstanceRolePoints, Message } from '@/lib/Types';
 
+
 interface SupplyPointsProps {
     joinCode: string;
-    socketRef: RefObject<WebSocket | null>;
+    socketRef: RefObject<ReconnectingWebSocket | null>;
     socketReady: boolean;
     viewerRoleInstance: RoleInstance | null;
     teamInstanceRolePoints: number;
     setTeamInstanceRolePoints: React.Dispatch<React.SetStateAction<number>>;
-}
-
+};
 
 export default function SupplyPoints({ joinCode, socketRef, socketReady, viewerRoleInstance, teamInstanceRolePoints, setTeamInstanceRolePoints }: SupplyPointsProps) {
     const authedFetch = useAuthedFetch();
 
     const [open, setOpen] = useState<boolean>(true);
-
     const [viewerTransferRecipients, setViewerTransferRecipients] = useState<[string, string][]>([]);
     const [inputs, setInputs] = useState<Record<string, Record<string, string>>>({});
     const [sendingPoints, setSendingPoints] = useState<boolean>(false);
@@ -34,23 +34,30 @@ export default function SupplyPoints({ joinCode, socketRef, socketReady, viewerR
 
         const handlePointsMessage = (event: MessageEvent) => {
             const msg = JSON.parse(event.data);
+
             if (msg.channel === "points") {
                 switch (msg.action) {
+
                     case "send":
                         const transfer: Message = msg.data;
                         const transferAmount = Number(transfer.text);
-                        if (transfer.recipient_team_name == viewerRoleInstance.team_instance.team.name
-                         && transfer.recipient_role_name == viewerRoleInstance.role.name) {
+
+                        if (transfer.recipient_team_name === viewerRoleInstance.team_instance.team.name
+                         && transfer.recipient_role_name === viewerRoleInstance.role.name) {
                             setTeamInstanceRolePoints(prev => prev + transferAmount);
                         }
-                        else if (transfer.sender_role_instance.team_instance.team.name == viewerRoleInstance.team_instance.team.name
-                              && transfer.sender_role_instance.role.name == viewerRoleInstance.role.name) {
+
+                        else if (transfer.sender_role_instance.team_instance.team.name === viewerRoleInstance.team_instance.team.name
+                              && transfer.sender_role_instance.role.name === viewerRoleInstance.role.name) {
                             setTeamInstanceRolePoints(prev => prev - transferAmount);
                         }
+
                         else {
                             throw Error("Recipient of message isn't sender or intended recipient!");
                         }
+
                         break;
+
                     case "spend":
                         const spendingAmount = msg.data.supply_points;
                         setTeamInstanceRolePoints(prev => prev - spendingAmount);
@@ -97,6 +104,7 @@ export default function SupplyPoints({ joinCode, socketRef, socketReady, viewerR
 
             } catch (err: unknown) {
                 console.error(err);
+
                 if (err instanceof Error) {
                     alert(err.message);
                 }
@@ -175,7 +183,7 @@ export default function SupplyPoints({ joinCode, socketRef, socketReady, viewerR
     };
 
     const handleSendPoints = async (joinCode: string) => {
-        if (!socketReady || !socketRef.current || !viewerRoleInstance) return;
+        if (!joinCode || !socketReady || !socketRef.current || !viewerRoleInstance) return;
         const socket = socketRef.current;
 
         try {
@@ -199,12 +207,14 @@ export default function SupplyPoints({ joinCode, socketRef, socketReady, viewerR
                 })
             });
             const data = await res.json();
+
             if (!res.ok) {
                 throw new Error(data.error || data.detail || 'Failed to add unit instance.');
             }
 
             if (socket.readyState === WebSocket.OPEN) {
                 const transfers: TeamInstanceRolePoints[] = data;
+
                 for (const transfer of transfers) {
                     const messageRecipientTeamName = transfer.team_instance.team.name;
                     const messageRecipientRoleName = transfer.role.name;
@@ -225,9 +235,9 @@ export default function SupplyPoints({ joinCode, socketRef, socketReady, viewerR
                     const messageSenderName = viewerRoleInstance.user.username;
                     const messageSenderTeamName = viewerRoleInstance.team_instance.team.name;
                     const messageSenderRoleName = viewerRoleInstance.role.name;
-                    const messageRoleDisplayName = messageSenderTeamName == "Gamemasters" ? messageSenderRoleName : `${messageSenderTeamName} ${messageSenderRoleName}`;
+                    const messageRoleDisplayName = messageSenderTeamName === "Gamemasters" ? messageSenderRoleName : `${messageSenderTeamName} ${messageSenderRoleName}`;
                     const messageText = `${messageRoleDisplayName} ${messageSenderName} transferred ${transfer.supply_points} supply points to ${messageRecipientTeamName} ${messageRecipientRoleName}s.`
-    
+
                     socket.send(JSON.stringify({
                         channel: "communications",
                         action: "send",
@@ -242,7 +252,6 @@ export default function SupplyPoints({ joinCode, socketRef, socketReady, viewerR
                         }
                     }));
                 }
-
             }
 
             setInputs(prev =>
@@ -258,14 +267,16 @@ export default function SupplyPoints({ joinCode, socketRef, socketReady, viewerR
 
         } catch (err: unknown) {
             console.error(err);
+
             if (err instanceof Error) {
                 alert(err.message);
             }
+
         } finally {
             setSendingPoints(false);
         }
+
     };
-    
 
     return (
         <div className="bg-neutral-700 rounded-lg mb-4 p-4">
@@ -278,25 +289,22 @@ export default function SupplyPoints({ joinCode, socketRef, socketReady, viewerR
                     {open ? '-' : '+'}
                 </button>
             </div>
-
             {open && (
                 <div className="flex flex-col max-h-[80vh] overflow-y-auto">
-
                     {viewerRoleInstance && (() => {
-                        
+
                         const teamName = viewerRoleInstance.team_instance.team.name;
                         const roleName = viewerRoleInstance.role.name;
                         const roleDisplayName = teamName === "Gamemasters" ? roleName : `${teamName} ${roleName}`;
 
                         return (
                             <p>
-                                {roleDisplayName}s have 
+                                {roleDisplayName}s have
                                 <span className="font-semibold text-yellow-200"> {teamInstanceRolePoints} </span>
                                 supply points.
                             </p>
-                        )
+                        );
                     })()}
-
                     {viewerTransferRecipients.length > 0 && (
                         <form
                             onSubmit={(e) => {
@@ -306,10 +314,9 @@ export default function SupplyPoints({ joinCode, socketRef, socketReady, viewerR
                             className="space-y-3 mt-5"
                         >
                             <h4 className="text-md font-semibold">Send Supply Points</h4>
-
                             {viewerTransferRecipients.map(([teamName, roleName]) => (
                                 <div key={`${teamName} ${roleName}`} className="flex items-center justify-between bg-neutral-800 p-3 rounded-lg">
-                                    <span className="font-bold">{roleName === "Gamemaster" ? roleName : `${teamName} ${roleName}`}</span>
+                                    <span className="font-semibold">{roleName === "Gamemaster" ? roleName : `${teamName} ${roleName}`}</span>
                                     <input
                                         type="number"
                                         value={inputs[teamName]?.[roleName] ?? "0"}
@@ -317,14 +324,13 @@ export default function SupplyPoints({ joinCode, socketRef, socketReady, viewerR
                                         className="w-[80px] px-2 py-1 bg-neutral-900 border border-gray-600 rounded text-white"
                                         placeholder="0"
                                     />
-                                    
                                 </div>
                             ))}
 
                             <button
                                 type="submit"
                                 disabled={sendingPoints || !validTransferValues}
-                                className={`w-full py-2 rounded-lg font-medium transition 
+                                className={`w-full py-2 rounded-lg font-medium
                                     ${sendingPoints || !validTransferValues
                                         ? "bg-gray-600 cursor-not-allowed text-gray-300"
                                         : "bg-green-600 cursor-pointer hover:bg-green-500 text-white"

@@ -1,7 +1,9 @@
 'use client'
 
+import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
-import { useEffect } from "react"
+import { useAuthedFetch } from '@/hooks/useAuthedFetch';
+
 
 type AuthGuardProps = {
     children: React.ReactNode
@@ -11,16 +13,46 @@ type AuthGuardProps = {
 
 export default function AuthGuard({children, redirectTo = '/login', publicPaths= ['/register', '/login']}: AuthGuardProps) {
     const router = useRouter();
+    const authedFetch = useAuthedFetch();
+
+    const [loading, setLoading] = useState<boolean>(true);
 
     useEffect(() => {
-        if (publicPaths.includes(window.location.pathname)) {
-            return;
-        }
-        
-        const access_token = localStorage.getItem("accessToken");
-        if (!access_token) {
-            router.replace(redirectTo);
-        }
-    }, [router, redirectTo, publicPaths]);
-    return <>{children}</>
+        const checkAuth = async () => {
+            if (publicPaths.includes(window.location.pathname)) {
+                setLoading(false);
+                return;
+            }
+
+            try {
+                const res = await authedFetch("/api/auth/me/");
+
+                if (!res.ok) {
+                    router.replace(redirectTo);
+                }
+
+                else {
+                    const data = await res.json();
+                    sessionStorage.setItem("username", data.username);
+                    setLoading(false);
+                }
+
+            } catch (err: unknown) {
+                console.error(err);
+                router.replace(redirectTo);
+            }
+        };
+
+        checkAuth();
+    }, [router, redirectTo, publicPaths, authedFetch]);
+
+    if (loading) {
+        return (
+            <div className="flex items-center justify-center h-screen text-white bg-neutral-900">
+                <h1 className="text-xl font-bold">Validating access...</h1>
+            </div>
+        );
+    };
+
+    return <>{children}</>;
 }

@@ -12,7 +12,6 @@ redis:
 server:
 	daphne -b 0.0.0.0 -p 8000 backend.wargamebackend.wargamebackend.asgi:application
 
-
 both:
 	make redis
 	make front & \

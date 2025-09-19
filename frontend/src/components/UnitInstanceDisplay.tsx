@@ -2,10 +2,11 @@
 
 import { useState } from 'react';
 
+
 interface UserInstanceDisplayProps {
     selectedUnitInstances: Record<string, boolean>;
     setSelectedUnitInstances: React.Dispatch<React.SetStateAction<Record<string, boolean>>>;
-}
+};
 
 export default function UnitInstanceDisplay({ selectedUnitInstances, setSelectedUnitInstances }: UserInstanceDisplayProps) {
     const [open, setOpen] = useState<boolean>(true);
@@ -29,7 +30,6 @@ export default function UnitInstanceDisplay({ selectedUnitInstances, setSelected
                     {open ? '-' : '+'}
                 </button>
             </div>
-
             {open && (
                 <div className="space-y-2">
                     {(['Air', 'Ground', 'Sea'] as string[]).map((domain) => (

@@ -3,14 +3,14 @@
 import React, { useState } from 'react';
 import { UnitInstance } from '@/lib/Types';
 
+
 interface DraggableUnitInstanceProps {
     unitInstance: UnitInstance;
     cellSize: number; // FINE_CELL_SIZE (world px, e.g., 20)
     zoom: number;
     offset: { x: number; y: number };
     onToggleDrag: (id: number) => void;
-}
-
+};
 
 export default function DraggableUnitInstance({ unitInstance, cellSize, zoom, offset, onToggleDrag }: DraggableUnitInstanceProps) {
     const [showInfo, setShowInfo] = useState<boolean>(false);
@@ -65,7 +65,7 @@ export default function DraggableUnitInstance({ unitInstance, cellSize, zoom, of
                         zIndex: 100,
                         width: 200
                     }}
-                    onClick={e => e.stopPropagation()}
+                    onClick={(e) => e.stopPropagation()}
                 >
                     <div><b>Team:</b> {unitInstance.team_instance.team.name}</div>
                     <div><b>Unit:</b> {unitInstance.unit.name}</div>

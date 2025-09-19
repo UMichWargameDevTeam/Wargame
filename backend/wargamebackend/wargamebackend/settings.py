@@ -16,11 +16,11 @@ from pathlib import Path
 from dotenv import load_dotenv
 from urllib.parse import urlparse, parse_qsl
 
+
 load_dotenv()
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
 
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/5.1/howto/deployment/checklist/
@@ -31,20 +31,6 @@ SECRET_KEY = os.getenv("SECRET_KEY")
 # SECURITY WARNING: don't run with debug turned on in production!
 
 DEBUG = os.getenv("DEBUG", "False").lower() in ("true", "1", "t", "yes")
-
-ALLOWED_HOSTS = [
-    "umichwargame.onrender.com",
-    "localhost",
-    "127.0.0.1"
-]
-
-CSRF_TRUSTED_ORIGINS = [
-    "https://umichwargame.onrender.com"
-]
-
-CSRF_COOKIE_SECURE = True
-
-SESSION_COOKIE_SECURE = True
 
 CONN_MAX_AGE = None
 
@@ -97,7 +83,6 @@ TEMPLATES = [
 ASGI_APPLICATION = 'wargamebackend.asgi.application'
 WSGI_APPLICATION = 'wargamebackend.wsgi.application'
 
-
 # Database
 # https://docs.djangoproject.com/en/5.1/ref/settings/#databases
 # I use Postgres for our real DB and sqlite when testing,
@@ -126,9 +111,12 @@ else:
     }
 
 REST_FRAMEWORK = {
-    'DEFAULT_AUTHENTICATION_CLASSES': (
-        'rest_framework_simplejwt.authentication.JWTAuthentication',
-    )
+    "DEFAULT_AUTHENTICATION_CLASSES": [
+        "auth.authentication.CookieJWTAuthentication",
+    ],
+    "DEFAULT_PERMISSION_CLASSES": [
+        "rest_framework.permissions.IsAuthenticated",
+    ],
 }
 
 # Password validation
@@ -148,7 +136,6 @@ AUTH_PASSWORD_VALIDATORS = [
         'NAME': 'django.contrib.auth.password_validation.NumericPasswordValidator',
     },
 ]
-
 
 # Internationalization
 # https://docs.djangoproject.com/en/5.1/topics/i18n/
@@ -187,8 +174,84 @@ CACHES = {
     }
 }
 
-CORS_ALLOW_ALL_ORIGINS = True
+raw_admins = os.getenv("ADMINS", "")
+ADMINS = [
+    tuple(admin.split(":", 1))
+    for admin in raw_admins.split(",") if admin
+]
 
+CORS_ALLOW_CREDENTIALS = True
+
+if DEBUG:
+    ALLOWED_HOSTS = [
+        "localhost",
+        "127.0.0.1"
+    ]
+
+    SESSION_COOKIE_SECURE = False
+    CORS_ALLOWED_ORIGIN_REGEXES = [
+        r"^http://localhost:\d+$",
+        r"^http://127\.0\.0\.1:\d+$",
+    ]
+
+    CSRF_COOKIE_HTTPONLY = False
+    CSRF_COOKIE_SAMESITE = "Lax"
+    CSRF_COOKIE_SECURE = False
+    CSRF_TRUSTED_ORIGINS = [
+        "http://localhost",
+        "http://127.0.0.1",
+    ]
+
+    EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
+
+else:
+    ALLOWED_HOSTS = [
+        "umichwargame.onrender.com",
+    ]
+
+    SESSION_COOKIE_SECURE = True
+    CORS_ALLOWED_ORIGINS = [
+        "https://umichwargame.vercel.app",
+    ]
+
+    CSRF_COOKIE_HTTPONLY = True
+    CSRF_COOKIE_SAMESITE = "None"
+    CSRF_COOKIE_SECURE = True
+    CSRF_TRUSTED_ORIGINS = [
+        "https://umichwargame.vercel.app",
+    ]
+
+    SECURE_HSTS_SECONDS = 31536000
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SECURE_SSL_REDIRECT = True
+
+    EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
+    # This assumes you're using a gmail account to send emails
+    EMAIL_HOST = "smtp.gmail.com"
+    EMAIL_PORT = 587
+    EMAIL_HOST_USER = os.getenv("EMAIL_HOST_USER", "")
+    EMAIL_HOST_PASSWORD = os.getenv("EMAIL_HOST_PASSWORD", "")
+    EMAIL_USE_TLS = True
+
+    LOGGING = {
+        "version": 1,
+        "disable_existing_loggers": False,
+        "handlers": {
+            "mail_admins": {
+                "level": "ERROR",
+                "class": "django.utils.log.AdminEmailHandler",
+                "include_html": True,
+            },
+        },
+        "loggers": {
+            "django.request": {
+                "handlers": ["mail_admins"],
+                "level": "ERROR",
+                "propagate": True,
+            },
+        },
+    }
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/5.1/howto/static-files/

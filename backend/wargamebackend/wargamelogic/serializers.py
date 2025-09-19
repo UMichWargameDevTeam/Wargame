@@ -7,8 +7,8 @@ from wargamelogic.models.dynamic import (
     GameInstance, TeamInstance, RoleInstance, TeamInstanceRolePoints, UnitInstance, LandmarkInstance, LandmarkInstanceTile
 )
 
-# static model serializers
 
+# static model serializers
 class TeamSerializer(serializers.ModelSerializer):
     class Meta:
         model = Team
@@ -35,7 +35,7 @@ class UnitSerializer(serializers.ModelSerializer):
     class Meta:
         model = Unit
         fields = [
-            'id', 'name', 'cost', 'domain', 'is_logistic', 'type', 'speed', 'max_health', 'max_supply_points', 'defense_modifier', 'description', 
+            'id', 'name', 'cost', 'domain', 'is_logistic', 'type', 'speed', 'max_health', 'max_supply_points', 'defense_modifier', 'icon', 'description',
             'branches'
         ]
         read_only_fields = ['id']
@@ -150,15 +150,14 @@ class RoleInstanceSerializer(serializers.ModelSerializer):
         queryset=Role.objects.all(),
         write_only=True
     )
-    
+
     class Meta:
         model = RoleInstance
         fields = [
-            'id', 'user', 'team_instance', 'role',
+            'id', 'user', 'team_instance', 'role', 'ready',
             'user_id', 'team_instance_id', 'role_id'
         ]
         read_only_fields = ['id']
-
 
 class TeamInstanceRolePointsSerializer(serializers.ModelSerializer):
     team_instance = TeamInstanceSerializer(read_only=True)
@@ -170,7 +169,6 @@ class TeamInstanceRolePointsSerializer(serializers.ModelSerializer):
             'id', 'team_instance', 'role', 'supply_points'
         ]
         read_only_fields = ['id']
-    
 
 class UnitInstanceSerializer(serializers.ModelSerializer):
     team_instance = TeamInstanceSerializer(read_only=True)
@@ -223,7 +221,7 @@ class LandmarkInstanceTileSerializer(serializers.ModelSerializer):
 
     landmark_instance_id = serializers.PrimaryKeyRelatedField(
         source='landmark_instance',
-        queryset=Landmark.objects.all(),
+        queryset=LandmarkInstance.objects.all(),
         write_only=True
     )
     tile_id = serializers.PrimaryKeyRelatedField(
