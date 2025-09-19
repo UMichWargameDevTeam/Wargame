@@ -257,6 +257,7 @@ def move_unit_instance(request, pk, row, column):
 ])
 @transaction.atomic
 def use_attack(request, pk, attack_name):
+    # TODO: remove pk from URL since attacker_id is already provided in the body
     """
     body: {
         attacker_id: int,
