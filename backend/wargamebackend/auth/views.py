@@ -12,7 +12,6 @@ from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.views import (
     TokenRefreshView,
     TokenObtainPairView,
-    TokenRefreshView
 )
 from wargamebackend.settings import DEBUG
 
@@ -122,7 +121,7 @@ class CookieTokenRefreshView(TokenRefreshView):
         refresh = request.COOKIES.get("refresh_token")
 
         if not refresh:
-            return Response({"detail": "No refresh token"}, status=401)
+            return Response({"detail": "No refresh token"}, status=status.HTTP_401_UNAUTHORIZED)
 
         request.data["refresh"] = refresh
         response = super().post(request, *args, **kwargs)
