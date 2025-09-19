@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useParams } from 'next/navigation';
+import { useParams, useRouter } from 'next/navigation';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 import ReconnectingWebSocket from "reconnecting-websocket";
 import MapSelector from '@/components/MapSelector';
@@ -23,6 +23,7 @@ import { Team, Unit, RoleInstance, UnitInstance, Attack, GameInstance } from '@/
 
 export default function MainMapPage() {
     const params = useParams();
+    const router = useRouter();
     const authedFetch = useAuthedFetch();
 
     const joinCode = params.join_code as string;
@@ -146,7 +147,10 @@ export default function MainMapPage() {
                 socketRef.current?.addEventListener("message", handleRoleInstancesMessage);
             }
 
-            socketRef.current.onclose = () => setSocketReady(false);
+            socketRef.current.onclose = () => {
+                setSocketReady(false);
+            }
+
         }
 
         const handleGamesMessage = (event: MessageEvent) => {
@@ -158,7 +162,7 @@ export default function MainMapPage() {
                     case "delete":
                         alert("This game was deleted.");
                         sessionStorage.clear();
-                        window.location.href = "/roleselect";
+                        router.push("/roleselect");
                         break;
                 }
             }
@@ -173,7 +177,7 @@ export default function MainMapPage() {
                     case "delete":
                         alert("Your role in this game was deleted.");
                         sessionStorage.clear();
-                        window.location.href = "/roleselect";
+                        router.push("/roleselect");
                         break;
                 }
             }
@@ -187,7 +191,6 @@ export default function MainMapPage() {
         })();
 
         return () => {
-            setSocketReady(false);
             socketRef.current?.removeEventListener("message", handleGamesMessage);
             socketRef.current?.removeEventListener("message", handleRoleInstancesMessage);
             socketRef.current?.close();
