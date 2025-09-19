@@ -232,16 +232,6 @@ def get_game_unit_instances_by_team_name_and_branch(request, join_code, team_nam
 @api_view(['GET'])
 @authentication_classes([CookieJWTAuthentication])
 @permission_classes([IsAuthenticated])
-def get_game_tiles_for_landmark_instance_by_id(request, pk):
-    landmark_instance = get_object_or_404(LandmarkInstance, pk=pk)
-    landmark_instance_tiles = get_list_or_404(LandmarkInstanceTile, landmark_instance=landmark_instance)
-    tiles = [lit.tile for lit in landmark_instance_tiles]
-    serializer = TileSerializer(tiles, many=True)
-    return Response(serializer.data)
-
-@api_view(['GET'])
-@authentication_classes([CookieJWTAuthentication])
-@permission_classes([IsAuthenticated])
 def get_game_landmark_instances_for_tile_by_coords(request, join_code, row, column):
     game_instance = get_object_or_404(GameInstance, join_code=join_code)
     tile = get_object_or_404(Tile, row=row, column=column)

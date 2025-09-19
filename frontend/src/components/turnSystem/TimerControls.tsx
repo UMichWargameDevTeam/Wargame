@@ -2,12 +2,13 @@
 
 import { useState, useCallback, RefObject } from "react";
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
+import ReconnectingWebSocket from "reconnecting-websocket";
 import { GameInstance } from "@/lib/Types";
 
 
 interface TimerControlsProps {
     joinCode: string;
-    socketRef: RefObject<WebSocket | null>;
+    socketRef: RefObject<ReconnectingWebSocket | null>;
     socketReady: boolean;
     turnDuration: number;
 };

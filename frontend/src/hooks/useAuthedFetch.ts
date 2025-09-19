@@ -32,7 +32,7 @@ export function useAuthedFetch() {
             if (res.status === 401) {
                 // check whether the 401 was due to not having a valid access token
                 try {
-                    const data = await res.json();
+                    const data = await res.clone().json();
 
                     // if the user doesn't have an access token, redirect them to the login page
                     if (data.detail === "no_token") {

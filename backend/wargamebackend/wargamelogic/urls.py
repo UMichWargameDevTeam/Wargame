@@ -38,7 +38,6 @@ urlpatterns = [
     path('api/units/<str:unit_name>/', get.get_unit_by_name, name='get_unit_by_name'),
     path('api/landmarks/<str:name>/', get.get_landmark_by_name, name='get_landmark_by_name'),
     path('api/tiles/<int:row>/<int:column>/', get.get_tile_by_coords, name='get_tile_by_coords'),
-    path('api/landmark-instances/<int:pk>/tiles/', get.get_game_tiles_for_landmark_instance_by_id, name='get_tiles_for_landmark_instance_by_id'),
 
     path('api/game-instances/create/', post.create_game_instance, name='create_game_instance'),
     path('api/role-instances/create/', post.create_role_instance, name='create_role_instance'),

@@ -221,7 +221,7 @@ else:
         "https://umichwargame.vercel.app",
     ]
 
-    SECURE_HSTS_SECONDS = 10
+    SECURE_HSTS_SECONDS = 31536000
     SECURE_SSL_REDIRECT = True
 
     EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"

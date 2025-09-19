@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useRef, RefObject } from "react";
+import ReconnectingWebSocket from "reconnecting-websocket";
 import TurnControls from '@/components/turnSystem/TurnControls';
 import Timer from '@/components/turnSystem/Timer';
 import TimerControls from '@/components/turnSystem/TimerControls';
@@ -10,7 +11,7 @@ import { GameInstance, RoleInstance } from "@/lib/Types";
 
 interface TurnSystemProps {
     joinCode: string;
-    socketRef: RefObject<WebSocket | null>;
+    socketRef: RefObject<ReconnectingWebSocket | null>;
     socketReady: boolean;
     roleInstance: RoleInstance | null;
     gameInstance: GameInstance | null;

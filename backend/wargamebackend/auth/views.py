@@ -1,5 +1,7 @@
 from django.contrib.auth.models import User
 from django.middleware.csrf import get_token
+from django.utils.decorators import method_decorator
+from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -23,6 +25,7 @@ def csrf_token(request):
     token = get_token(request)  # generates or returns existing CSRF token
     return Response({"csrfToken": token})
 
+@method_decorator(csrf_exempt, name="dispatch")
 class RegisterView(APIView):
     """
     data: {
@@ -69,6 +72,7 @@ class RegisterView(APIView):
 
         return response
 
+@method_decorator(csrf_exempt, name="dispatch")
 class CookieTokenObtainPairView(TokenObtainPairView):
     # The parent class TokenObtainPairView already sets permission_classes to AllowAny,
     # But this makes it more explicit and readable.
@@ -106,6 +110,7 @@ class CookieTokenObtainPairView(TokenObtainPairView):
 
         return response
 
+@method_decorator(csrf_exempt, name="dispatch")
 class CookieTokenRefreshView(TokenRefreshView):
     # The parent class TokenRefreshView already sets permission_classes to AllowAny,
     # But this makes it more explicit and readable.
@@ -149,6 +154,7 @@ class MeView(APIView):
             "username": user.username
         })
 
+@method_decorator(csrf_exempt, name="dispatch")
 class LogoutView(APIView):
     authentication_classes = []
     permission_classes = [AllowAny]

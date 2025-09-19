@@ -52,17 +52,6 @@ class RoleViewSet(viewsets.ModelViewSet):
 
         return [IsAuthenticated()]
 
-class TeamInstanceRolePointsViewSet(viewsets.ModelViewSet):
-    queryset = TeamInstanceRolePoints.objects.all()
-    serializer_class =  TeamInstanceRolePointsSerializer
-    http_method_names = ['get', 'post', 'patch', 'put', 'delete']
-
-    def get_permissions(self):
-        if self.request.method not in SAFE_METHODS:
-            return [IsAdminUser()]
-
-        return [IsAuthenticated()]
-
 class UnitViewSet(viewsets.ModelViewSet):
     queryset = Unit.objects.all()
     serializer_class = UnitSerializer
@@ -228,8 +217,8 @@ class RoleInstanceViewSet(viewsets.ModelViewSet):
 class TeamInstanceRolePointsViewSet(viewsets.ModelViewSet):
     authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
-    queryset = RoleInstance.objects.all()
-    serializer_class = RoleInstanceSerializer
+    queryset = TeamInstanceRolePoints.objects.all()
+    serializer_class = TeamInstanceRolePointsSerializer
     http_method_names = ['get', 'patch']
 
     @require_any_role_instance([

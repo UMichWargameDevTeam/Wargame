@@ -2,13 +2,14 @@
 
 import { useState, useEffect, useRef, RefObject } from 'react';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
+import ReconnectingWebSocket from "reconnecting-websocket";
 import CommunicationsChannel from './CommunicationsChannel';
 import { getSessionStorageOrFetch, arraysEqual } from '@/lib/utils';
 import { Team, Role, RoleInstance, Message } from '@/lib/Types';
 
 
 interface CommunicationsProps {
-    socketRef: RefObject<WebSocket | null>;
+    socketRef: RefObject<ReconnectingWebSocket | null>;
     socketReady: boolean;
     viewerRoleInstance: RoleInstance
 };
