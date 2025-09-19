@@ -1,12 +1,13 @@
 'use client';
 
 import React, { useState, useEffect, useRef, RefObject } from 'react';
+import ReconnectingWebSocket from "reconnecting-websocket";
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 import { RoleInstance } from '@/lib/Types'
 
 
 interface UsersListProps {
-    socketRef: RefObject<WebSocket | null>;
+    socketRef: RefObject<ReconnectingWebSocket | null>;
     socketReady: boolean;
     roleInstance: RoleInstance | null;
     roleInstances: RoleInstance[];

@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { useParams } from 'next/navigation';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
+import ReconnectingWebSocket from "reconnecting-websocket";
 import MapSelector from '@/components/MapSelector';
 import UnitInstanceDisplay from '@/components/UnitInstanceDisplay';
 import AvailableUnitInstances from '@/components/AvailableUnitInstances';
@@ -31,7 +32,7 @@ export default function MainMapPage() {
         Sea: true,
     };
 
-    const socketRef = useRef<WebSocket | null>(null);
+    const socketRef = useRef<ReconnectingWebSocket | null>(null);
     const [socketReady, setSocketReady] = useState<boolean>(false);
 
     const [mapSrc, setMapSrc] = useState<string>('/maps/taiwan_middle_clean.png');
@@ -132,13 +133,19 @@ export default function MainMapPage() {
 
         const connectToWebSocket = () => {
             if (socketRef.current) return;
-            socketRef.current = new WebSocket(`${WS_URL}/game-instances/${joinCode}/`);
+            socketRef.current = new ReconnectingWebSocket(`${WS_URL}/game-instances/${joinCode}/`, [], {
+                minReconnectionDelay: 1000,
+                reconnectionDelayGrowFactor: 2,
+                maxRetries: 8,
+            });
 
             socketRef.current.onopen = () => {
                 setSocketReady(true);
                 socketRef.current?.addEventListener("message", handleGamesMessage);
                 socketRef.current?.addEventListener("message", handleRoleInstancesMessage);
             }
+
+            socketRef.current.onclose = () => setSocketReady(false);
         }
 
         const handleGamesMessage = (event: MessageEvent) => {
@@ -180,6 +187,8 @@ export default function MainMapPage() {
 
         return () => {
             setSocketReady(false);
+            socketRef.current?.removeEventListener("message", handleGamesMessage);
+            socketRef.current?.removeEventListener("message", handleRoleInstancesMessage);
             socketRef.current?.close();
             socketRef.current = null;
         };

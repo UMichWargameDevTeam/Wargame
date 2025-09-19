@@ -242,7 +242,7 @@ def create_unit_instance(request):
             return Response({"detail": f"Unit costs {unit.cost} supply points, but you only have {team_instance_role_points.supply_points}!"}, status=status.HTTP_400_BAD_REQUEST)
 
         team_instance_role_points.supply_points -= unit.cost
-        role_instance.save()
+        team_instance_role_points.save(update_fields=["supply_points"])
 
     unit_instance = UnitInstance.objects.create(
         team_instance=team_instance,

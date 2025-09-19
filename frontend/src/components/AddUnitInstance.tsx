@@ -2,12 +2,13 @@
 
 import { useState, RefObject } from 'react';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
+import ReconnectingWebSocket from "reconnecting-websocket";
 import { Team, Unit, RoleInstance, UnitInstance } from '@/lib/Types';
 
 
 interface AddUnitInstanceProps {
     joinCode: string;
-    socketRef: RefObject<WebSocket | null>;
+    socketRef: RefObject<ReconnectingWebSocket | null>;
     socketReady: boolean;
     roleInstance: RoleInstance | null;
     units: Unit[];

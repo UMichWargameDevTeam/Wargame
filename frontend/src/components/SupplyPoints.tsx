@@ -2,13 +2,14 @@
 
 import { useState, useEffect, useRef, RefObject } from 'react';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
+import ReconnectingWebSocket from "reconnecting-websocket";
 import { getSessionStorageOrFetch } from '@/lib/utils';
 import { Team, Role, RoleInstance, TeamInstanceRolePoints, Message } from '@/lib/Types';
 
 
 interface SupplyPointsProps {
     joinCode: string;
-    socketRef: RefObject<WebSocket | null>;
+    socketRef: RefObject<ReconnectingWebSocket | null>;
     socketReady: boolean;
     viewerRoleInstance: RoleInstance | null;
     teamInstanceRolePoints: number;

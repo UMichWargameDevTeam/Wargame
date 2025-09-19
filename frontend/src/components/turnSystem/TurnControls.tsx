@@ -2,12 +2,13 @@
 
 import { useState, useEffect, useCallback, RefObject } from "react";
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
+import ReconnectingWebSocket from "reconnecting-websocket";
 import { GameInstance, RoleInstance } from "@/lib/Types";
 
 
 interface TurnControlsProps {
     joinCode: string;
-    socketRef: RefObject<WebSocket | null>;
+    socketRef: RefObject<ReconnectingWebSocket | null>;
     socketReady: boolean;
     roleInstance: RoleInstance | null;
     gameInstance: GameInstance | null;
@@ -70,7 +71,7 @@ export default function TurnControls({ joinCode, socketRef, socketReady, roleIns
     // Auto-advance turn if all non-gamemasters ready up
     // Need to consider whether this could potentially cause an infinite rendering loop.
     useEffect(() => {
-        if (!roleInstance || !gameInstance) return;
+        if (!roleInstance || !gameInstance || settingTurn) return;
 
         const nonGamemasters = roleInstances.filter(r => r.role.name !== "Gamemaster");
         if (nonGamemasters.length === 0) return;
@@ -88,7 +89,7 @@ export default function TurnControls({ joinCode, socketRef, socketReady, roleIns
         if (allReady && roleInstance.id === gamemasterWithLowestId?.id) {
             sendTurnUpdate(gameInstance.turn + 1);
         }
-    }, [roleInstance, gameInstance, roleInstances, sendTurnUpdate]);
+    }, [roleInstance, gameInstance, settingTurn, roleInstances, sendTurnUpdate]);
 
     // Auto-advance turn if timer hits 0
     useEffect(() => {

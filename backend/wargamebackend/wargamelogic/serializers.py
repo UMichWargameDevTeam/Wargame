@@ -221,7 +221,7 @@ class LandmarkInstanceTileSerializer(serializers.ModelSerializer):
 
     landmark_instance_id = serializers.PrimaryKeyRelatedField(
         source='landmark_instance',
-        queryset=Landmark.objects.all(),
+        queryset=LandmarkInstance.objects.all(),
         write_only=True
     )
     tile_id = serializers.PrimaryKeyRelatedField(

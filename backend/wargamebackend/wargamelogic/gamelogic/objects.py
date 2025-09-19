@@ -1,5 +1,10 @@
 from dataclasses import dataclass
-from wargamelogic.models import *
+from wargamelogic.models.static import (
+    Unit, Attack
+)
+from wargamelogic.models.dynamic import (
+    UnitInstance
+)
 
 
 ATTACK_TYPES = [

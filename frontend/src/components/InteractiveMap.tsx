@@ -2,12 +2,13 @@
 
 import React, { useState, useEffect, useRef, RefObject, useCallback } from 'react';
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
+import ReconnectingWebSocket from "reconnecting-websocket";
 import DraggableUnitInstance from './DraggableUnitInstance';
 import { UnitInstance } from '@/lib/Types';
 
 
 interface InteractiveMapProps {
-    socketRef: RefObject<WebSocket | null>;
+    socketRef: RefObject<ReconnectingWebSocket | null>;
     socketReady: boolean;
     mapSrc: string;
     unitInstances: UnitInstance[];
@@ -322,10 +323,10 @@ export default function InteractiveMap({ socketRef, socketReady, mapSrc, unitIns
             if (!unitInstance) return;
 
             try {
-                const res = await authedFetch(
-                    `/api/unit-instances/${unitInstance.id}/move/tiles/${unitInstance.tile.row}/${unitInstance.tile.column}/`,
-                    { method: "PATCH", headers: { "Content-Type": "application/json" } }
-                );
+                const res = await authedFetch(`/api/unit-instances/${unitInstance.id}/move/tiles/${unitInstance.tile.row}/${unitInstance.tile.column}/`, {
+                    method: "PATCH",
+                    headers: { "Content-Type": "application/json" }
+                });
                 const data = await res.json();
 
                 if (!res.ok) {

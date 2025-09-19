@@ -61,22 +61,21 @@ export default function UnitAttackDropdown({ open, onClose, roleInstance, unitIn
         setError(null);
 
         try {
-            const res = await authedFetch(
-                `/api/unit-instances/${attackerId}/attacks/${attackName}/use/`,
-                {
-                    method: 'PATCH',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        attacker_id: attackerId,
-                        target_id: targetId,
-                        attack_name: attackName,
-                        role_instance: roleInstance.id,
-                    }),
-                }
-            );
-
+            const res = await authedFetch(`/api/unit-instances/${attackerId}/attacks/${attackName}/use/`, {
+                method: 'PATCH',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    attacker_id: attackerId,
+                    target_id: targetId,
+                    attack_name: attackName,
+                    role_instance: roleInstance.id,
+                }),
+            });
             const data = await res.json();
-            if (!res.ok) throw new Error(data.error || 'Attack failed');
+
+            if (!res.ok) {
+                throw new Error(data.error || data.detail || 'Attack failed');
+            }
 
             onAttackSuccess(data);
             setSuccessMessage(data.message);

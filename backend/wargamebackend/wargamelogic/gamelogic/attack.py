@@ -1,5 +1,7 @@
 import math
-from wargamelogic.gamelogic.objects import *
+from wargamelogic.gamelogic.objects import (
+    GameUnit, GameAttack
+)
 
 
 # RANGE_2_TILES_MULTIPLIER = .25

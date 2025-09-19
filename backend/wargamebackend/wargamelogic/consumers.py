@@ -306,7 +306,7 @@ class GameConsumer(AsyncWebsocketConsumer):
 
         target_group = self.team_role_group
 
-        if target_group not in self.channel_groups:
+        if not hasattr(self, "team_role_group"):
             username = self.scope["user"].username
             raise Exception(f"User {username} on team {sender_team_name} with role {sender_role_name} is not in group {target_group}")
 

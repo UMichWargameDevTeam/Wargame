@@ -1,13 +1,14 @@
 'use client';
 
 import React, { useState, useEffect, useRef, RefObject } from 'react';
+import ReconnectingWebSocket from "reconnecting-websocket";
 import CommunicationsMessage from './CommunicationsMessage';
 import { arraysEqual } from '@/lib/utils';
 import { Message, RoleInstance } from '@/lib/Types';
 
 
 interface CommunicationsChannelProps {
-    socketRef: RefObject<WebSocket | null>;
+    socketRef: RefObject<ReconnectingWebSocket | null>;
     socketReady: boolean;
     viewerRoleInstance: RoleInstance;
     unreadChannels: [string, string][];

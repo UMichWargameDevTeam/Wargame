@@ -100,15 +100,13 @@ export default function RoleSelectPage() {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ join_code: createCode }),
             });
+            const data = await res.json();
 
             if (!res.ok) {
-                const errorData = await res.json();
-                throw Error(errorData.error || errorData.detail || "Failed to create game");
+                throw Error(data.error || data.detail || "Failed to create game");
             }
 
-            const data = await res.json();
             sessionStorage.setItem('role_instance', JSON.stringify(data));
-
             router.push(`/game-instances/${data.team_instance.game_instance.join_code}/main-map/`);
 
         } catch (err: unknown) {
@@ -139,15 +137,13 @@ export default function RoleSelectPage() {
                     role_name: selectedRole,
                 }),
             });
+            const data = await res.json();
 
             if (!res.ok) {
-                const errorData = await res.json();
-                throw new Error(errorData.error || errorData.detail || "Failed to join game");
+                throw new Error(data.error || data.detail || "Failed to join game");
             }
 
-            const data = await res.json();
             sessionStorage.setItem('role_instance', JSON.stringify(data));
-
             router.push(`/game-instances/${data.team_instance.game_instance.join_code}/main-map/`);
 
         } catch (err: unknown) {

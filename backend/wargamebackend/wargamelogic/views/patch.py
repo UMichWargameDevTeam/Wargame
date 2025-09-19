@@ -9,13 +9,14 @@ from wargamelogic.models.static import (
     Tile, Attack
 )
 from wargamelogic.models.dynamic import (
-    TeamInstanceRolePoints, UnitInstance
+    GameInstance, RoleInstance, TeamInstanceRolePoints, UnitInstance
 )
 from wargamelogic.serializers import (
     GameInstanceSerializer, RoleInstanceSerializer, TeamInstanceRolePointsSerializer, UnitInstanceSerializer
 )
-from wargamelogic.gamelogic.objects import *
-from wargamelogic.gamelogic.attack import *
+from wargamelogic.gamelogic.attack import (
+    GameAttack, GameUnit, conduct_attack
+)
 from auth.authorization import (
     require_role_instance, require_any_role_instance, get_object_and_related_with_cache_or_404, get_user_role_instances
 )
@@ -151,7 +152,7 @@ def send_points(request, join_code, team_name, role_name):
             {
                 team_name: string,
                 role_name: string,
-                num_supply_points: float
+                supply_points: float
             },
             ...
         ]
@@ -176,12 +177,12 @@ def send_points(request, join_code, team_name, role_name):
     for transfer in transfers:
         recipient_team_name = transfer.get("team_name")
         recipient_role_name = transfer.get("role_name")
-        num_supply_points = transfer.get("supply_points")
+        supply_points = transfer.get("supply_points")
 
-        if not recipient_team_name or not recipient_role_name or num_supply_points < 0:
+        if not recipient_team_name or not recipient_role_name or supply_points is None or supply_points < 0:
             return Response({"error": f"Invalid transfer: {transfer}"}, status=status.HTTP_400_BAD_REQUEST)
 
-        total_supply_points += num_supply_points
+        total_supply_points += supply_points
 
     if sender_team_instance_role_points.supply_points < total_supply_points:
         return Response({"detail": f"You wanted to send {total_supply_points} supply points, but you only have {sender_team_instance_role_points.supply_points}!"}, status=status.HTTP_400_BAD_REQUEST)
@@ -191,7 +192,7 @@ def send_points(request, join_code, team_name, role_name):
     for transfer in transfers:
         recipient_team_name = transfer["team_name"]
         recipient_role_name = transfer["role_name"]
-        num_supply_points = transfer["supply_points"]
+        supply_points = transfer["supply_points"]
 
         recipient = get_object_or_404(
             TeamInstanceRolePoints,
@@ -200,7 +201,7 @@ def send_points(request, join_code, team_name, role_name):
             role__name=recipient_role_name,
         )
 
-        recipient.supply_points += num_supply_points
+        recipient.supply_points += supply_points
         recipient.save(update_fields=["supply_points"])
         recipients.append(recipient)
 
