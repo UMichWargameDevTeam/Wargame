@@ -225,6 +225,7 @@ else:
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
     SECURE_HSTS_PRELOAD = True
     SECURE_SSL_REDIRECT = True
+    SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")
 
     EMAIL_BACKEND = "django.core.mail.backends.smtp.EmailBackend"
     # This assumes you're using a gmail account to send emails
