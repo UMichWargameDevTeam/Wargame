@@ -46,6 +46,7 @@ export function useAuthedFetch() {
                         const refreshRes = await fetch(`${BACKEND_URL}/api/auth/token/refresh/`, {
                             method: "POST",
                             credentials: "include",
+                            headers,
                         });
 
                         if (refreshRes.ok) {
@@ -78,7 +79,8 @@ export function useAuthedFetch() {
             throw err;
         }
 
-    }, [router]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
 
     return authedFetch;
 }
