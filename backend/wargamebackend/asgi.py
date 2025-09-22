@@ -26,4 +26,3 @@ application = ProtocolTypeRouter({
         URLRouter(wargamelogic.routing.websocket_urlpatterns)
     ),
 })
-

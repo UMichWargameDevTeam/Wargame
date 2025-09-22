@@ -4,13 +4,13 @@ front:
 	cd frontend && npm run dev
 
 back:
-	cd backend/wargamebackend && daphne -b 127.0.0.1 -p 8000 wargamebackend.asgi:application
+	cd backend && daphne -b 127.0.0.1 -p 8000 wargamebackend.asgi:application
 
 redis:
 	redis-server --daemonize yes
 
 server:
-	daphne -b 0.0.0.0 -p 8000 backend.wargamebackend.wargamebackend.asgi:application
+	daphne -b 0.0.0.0 -p 8000 backend.wargamebackend.asgi:application
 
 both:
 	make redis

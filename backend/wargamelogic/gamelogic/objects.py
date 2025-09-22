@@ -8,11 +8,11 @@ from wargamelogic.models.dynamic import (
 
 
 ATTACK_TYPES = [
-        ("Light", "Light"),
-        ("Medium", "Medium"),
-        ("Heavy", "Heavy"),
-        ("Structure", "Structure"),
-    ]
+    ("Light", "Light"),
+    ("Medium", "Medium"),
+    ("Heavy", "Heavy"),
+    ("Structure", "Structure"),
+]
 
 @dataclass
 class GameUnit:
