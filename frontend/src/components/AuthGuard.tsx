@@ -5,11 +5,11 @@ import { useRouter } from "next/navigation"
 import { useAuthedFetch } from '@/hooks/useAuthedFetch';
 
 
-type AuthGuardProps = {
+interface AuthGuardProps {
     children: React.ReactNode
     redirectTo?: string
     publicPaths?: string[]
-}
+};
 
 export default function AuthGuard({children, redirectTo = '/login', publicPaths= ['/register', '/login']}: AuthGuardProps) {
     const router = useRouter();

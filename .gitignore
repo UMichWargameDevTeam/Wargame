@@ -1,10 +1,17 @@
-# Ignore virtual environment
+# VSCode settings
+.vscode/
+
+# Finder (Mac) Indexing files
+.DS_Store
+
+# virtual environment
 env/
-backend/env/
-frontend/env/
+
+# Environment variables file
+.env
 
 # Python cache and compiled files
-__pycache__/
+*__pycache__/
 *.pyc
 *.pyo
 *.pyd
@@ -12,14 +19,14 @@ __pycache__/
 # SQLite DB
 *.sqlite3
 
-# VSCode settings (optional)
-.vscode/
+# typescript
+frontend/next-env.d.ts
 
-# Environment variables file (optional)
-.env
+# Node modules
+frontend/node_modules/
 
-# Finder (Mac) Indexing files
-.DS_Store
+# Next files
+frontend/.next/
 
 # static files
-backend/wargamebackend/staticfiles
+backend/staticfiles/
