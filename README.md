@@ -2,10 +2,10 @@
 
 A real-time web-based wargame map viewer and command tool. Built with:
 
-- **Next.js** frontend, hosted on Vercel at https://umichwargame.vercel.app
-- **Django + Channels (Daphne)** backend, hosted on Render at https://umichwargame.onrender.com
 - **PostgreSQL** database, hosted on Neon
-- **Redis** WebSocket backend, hosted at wss://umichwargame.onrender.com
+- **Redis** WebSocket backend, hosted on Redis Cloud
+- **Django + Channels (Daphne)** backend, hosted on Render at https://umichwargame.onrender.com
+- **Next.js** frontend, hosted on Vercel at https://umichwargame.vercel.app
 
 ---
 
@@ -40,34 +40,62 @@ Wargame/
 
 ---
 
-## 🐍 Backend Setup
+## 🛢 Database Setup
 
-In the ``Wargame/`` directory, run:
+We used Neon to host a PostgreSQL database for our project. Here are instructions on how to set it up:
 
-```bash
-python3 -m venv env
-source env/bin/activate  # or env\Scripts\activate on Windows
-cd backend
-pip install -r requirements.txt
-python3 manage.py collectstatic
-```
+1. Go to https://neon.com/ and sign up/log in
+2. In the dashboard’s ``Projects`` tab, click ``New project``.
+3. Choose a ``Project name``
+4. Select the ``Region`` closest to where you live
+5. Click ``Create`
+
+To get the connection string to be pasted in the ``.env file Setup``:
+
+6. In the project's dashboard, click ``Connect``
+7. In the dropdown whose default value is ``psql``, select ``Django``
+8. Click ``Show password``
+9. Click ``Copy snippet``
 
 ---
 
-## .env file Setup
+## 🔌 WebSocket Server Setup (production only)
 
-In the root of the project, create a file named .env with the following structure:
+We used Redis Cloud to host a WebSocket server for our project. Here are instructions on how to set it up:
+
+1. Go to https://redis.io/cloud/ and sign up/log in
+2. In the dashboard’s ``Databases`` tab, click ``New database``
+3. Select the free plan
+4. Choose a ``Name``
+5. Select the ``Region`` closest to where you live
+6. Click ``Create database``
+
+To get the connection string to be pasted in the ``.env file Setup``:
+
+7. In the project’s dashboard, click ``Connect``
+8. Click ``Redis CLI``
+9. Click ``Copy``
+10. When pasting, only include the part that starts with ``redis://``
+
+---
+
+## 🗝️ .env file Setup
+
+In the root of the project (i.e. ``Wargame/``), create a file named .env with the following structure:
 
 ```
 # Generate with $ openssl rand -base64 48
 SECRET_KEY='your Django secret key here'
-# See Database Setup step for how to obtain this URL
-DATABASE_URL='your neon database connection url'
+# See Database Setup for how to obtain this URL
+DATABASE_URL='your Neon database connection URL here'
 # Should be True in development, False in production
 DEBUG=True
-# The rest of the keys should only be specified in production, and omitted in development
+# The rest of the keys are only for use in production
 NEXT_PUBLIC_BACKEND_URL='your backend server URL here'
-NEXT_PUBLIC_WS_URL='your WebSocket server URL here'
+NEXT_PUBLIC_WS_URL='your public WebSocket URL here'
+NEXT_PUBLIC_FRONTEND_URL='your frontend URL here'
+# See WebSocket Server Setup for how to obtain this URL
+REDIS_URL='your Redis Cloud WebSocket connection URL here'
 # Will be emailed in production when there are internal server errors
 ADMINS='example:example@gmail.com'
 # Credentials of the email that will be used to send emails to admins when there are internal server errors
@@ -78,28 +106,24 @@ EMAIL_HOST_PASSWORD='your password here'
 
 ---
 
-## 🛢 Database Setup
+## 🐍 Backend Setup
 
-We used Neon for our project. Here's instructions on how to set up a Neon database:
+In the root of the project, run:
 
-1. Go to https://neon.com/
-2. Make a Neon account/organization
-3. In the projects tab, click ``Create project``.
-4. Name the project
-5. If you are not already there, go to the project's dashboard by clicking ``Dashboard`` in the sidebar.
-6. Click ``Connect``
-7. From one of the dropdowns (whose default value is ``psql``), select ``Django``
-
-To get the connection string to be pasted in the .env file ``Setup step``:
-
-8. Click ``Show password``
-9. Click ``Copy snippet``
+```bash
+python3 -m venv env     # create a virtual environment
+source env/bin/activate  # or env\Scripts\activate on Windows. This is how to activate your virtual environment
+cd backend
+pip install -r requirements.txt
+python3 manage.py collectstatic
+python3 manage.py migrate   # you need to complete the Database Setup and .env file Setup for this to work
+```
 
 ---
 
 ## 🌐 Frontend Setup
 
-In the ``Wargame/`` directory, run:
+In the root of the project, run:
 
 ```bash
 cd frontend
@@ -110,9 +134,9 @@ npm install
 
 ## 🧪 Running the project- Makefile Commands
 
-First, make sure the virtual environment is activated (demonstrated in ``Backend setup`` step).
+First, make sure the virtual environment is activated (see ``Backend setup`` for how to do this).
 
-Then inside the ``Wargame/`` directory, run
+Then in the root of the project, run
 
 ```bash
 make both

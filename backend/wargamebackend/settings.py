@@ -162,7 +162,7 @@ CHANNEL_LAYERS = {
 CACHES = {
     "default": {
         "BACKEND": "django_redis.cache.RedisCache",
-        "LOCATION": f"{REDIS_URL}",
+        "LOCATION": REDIS_URL,
         "OPTIONS": {
             "CLIENT_CLASS": "django_redis.client.DefaultClient",
             'CONNECTION_POOL_KWARGS': {
@@ -182,6 +182,7 @@ ADMINS = [
 
 CORS_ALLOW_CREDENTIALS = True
 
+# Development-specific settings
 if DEBUG:
     ALLOWED_HOSTS = [
         "localhost",
@@ -204,21 +205,25 @@ if DEBUG:
 
     EMAIL_BACKEND = "django.core.mail.backends.console.EmailBackend"
 
+# Production-specific settings
 else:
+    BACKEND_URL = os.getenv("NEXT_PUBLIC_BACKEND_URL", "")
+    FRONTEND_URL = os.getenv("NEXT_PUBLIC_FRONTEND_URL", "")
+
     ALLOWED_HOSTS = [
-        "umichwargame.onrender.com",
+        urlparse(BACKEND_URL).hostname,
     ]
 
     SESSION_COOKIE_SECURE = True
     CORS_ALLOWED_ORIGINS = [
-        "https://umichwargame.vercel.app",
+        FRONTEND_URL,
     ]
 
     CSRF_COOKIE_HTTPONLY = True
     CSRF_COOKIE_SAMESITE = "None"
     CSRF_COOKIE_SECURE = True
     CSRF_TRUSTED_ORIGINS = [
-        "https://umichwargame.vercel.app",
+        FRONTEND_URL,
     ]
 
     SECURE_HSTS_SECONDS = 31536000

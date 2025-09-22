@@ -1,5 +1,11 @@
+# VSCode settings
+.vscode/
+
+# Finder (Mac) Indexing files
+.DS_Store
+
 # virtual environment
-*env/
+env/
 
 # Environment variables file
 .env
@@ -10,26 +16,17 @@
 *.pyo
 *.pyd
 
-# typescript
-*next-env.d.ts
-
-# Node modules
-*node_modules/
-
-# Next files
-*.next/
-
-# VSCode settings
-.vscode/
-
-# Finder (Mac) Indexing files
-.DS_Store
-
-# static files
-*staticfiles/
-
 # SQLite DB
 *.sqlite3
 
-# misc
-*.pem
+# typescript
+frontend/next-env.d.ts
+
+# Node modules
+frontend/node_modules/
+
+# Next files
+frontend/.next/
+
+# static files
+backend/staticfiles/
