@@ -6,12 +6,15 @@ from wargamelogic.gamelogic.objects import (
 
 # RANGE_2_TILES_MULTIPLIER = .25
 
+
 def calculate_distance(tile_a, tile_b):
     return math.ceil(math.sqrt((tile_a[0]-tile_b[0])**2 + (tile_a[1] - tile_b[1])**2))
+
 
 def calculate_attack_damage(attacker: GameUnit, target: GameUnit, attack: GameAttack):
     # TODO actually calculate damage
     return 3
+
 
 def conduct_attack(attacker: GameUnit, target: GameUnit, attack: GameAttack):
     if attack.cost > attacker.supply_points:

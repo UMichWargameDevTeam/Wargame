@@ -51,6 +51,7 @@ def toggle_ready(request, pk):
     serializer = RoleInstanceSerializer(role_instance)
     return Response(serializer.data)
 
+
 @api_view(['PATCH'])
 @authentication_classes([CookieJWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -88,6 +89,7 @@ def set_turn(request, join_code):
     serializer = GameInstanceSerializer(game_instance)
     return Response(serializer.data)
 
+
 @api_view(['PATCH'])
 @authentication_classes([CookieJWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -117,6 +119,7 @@ def set_timer(request, join_code):
 
     serializer = GameInstanceSerializer(game_instance)
     return Response(serializer.data)
+
 
 @api_view(['PATCH'])
 @authentication_classes([CookieJWTAuthentication])
@@ -216,6 +219,7 @@ def send_points(request, join_code, team_name, role_name):
 
     return Response(data, status=status.HTTP_200_OK)
 
+
 @api_view(['PATCH'])
 @authentication_classes([CookieJWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -239,6 +243,7 @@ def move_unit_instance(request, pk, row, column):
 
     serializer = UnitInstanceSerializer(unit_instance)
     return Response(serializer.data)
+
 
 @api_view(['PATCH'])
 @authentication_classes([CookieJWTAuthentication])

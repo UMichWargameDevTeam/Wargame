@@ -8,6 +8,7 @@ class Team(models.Model):
     def __str__(self):
         return self.name
 
+
 class Branch(models.Model):
     name = models.CharField(max_length=100, unique=True)
 
@@ -16,6 +17,7 @@ class Branch(models.Model):
 
     def __str__(self):
         return self.name
+
 
 class Role(models.Model):
     BRANCHES = [
@@ -63,6 +65,7 @@ class Role(models.Model):
     def __str__(self):
         return self.name
 
+
 class Unit(models.Model):
     DOMAINS = [
         ("Ground", "Ground"),
@@ -94,6 +97,7 @@ class Unit(models.Model):
     def __str__(self):
         return self.name
 
+
 class UnitBranch(models.Model):
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE)
     branch = models.ForeignKey(Branch, on_delete=models.CASCADE)
@@ -106,6 +110,7 @@ class UnitBranch(models.Model):
 
     def __str__(self):
         return f"{self.unit.name} - {self.branch.name}"
+
 
 class Attack(models.Model):
     ATTACK_TYPES = [
@@ -136,6 +141,7 @@ class Attack(models.Model):
     def __str__(self):
         return f"{self.unit.name} - {self.name}"
 
+
 class Ability(models.Model):
     unit = models.ForeignKey(Unit, on_delete=models.CASCADE, related_name='abilities')
     name = models.CharField(max_length=100)
@@ -149,6 +155,7 @@ class Ability(models.Model):
 
     def __str__(self):
         return f"{self.unit.name} - {self.name}"
+
 
 class Landmark(models.Model):
     LANDMARK_TYPES = [
@@ -167,6 +174,7 @@ class Landmark(models.Model):
 
     def __str__(self):
         return self.name
+
 
 class Tile(models.Model):
     TERRAIN_TYPES = [

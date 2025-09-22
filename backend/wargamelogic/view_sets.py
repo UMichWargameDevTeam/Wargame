@@ -30,6 +30,7 @@ class TeamViewSet(viewsets.ModelViewSet):
 
         return [IsAuthenticated()]
 
+
 class BranchViewSet(viewsets.ModelViewSet):
     queryset = Branch.objects.all()
     serializer_class = BranchSerializer
@@ -40,6 +41,7 @@ class BranchViewSet(viewsets.ModelViewSet):
             return [IsAdminUser()]
 
         return [IsAuthenticated()]
+
 
 class RoleViewSet(viewsets.ModelViewSet):
     queryset = Role.objects.all()
@@ -52,6 +54,7 @@ class RoleViewSet(viewsets.ModelViewSet):
 
         return [IsAuthenticated()]
 
+
 class UnitViewSet(viewsets.ModelViewSet):
     queryset = Unit.objects.all()
     serializer_class = UnitSerializer
@@ -62,6 +65,7 @@ class UnitViewSet(viewsets.ModelViewSet):
             return [IsAdminUser()]
 
         return [IsAuthenticated()]
+
 
 class UnitBranchViewSet(viewsets.ModelViewSet):
     queryset = UnitBranch.objects.all()
@@ -74,6 +78,7 @@ class UnitBranchViewSet(viewsets.ModelViewSet):
 
         return [IsAuthenticated()]
 
+
 class AttackViewSet(viewsets.ModelViewSet):
     queryset = Attack.objects.all()
     serializer_class = AttackSerializer
@@ -84,6 +89,7 @@ class AttackViewSet(viewsets.ModelViewSet):
             return [IsAdminUser()]
 
         return [IsAuthenticated()]
+
 
 class AbilityViewSet(viewsets.ModelViewSet):
     queryset = Ability.objects.all()
@@ -96,6 +102,7 @@ class AbilityViewSet(viewsets.ModelViewSet):
 
         return [IsAuthenticated()]
 
+
 class LandmarkViewSet(viewsets.ModelViewSet):
     queryset = Landmark.objects.all()
     serializer_class = LandmarkSerializer
@@ -107,6 +114,7 @@ class LandmarkViewSet(viewsets.ModelViewSet):
 
         return [IsAuthenticated()]
 
+
 class TileViewSet(viewsets.ModelViewSet):
     queryset = Tile.objects.all()
     serializer_class = TileSerializer
@@ -117,6 +125,7 @@ class TileViewSet(viewsets.ModelViewSet):
             return [IsAdminUser()]
 
         return [IsAuthenticated()]
+
 
 # dynamic model view sets
 class GameInstanceViewSet(viewsets.ModelViewSet):
@@ -150,6 +159,7 @@ class GameInstanceViewSet(viewsets.ModelViewSet):
     })
     def update(self, request, *args, **kwargs):
         return super().update(request, *args, **kwargs)
+
 
 class TeamInstanceViewSet(viewsets.ModelViewSet):
     authentication_classes = [CookieJWTAuthentication]
@@ -186,6 +196,7 @@ class TeamInstanceViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
 
+
 class RoleInstanceViewSet(viewsets.ModelViewSet):
     authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -214,6 +225,7 @@ class RoleInstanceViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
 
+
 class TeamInstanceRolePointsViewSet(viewsets.ModelViewSet):
     authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -232,6 +244,7 @@ class TeamInstanceRolePointsViewSet(viewsets.ModelViewSet):
     ])
     def partial_update(self, request, *args, **kwargs):
         return super().partial_update(request, *args, **kwargs)
+
 
 class UnitInstanceViewSet(viewsets.ModelViewSet):
     authentication_classes = [CookieJWTAuthentication]
@@ -268,6 +281,7 @@ class UnitInstanceViewSet(viewsets.ModelViewSet):
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
 
+
 class LandmarkInstanceViewSet(viewsets.ModelViewSet):
     authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -302,6 +316,7 @@ class LandmarkInstanceViewSet(viewsets.ModelViewSet):
     })
     def destroy(self, request, *args, **kwargs):
         return super().destroy(request, *args, **kwargs)
+
 
 class LandmarkInstanceTileViewSet(viewsets.ModelViewSet):
     authentication_classes = [CookieJWTAuthentication]

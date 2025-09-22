@@ -14,6 +14,7 @@ ATTACK_TYPES = [
     ("Structure", "Structure"),
 ]
 
+
 @dataclass
 class GameUnit:
     id: int
@@ -43,6 +44,7 @@ class GameUnit:
             max_supply_points=unit.max_supply_points,
             position=(instance.tile.row, instance.tile.column),
         )
+
 
 @dataclass
 class GameAttack:

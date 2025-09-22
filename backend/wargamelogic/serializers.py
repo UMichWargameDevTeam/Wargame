@@ -8,18 +8,22 @@ from wargamelogic.models.dynamic import (
 )
 
 
-# static model serializers
+# ------------------------ #
+# static table serializers #
+# ------------------------ #
 class TeamSerializer(serializers.ModelSerializer):
     class Meta:
         model = Team
         fields = '__all__'
         read_only_fields = ['id']
 
+
 class BranchSerializer(serializers.ModelSerializer):
     class Meta:
         model = Branch
         fields = '__all__'
         read_only_fields = ['id']
+
 
 class RoleSerializer(serializers.ModelSerializer):
     branch = BranchSerializer(read_only=True)
@@ -28,6 +32,7 @@ class RoleSerializer(serializers.ModelSerializer):
         model = Role
         fields = '__all__'
         read_only_fields = ['id']
+
 
 class UnitSerializer(serializers.ModelSerializer):
     branches = BranchSerializer(many=True, read_only=True)
@@ -40,6 +45,7 @@ class UnitSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id']
 
+
 class UnitBranchSerializer(serializers.ModelSerializer):
     unit = UnitSerializer(read_only=True)
     branch = BranchSerializer(read_only=True)
@@ -48,6 +54,7 @@ class UnitBranchSerializer(serializers.ModelSerializer):
         model = UnitBranch
         fields = '__all__'
         read_only_fields = ['id']
+
 
 class AttackSerializer(serializers.ModelSerializer):
     unit = UnitSerializer(read_only=True)
@@ -66,6 +73,7 @@ class AttackSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id']
 
+
 class AbilitySerializer(serializers.ModelSerializer):
     unit = UnitSerializer(read_only=True)
 
@@ -83,11 +91,13 @@ class AbilitySerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id']
 
+
 class LandmarkSerializer(serializers.ModelSerializer):
     class Meta:
         model = Landmark
         fields = '__all__'
         read_only_fields = ['id']
+
 
 class TileSerializer(serializers.ModelSerializer):
     class Meta:
@@ -95,17 +105,22 @@ class TileSerializer(serializers.ModelSerializer):
         fields = '__all__'
         read_only_fields = ['id']
 
-# dynamic model serializers
+
+# ------------------------- #
+# dynamic table serializers #
+# ------------------------- #
 class UserSerializer(serializers.ModelSerializer):
     class Meta:
         model = User
         fields = ['id', 'username', 'is_staff']
+
 
 class GameInstanceSerializer(serializers.ModelSerializer):
     class Meta:
         model = GameInstance
         fields = '__all__'
         read_only_fields = ['id']
+
 
 class TeamInstanceSerializer(serializers.ModelSerializer):
     game_instance = GameInstanceSerializer(read_only=True)
@@ -129,6 +144,7 @@ class TeamInstanceSerializer(serializers.ModelSerializer):
             'game_instance_id', 'team_id'
         ]
         read_only_fields = ['id']
+
 
 class RoleInstanceSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)
@@ -159,6 +175,7 @@ class RoleInstanceSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = ['id']
 
+
 class TeamInstanceRolePointsSerializer(serializers.ModelSerializer):
     team_instance = TeamInstanceSerializer(read_only=True)
     role = RoleSerializer(read_only=True)
@@ -169,6 +186,7 @@ class TeamInstanceRolePointsSerializer(serializers.ModelSerializer):
             'id', 'team_instance', 'role', 'supply_points'
         ]
         read_only_fields = ['id']
+
 
 class UnitInstanceSerializer(serializers.ModelSerializer):
     team_instance = TeamInstanceSerializer(read_only=True)
@@ -185,6 +203,7 @@ class UnitInstanceSerializer(serializers.ModelSerializer):
             'row', 'column'  # writable for PATCH
         ]
         read_only_fields = ['id']
+
 
 class LandmarkInstanceSerializer(serializers.ModelSerializer):
     game_instance = GameInstanceSerializer(read_only=True)
@@ -214,6 +233,7 @@ class LandmarkInstanceSerializer(serializers.ModelSerializer):
             'game_instance_id', 'team_instance_id', 'landmark_id'
         ]
         read_only_fields = ['id']
+
 
 class LandmarkInstanceTileSerializer(serializers.ModelSerializer):
     landmark_instance = LandmarkInstanceSerializer(read_only=True)

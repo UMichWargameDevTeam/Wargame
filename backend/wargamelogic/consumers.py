@@ -8,6 +8,7 @@ from wargamelogic.models.static import Team, Role
 teams_cache = None
 roles_cache = None
 
+
 @database_sync_to_async
 def load_data():
     global teams_cache
@@ -21,7 +22,7 @@ def load_data():
 
     return teams_cache, roles_cache
 
-# You don't need to understand this code to be able to use the WebSocket.
+
 # What you need to know is that any message sent over the WebSocket should be an object
 # Containing "channel", "action", and "data" properties.
 # You can set "channel" and "action" to whatever strings you want; you just need to make sure
@@ -31,11 +32,6 @@ def load_data():
 # "data" is an object that can contain whatever kind of data you want,
 # Though typically it matches the shape of a record in one of the database's tables,
 # Or an array of such records.
-
-# You should only need to add to this code if you want
-# your message to be sent to a specific user in your game rather than everyone in your game.
-# That can be done by creating a handler function for your specific channel and action.
-
 class GameConsumer(AsyncWebsocketConsumer):
     # A user must be logged-in to connect to the WebSocket.
     # If successful, they're added to two groups,
@@ -160,10 +156,8 @@ class GameConsumer(AsyncWebsocketConsumer):
     # By default, messages are simply broadcast to everyone in the game,
     # But with a handler you can make it send a message to only a specific user,
     # and perform side-effects, or change the data that is sent.
-    # These should return the group that the message should be sent to,
-    # Whether the group containing all the users in this game,
-    # The group containing just a specific user in the game,
-    # Or if you raise an exception it won't be sent to anybody.
+    # These should return the group that the message should be sent to.
+    # If you raise an exception it won't be sent to anybody.
     async def handle_users_list(self, data):
         """
         data: RoleInstance
@@ -319,6 +313,7 @@ def get_redis_client():
     """Get the synchronous Redis client."""
     return cache.client.get_client(write=True)
 
+
 # -------------------- #
 # helper functions     #
 # -------------------- #
@@ -377,6 +372,7 @@ def get_user_channel_groups(join_code, teams, roles, role_instance):
     ])
 
     return channel_groups
+
 
 def get_user_transfer_groups(join_code, teams, roles, role_instance):
     user_role_name = role_instance["role"]["name"]

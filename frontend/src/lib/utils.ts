@@ -3,6 +3,7 @@ export const BACKEND_URL =
 export const WS_URL =
     process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000";
 
+
 export async function getCsrfToken(): Promise<string> {
     const res = await fetch(`${BACKEND_URL}/api/auth/csrf-token/`, {
         credentials: "include",
@@ -10,6 +11,7 @@ export async function getCsrfToken(): Promise<string> {
     const data = await res.json();
     return data.csrfToken;
 }
+
 
 // This should only be used when fetching all records of a Static table
 export async function getSessionStorageOrFetch<T>(key: string, fetcher: () => Promise<T>): Promise<T> {
@@ -21,10 +23,12 @@ export async function getSessionStorageOrFetch<T>(key: string, fetcher: () => Pr
     return data;
 }
 
+
 export function arraysEqual<T>(a: T[], b: T[]): boolean {
     if (a.length !== b.length) return false;
     return a.every((value, index) => value === b[index]);
 }
+
 
 export function isValidName(name: string) {
     const regex = /^[A-Za-z0-9\-.]+$/;

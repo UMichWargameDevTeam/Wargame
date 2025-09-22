@@ -11,6 +11,7 @@ from wargamelogic.models import Tile
 def wipe_tiles():
     Tile.objects.all().delete()
 
+
 def populate_tiles(num_rows: int, num_cols: int):
     tiles_to_create = []
     for row in range(num_rows):
@@ -19,6 +20,7 @@ def populate_tiles(num_rows: int, num_cols: int):
 
     Tile.objects.bulk_create(tiles_to_create)
     print(f"Inserted {len(tiles_to_create)} tiles.")
+
 
 if __name__ == "__main__":
     # warning: if you wipe tiles, you'll also delete all unit instances

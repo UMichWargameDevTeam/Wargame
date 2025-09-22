@@ -22,12 +22,6 @@ from auth.authorization import (
 @api_view(['GET'])
 @authentication_classes([CookieJWTAuthentication])
 @permission_classes([IsAuthenticated])
-def main_map(request, join_code):
-    return Response({"message": "Hello from Django view!"}, status=status.HTTP_200_OK)
-
-@api_view(['GET'])
-@authentication_classes([CookieJWTAuthentication])
-@permission_classes([IsAuthenticated])
 def validate_map_access(request, join_code):
     try:
         game_instance = GameInstance.objects.get(join_code=join_code)
@@ -44,8 +38,10 @@ def validate_map_access(request, join_code):
     serializer = RoleInstanceSerializer(role_instance)
     return Response(serializer.data, status=status.HTTP_200_OK)
 
-# GET static table data
 
+# ------------------------ #
+# GET static table data    #
+# ------------------------ #
 @api_view(['GET'])
 @authentication_classes([CookieJWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -53,6 +49,7 @@ def get_team_by_name(request, name):
     team = get_object_or_404(Team, name=name)
     serializer = TeamSerializer(team)
     return Response(serializer.data)
+
 
 @api_view(['GET'])
 @authentication_classes([CookieJWTAuthentication])
@@ -62,6 +59,7 @@ def get_role_by_name(request, name):
     serializer = RoleSerializer(role)
     return Response(serializer.data)
 
+
 @api_view(['GET'])
 @authentication_classes([CookieJWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -69,6 +67,7 @@ def get_unit_by_name(request, unit_name):
     unit = get_object_or_404(Unit, name=unit_name)
     serializer = UnitSerializer(unit)
     return Response(serializer.data)
+
 
 @api_view(['GET'])
 @authentication_classes([CookieJWTAuthentication])
@@ -79,6 +78,7 @@ def get_attack_by_unit_and_name(request, unit_name, attack_name):
     serializer = AttackSerializer(attack)
     return Response(serializer.data)
 
+
 @api_view(['GET'])
 @authentication_classes([CookieJWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -88,6 +88,7 @@ def get_ability_by_unit_and_name(request, unit_name, ability_name):
     serializer = AbilitySerializer(ability)
     return Response(serializer.data)
 
+
 @api_view(['GET'])
 @authentication_classes([CookieJWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -95,6 +96,7 @@ def get_landmark_by_name(request, name):
     landmark = get_object_or_404(Landmark, name=name)
     serializer = LandmarkSerializer(landmark)
     return Response(serializer.data)
+
 
 @api_view(['GET'])
 @authentication_classes([CookieJWTAuthentication])
@@ -104,7 +106,10 @@ def get_tile_by_coords(request, row, column):
     serializer = TileSerializer(tile)
     return Response(serializer.data)
 
-# GET dynamic table data
+
+# ------------------------ #
+# GET dynamic table data   #
+# ------------------------ #
 @api_view(['GET'])
 @authentication_classes([CookieJWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -112,6 +117,7 @@ def get_game_by_join_code(request, join_code):
     game_instance = get_object_or_404(GameInstance, join_code=join_code)
     serializer = GameInstanceSerializer(game_instance)
     return Response(serializer.data)
+
 
 @api_view(['GET'])
 @authentication_classes([CookieJWTAuthentication])
@@ -123,6 +129,7 @@ def get_game_team_instance_by_name(request, join_code, team_name):
     serializer = TeamInstanceSerializer(team_instance)
     return Response(serializer.data)
 
+
 @api_view(['GET'])
 @authentication_classes([CookieJWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -131,6 +138,7 @@ def get_game_role_instances(request, join_code):
     role_instances = get_list_or_404(RoleInstance, team_instance__game_instance=game_instance)
     serializer = RoleInstanceSerializer(role_instances, many=True)
     return Response(serializer.data)
+
 
 @api_view(['GET'])
 @authentication_classes([CookieJWTAuthentication])
@@ -142,6 +150,7 @@ def get_game_role_instances_by_team(request, join_code, team_name):
     role_instances = get_list_or_404(RoleInstance, team_instance=team_instance)
     serializer = RoleInstanceSerializer(role_instances, many=True)
     return Response(serializer.data)
+
 
 @api_view(['GET'])
 @authentication_classes([CookieJWTAuthentication])
@@ -155,6 +164,7 @@ def get_game_role_instances_by_team_and_role(request, join_code, team_name, role
     serializer = RoleInstanceSerializer(role_instances, many=True)
     return Response(serializer.data)
 
+
 @api_view(['GET'])
 @authentication_classes([CookieJWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -167,6 +177,7 @@ def get_game_team_instance_role_points(request, join_code, team_name, role_name)
     serializer = TeamInstanceRolePointsSerializer(team_instance_role_points)
     return Response(serializer.data)
 
+
 @api_view(['GET'])
 @authentication_classes([CookieJWTAuthentication])
 @permission_classes([IsAuthenticated])
@@ -178,6 +189,7 @@ def get_game_unit_instances(request, join_code):
     unit_instances = UnitInstance.objects.filter(team_instance__game_instance=game_instance)
     serializer = UnitInstanceSerializer(unit_instances, many=True)
     return Response(serializer.data)
+
 
 # may remove this view if it's unnecessary or modify who can access it
 @api_view(['GET'])
@@ -201,6 +213,7 @@ def get_game_unit_instances_by_team_name(request, join_code, team_name):
     unit_instances = UnitInstance.objects.filter(team_instance=team_instance)
     serializer = UnitInstanceSerializer(unit_instances, many=True)
     return Response(serializer.data)
+
 
 # may remove this view if it's unnecessary or modify who can access it
 @api_view(['GET'])
@@ -228,6 +241,7 @@ def get_game_unit_instances_by_team_name_and_branch(request, join_code, team_nam
     )
     serializer = UnitInstanceSerializer(unit_instances, many=True)
     return Response(serializer.data)
+
 
 @api_view(['GET'])
 @authentication_classes([CookieJWTAuthentication])

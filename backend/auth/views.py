@@ -24,6 +24,7 @@ def csrf_token(request):
     token = get_token(request)  # generates or returns existing CSRF token
     return Response({"csrfToken": token})
 
+
 @method_decorator(csrf_exempt, name="dispatch")
 class RegisterView(APIView):
     """
@@ -71,6 +72,7 @@ class RegisterView(APIView):
 
         return response
 
+
 @method_decorator(csrf_exempt, name="dispatch")
 class CookieTokenObtainPairView(TokenObtainPairView):
     # The parent class TokenObtainPairView already sets permission_classes to AllowAny,
@@ -109,6 +111,7 @@ class CookieTokenObtainPairView(TokenObtainPairView):
 
         return response
 
+
 @method_decorator(csrf_exempt, name="dispatch")
 class CookieTokenRefreshView(TokenRefreshView):
     # The parent class TokenRefreshView already sets permission_classes to AllowAny,
@@ -142,6 +145,7 @@ class CookieTokenRefreshView(TokenRefreshView):
 
         return response
 
+
 class MeView(APIView):
     authentication_classes = [CookieJWTAuthentication]
     permission_classes = [IsAuthenticated]
@@ -152,6 +156,7 @@ class MeView(APIView):
             "id": user.id,
             "username": user.username
         })
+
 
 @method_decorator(csrf_exempt, name="dispatch")
 class LogoutView(APIView):

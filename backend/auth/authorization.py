@@ -18,12 +18,12 @@ from wargamelogic.models import (
 # ------------------------ #
 # Request cache utilities  #
 # ------------------------ #
-
 def _get_request_cache(request):
     if not hasattr(request, "_role_check_cache"):
         request._role_check_cache = {}
 
     return request._role_check_cache
+
 
 def _normalize_select_related(sel):
     """
@@ -36,6 +36,7 @@ def _normalize_select_related(sel):
         for i in range(1, len(parts) + 1):
             expanded.add("__".join(parts[:i]))
     return expanded
+
 
 def get_object_and_related_with_cache_or_404(request, model, *args, select_related=None, **kwargs):
     cache = _get_request_cache(request)
@@ -78,7 +79,6 @@ def get_object_and_related_with_cache_or_404(request, model, *args, select_relat
 # ------------------------ #
 # Helpers                  #
 # ------------------------ #
-
 def _extract_request(args, kwargs, view_func):
     """
     Find 'request' in args/kwargs by inspecting the view function's signature.
@@ -105,6 +105,7 @@ def _extract_request(args, kwargs, view_func):
 
     return None, None
 
+
 def get_nested_attr(obj, attr, default=None):
     try:
         for part in attr.split('.'):
@@ -113,6 +114,7 @@ def get_nested_attr(obj, attr, default=None):
 
     except AttributeError:
         return default
+
 
 def _json_safe(value):
     if value is None or isinstance(value, (bool, int, float, str)):
@@ -131,6 +133,7 @@ def _json_safe(value):
         return [str(v) for v in value]
 
     return str(value)
+
 
 def _json_safe_dict(d):
     return {k: _json_safe(v) for k, v in d.items()}
@@ -152,6 +155,7 @@ def get_user_role_instances(request):
         )
 
     return cache["role_instances"]
+
 
 def role_instance_matches(request, kwargs, criteria):
     if request.user.is_staff or request.user.is_superuser:
@@ -192,7 +196,6 @@ def role_instance_matches(request, kwargs, criteria):
 # ------------------------ #
 # Decorators               #
 # ------------------------ #
-
 def require_role_instance(criteria):
     def decorator(view_func):
         @wraps(view_func)
@@ -231,13 +234,16 @@ def require_role_instance(criteria):
         return _wrapped_view
     return decorator
 
+
 def require_any_role_instance(criteria_list):
     def decorator(view_func):
         @wraps(view_func)
         def _wrapped_view(*args, **kwargs):
             self, request = _extract_request(args, kwargs, view_func)
+
             try:
                 all_failed_fields = []
+
                 for criteria in criteria_list:
                     matches, failed_fields = role_instance_matches(request, kwargs, criteria)
 
@@ -246,8 +252,10 @@ def require_any_role_instance(criteria_list):
                     all_failed_fields.append(_json_safe_dict(failed_fields))
 
                 serialized_criteria_list = []
+
                 for criteria in criteria_list:
                     computed_criteria = {}
+
                     for k, v in criteria.items():
                         if callable(v):
 

@@ -108,6 +108,7 @@ def create_game_instance(request):
         serializer = RoleInstanceSerializer(role_instance)
         return Response(serializer.data, status=status.HTTP_201_CREATED)
 
+
 # any user can create a role for themselves for any game,
 # but they cannot create a gamemaster role for a game that already has a gamemaster,
 # and they cannot create multiple roles for themselves in the same game.
@@ -180,6 +181,7 @@ def create_role_instance(request):
 
     serializer = RoleInstanceSerializer(role_instance)
     return Response(serializer.data, status=status.HTTP_201_CREATED)
+
 
 @api_view(['POST'])
 @authentication_classes([CookieJWTAuthentication])
