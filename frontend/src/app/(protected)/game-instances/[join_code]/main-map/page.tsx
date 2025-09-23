@@ -161,7 +161,11 @@ export default function MainMapPage() {
 
                     case "delete":
                         alert("This game was deleted.");
+                        const storedUsername = sessionStorage.getItem("username");
                         sessionStorage.clear();
+                        if (storedUsername) {
+                            sessionStorage.setItem("username", storedUsername);
+                        }
                         router.push("/roleselect");
                         break;
                 }
@@ -176,7 +180,11 @@ export default function MainMapPage() {
 
                     case "delete":
                         alert("Your role in this game was deleted.");
+                        const storedUsername = sessionStorage.getItem("username");
                         sessionStorage.clear();
+                        if (storedUsername) {
+                            sessionStorage.setItem("username", storedUsername);
+                        }
                         router.push("/roleselect");
                         break;
                 }

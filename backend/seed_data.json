@@ -1,0 +1,1957 @@
+[
+  {
+    "model": "wargamelogic.team",
+    "pk": 1,
+    "fields": {
+      "name": "Blue"
+    }
+  },
+  {
+    "model": "wargamelogic.team",
+    "pk": 2,
+    "fields": {
+      "name": "Red"
+    }
+  },
+  {
+    "model": "wargamelogic.team",
+    "pk": 3,
+    "fields": {
+      "name": "Gamemasters"
+    }
+  },
+  {
+    "model": "wargamelogic.branch",
+    "pk": 1,
+    "fields": {
+      "name": "Air Force"
+    }
+  },
+  {
+    "model": "wargamelogic.branch",
+    "pk": 2,
+    "fields": {
+      "name": "Army"
+    }
+  },
+  {
+    "model": "wargamelogic.branch",
+    "pk": 3,
+    "fields": {
+      "name": "Navy"
+    }
+  },
+  {
+    "model": "wargamelogic.branch",
+    "pk": 4,
+    "fields": {
+      "name": "Marines"
+    }
+  },
+  {
+    "model": "wargamelogic.role",
+    "pk": 1,
+    "fields": {
+      "name": "Gamemaster",
+      "branch": null,
+      "is_chief_of_staff": false,
+      "is_commander": false,
+      "is_vice_commander": false,
+      "is_operations": false,
+      "is_logistics": false,
+      "description": "Has permission to modify every aspect of their game."
+    }
+  },
+  {
+    "model": "wargamelogic.role",
+    "pk": 2,
+    "fields": {
+      "name": "Combatant Commander",
+      "branch": null,
+      "is_chief_of_staff": false,
+      "is_commander": false,
+      "is_vice_commander": false,
+      "is_operations": false,
+      "is_logistics": false,
+      "description": "Chooses how to divide supply points amongst the three branch commanders."
+    }
+  },
+  {
+    "model": "wargamelogic.role",
+    "pk": 3,
+    "fields": {
+      "name": "Ambassador",
+      "branch": null,
+      "is_chief_of_staff": false,
+      "is_commander": false,
+      "is_vice_commander": false,
+      "is_operations": false,
+      "is_logistics": false,
+      "description": "Responds to political scenarios, and can gain or lose supply points for their team based on their performance."
+    }
+  },
+  {
+    "model": "wargamelogic.role",
+    "pk": 4,
+    "fields": {
+      "name": "Air Force Chief of Staff",
+      "branch": 1,
+      "is_chief_of_staff": true,
+      "is_commander": false,
+      "is_vice_commander": false,
+      "is_operations": false,
+      "is_logistics": false,
+      "description": "Allocates the supply points given by the Combatant Commander among the Air Force Operations and Logistics members."
+    }
+  },
+  {
+    "model": "wargamelogic.role",
+    "pk": 5,
+    "fields": {
+      "name": "Army Chief of Staff",
+      "branch": 2,
+      "is_chief_of_staff": true,
+      "is_commander": false,
+      "is_vice_commander": false,
+      "is_operations": false,
+      "is_logistics": false,
+      "description": "Allocates the supply points given by the Combatant Commander among the Army Operations and Logistics members."
+    }
+  },
+  {
+    "model": "wargamelogic.role",
+    "pk": 6,
+    "fields": {
+      "name": "Navy Chief of Staff",
+      "branch": 3,
+      "is_chief_of_staff": true,
+      "is_commander": false,
+      "is_vice_commander": false,
+      "is_operations": false,
+      "is_logistics": false,
+      "description": "Allocates the supply points given by the Combatant Commander among the Navy Operations and Logistics members."
+    }
+  },
+  {
+    "model": "wargamelogic.role",
+    "pk": 7,
+    "fields": {
+      "name": "Air Force Operations Commander",
+      "branch": 1,
+      "is_chief_of_staff": false,
+      "is_commander": true,
+      "is_vice_commander": false,
+      "is_operations": true,
+      "is_logistics": false,
+      "description": "Controls non-logistic Air Force units' movements, and can do actions using supply points allocated by the Air Force Chief of Staff."
+    }
+  },
+  {
+    "model": "wargamelogic.role",
+    "pk": 8,
+    "fields": {
+      "name": "Air Force Operations Vice Commander",
+      "branch": 1,
+      "is_chief_of_staff": false,
+      "is_commander": false,
+      "is_vice_commander": true,
+      "is_operations": true,
+      "is_logistics": false,
+      "description": "Controls non-logistic Air Force units' movements, and can do actions using supply points allocated by the Air Force Chief of Staff. Unlike Air Force Operations Commanders, this role cannot directly message the Air Force Chief of staff."
+    }
+  },
+  {
+    "model": "wargamelogic.role",
+    "pk": 9,
+    "fields": {
+      "name": "Air Force Logistics Commander",
+      "branch": 1,
+      "is_chief_of_staff": false,
+      "is_commander": true,
+      "is_vice_commander": false,
+      "is_operations": false,
+      "is_logistics": true,
+      "description": "Controls logistic Air Force units' movements, and generates supply points at supply nodes, which can be moved along a  'chain' of logistic units."
+    }
+  },
+  {
+    "model": "wargamelogic.role",
+    "pk": 10,
+    "fields": {
+      "name": "Air Force Logistics Vice Commander",
+      "branch": 1,
+      "is_chief_of_staff": false,
+      "is_commander": false,
+      "is_vice_commander": true,
+      "is_operations": false,
+      "is_logistics": true,
+      "description": "Controls logistic Air Force units' movements, and generates supply points at supply nodes, which can be moved along a  'chain' of logistic units. Unlike Air Force Logistics Commanders, this role cannot directly message the Air Force Chief of staff."
+    }
+  },
+  {
+    "model": "wargamelogic.role",
+    "pk": 11,
+    "fields": {
+      "name": "Army Operations Commander",
+      "branch": 2,
+      "is_chief_of_staff": false,
+      "is_commander": true,
+      "is_vice_commander": false,
+      "is_operations": true,
+      "is_logistics": false,
+      "description": "Controls non-logistic Army units' movements, and can do actions using supply points allocated by the Army Chief of Staff."
+    }
+  },
+  {
+    "model": "wargamelogic.role",
+    "pk": 12,
+    "fields": {
+      "name": "Army Operations Vice Commander",
+      "branch": 2,
+      "is_chief_of_staff": false,
+      "is_commander": false,
+      "is_vice_commander": true,
+      "is_operations": true,
+      "is_logistics": false,
+      "description": "Controls non-logistic Army units' movements, and can do actions using supply points allocated by the Army Chief of Staff. Unlike Army Operations Commanders, this role cannot directly message the Army Chief of staff."
+    }
+  },
+  {
+    "model": "wargamelogic.role",
+    "pk": 13,
+    "fields": {
+      "name": "Army Logistics Commander",
+      "branch": 2,
+      "is_chief_of_staff": false,
+      "is_commander": true,
+      "is_vice_commander": false,
+      "is_operations": false,
+      "is_logistics": true,
+      "description": "Controls logistic Army units' movements, and generates supply points at supply nodes, which can be moved along a  'chain' of logistic units."
+    }
+  },
+  {
+    "model": "wargamelogic.role",
+    "pk": 14,
+    "fields": {
+      "name": "Army Logistics Vice Commander",
+      "branch": 2,
+      "is_chief_of_staff": false,
+      "is_commander": false,
+      "is_vice_commander": true,
+      "is_operations": false,
+      "is_logistics": true,
+      "description": "Controls logistic Army units' movements, and generates supply points at supply nodes, which can be moved along a  'chain' of logistic units. Unlike Army Logistics Commanders, this role cannot directly message the Army Chief of staff."
+    }
+  },
+  {
+    "model": "wargamelogic.role",
+    "pk": 15,
+    "fields": {
+      "name": "Navy Operations Commander",
+      "branch": 3,
+      "is_chief_of_staff": false,
+      "is_commander": true,
+      "is_vice_commander": false,
+      "is_operations": true,
+      "is_logistics": false,
+      "description": "Controls non-logistic Navy units' movements, and can do actions using supply points allocated by the Navy Chief of Staff."
+    }
+  },
+  {
+    "model": "wargamelogic.role",
+    "pk": 16,
+    "fields": {
+      "name": "Navy Operations Vice Commander",
+      "branch": 3,
+      "is_chief_of_staff": false,
+      "is_commander": false,
+      "is_vice_commander": true,
+      "is_operations": true,
+      "is_logistics": false,
+      "description": "Controls non-logistic Navy units' movements, and can do actions using supply points allocated by the Navy Chief of Staff. Unlike Navy Operations Commanders, this role cannot directly message the Navy Chief of staff."
+    }
+  },
+  {
+    "model": "wargamelogic.role",
+    "pk": 17,
+    "fields": {
+      "name": "Navy Logistics Commander",
+      "branch": 3,
+      "is_chief_of_staff": false,
+      "is_commander": true,
+      "is_vice_commander": false,
+      "is_operations": false,
+      "is_logistics": true,
+      "description": "Controls logistic Navy units' movements, and generates supply points at supply nodes, which can be moved along a  'chain' of logistic units."
+    }
+  },
+  {
+    "model": "wargamelogic.role",
+    "pk": 18,
+    "fields": {
+      "name": "Navy Logistics Vice Commander",
+      "branch": 3,
+      "is_chief_of_staff": false,
+      "is_commander": false,
+      "is_vice_commander": true,
+      "is_operations": false,
+      "is_logistics": true,
+      "description": "Controls logistic Navy units' movements, and generates supply points at supply nodes, which can be moved along a  'chain' of logistic units. Unlike Navy Logistics Commanders, this role cannot directly message the Navy Chief of staff."
+    }
+  },
+  {
+    "model": "wargamelogic.unit",
+    "pk": 1,
+    "fields": {
+      "name": "Infantry",
+      "cost": 0.0,
+      "domain": "Ground",
+      "is_logistic": false,
+      "type": "Light",
+      "speed": 30.0,
+      "max_health": 20.0,
+      "max_supply_points": 4.0,
+      "defense_modifier": 0.0,
+      "icon": "",
+      "description": "The Queen of the Battlefield. All else exists to support the infantry. They will be your primary tool for capturing and holding your objectives"
+    }
+  },
+  {
+    "model": "wargamelogic.unit",
+    "pk": 2,
+    "fields": {
+      "name": "Armor",
+      "cost": 0.0,
+      "domain": "Ground",
+      "is_logistic": false,
+      "type": "Heavy",
+      "speed": 45.0,
+      "max_health": 50.0,
+      "max_supply_points": 6.0,
+      "defense_modifier": 0.0,
+      "icon": "",
+      "description": "TBD"
+    }
+  },
+  {
+    "model": "wargamelogic.unit",
+    "pk": 3,
+    "fields": {
+      "name": "Field Artillery",
+      "cost": 0.0,
+      "domain": "Ground",
+      "is_logistic": false,
+      "type": "Light",
+      "speed": 30.0,
+      "max_health": 10.0,
+      "max_supply_points": 6.0,
+      "defense_modifier": 0.0,
+      "icon": "",
+      "description": "The King of the Battlefield."
+    }
+  },
+  {
+    "model": "wargamelogic.unit",
+    "pk": 4,
+    "fields": {
+      "name": "Engineer",
+      "cost": 0.0,
+      "domain": "Ground",
+      "is_logistic": false,
+      "type": "Light",
+      "speed": 30.0,
+      "max_health": 10.0,
+      "max_supply_points": 3.0,
+      "defense_modifier": 0.0,
+      "icon": "",
+      "description": "Use engineers to shape the battlefield and take out hardened structures."
+    }
+  },
+  {
+    "model": "wargamelogic.unit",
+    "pk": 5,
+    "fields": {
+      "name": "B-2 Spirit",
+      "cost": 0.0,
+      "domain": "Air",
+      "is_logistic": false,
+      "type": "Heavy",
+      "speed": 550.0,
+      "max_health": 20.0,
+      "max_supply_points": 4.0,
+      "defense_modifier": 2.0,
+      "icon": "",
+      "description": "Stealth strategic bomber designed for deep penetration and precision strikes against high-value, heavily fortified targets. Fuel Capacity / Range: 6000 miles"
+    }
+  },
+  {
+    "model": "wargamelogic.unit",
+    "pk": 6,
+    "fields": {
+      "name": "F-22 Raptor",
+      "cost": 0.0,
+      "domain": "Air",
+      "is_logistic": false,
+      "type": "Light",
+      "speed": 1500.0,
+      "max_health": 20.0,
+      "max_supply_points": 1.0,
+      "defense_modifier": 2.0,
+      "icon": "",
+      "description": "Stealth air superiority fighter optimized for speed, agility, and first-shot advantage in\r\nair-to-air combat. Fuel Capacity / Range: 600 miles"
+    }
+  },
+  {
+    "model": "wargamelogic.unit",
+    "pk": 7,
+    "fields": {
+      "name": "F-15EX Strike Eagle",
+      "cost": 0.0,
+      "domain": "Air",
+      "is_logistic": false,
+      "type": "Light",
+      "speed": 1650.0,
+      "max_health": 20.0,
+      "max_supply_points": 1.0,
+      "defense_modifier": 0.0,
+      "icon": "",
+      "description": "Multi-role fighter with exceptional payload capacity, ideal for close air support and\r\nground strike missions. Fuel Capacity / Range: 1000 miles"
+    }
+  },
+  {
+    "model": "wargamelogic.unit",
+    "pk": 8,
+    "fields": {
+      "name": "MQ-9 Reaper",
+      "cost": 0.0,
+      "domain": "Air",
+      "is_logistic": false,
+      "type": "Medium",
+      "speed": 300.0,
+      "max_health": 20.0,
+      "max_supply_points": 1.0,
+      "defense_modifier": 0.0,
+      "icon": "",
+      "description": "Long-endurance unmanned combat aerial vehicle for precision strikes and ISR\r\nmissions. Fuel Capacity / Range: 1200 miles"
+    }
+  },
+  {
+    "model": "wargamelogic.unit",
+    "pk": 9,
+    "fields": {
+      "name": "U-2 Dragon Lady",
+      "cost": 0.0,
+      "domain": "Air",
+      "is_logistic": false,
+      "type": "Medium",
+      "speed": 410.0,
+      "max_health": 20.0,
+      "max_supply_points": 1.0,
+      "defense_modifier": 1.0,
+      "icon": "",
+      "description": "High-altitude reconnaissance aircraft for long-range ISR missions. Fuel Capacity /\r\nRange: 3000 miles"
+    }
+  },
+  {
+    "model": "wargamelogic.unit",
+    "pk": 10,
+    "fields": {
+      "name": "Arleigh Burke-class DDG",
+      "cost": 0.0,
+      "domain": "Sea",
+      "is_logistic": false,
+      "type": "Structure",
+      "speed": 35.0,
+      "max_health": 80.0,
+      "max_supply_points": 20.0,
+      "defense_modifier": 0.0,
+      "icon": "",
+      "description": "Versatile Navy vessel designed for engaging targets on land, in the air, and under\r\nthe water. Fuel range 5000 miles"
+    }
+  },
+  {
+    "model": "wargamelogic.unit",
+    "pk": 11,
+    "fields": {
+      "name": "F/A-18 Super Hornet",
+      "cost": 0.0,
+      "domain": "Air",
+      "is_logistic": false,
+      "type": "Light",
+      "speed": 1190.0,
+      "max_health": 20.0,
+      "max_supply_points": 1.0,
+      "defense_modifier": 0.2,
+      "icon": "",
+      "description": "A versatile twin-engine multirole fighter capable of air superiority, strike, and fleet\r\ndefense. With carrier-launch capability and smart munitions, it’s a key asset in both offensive\r\nand defensive missions."
+    }
+  },
+  {
+    "model": "wargamelogic.unit",
+    "pk": 12,
+    "fields": {
+      "name": "F-35C Lightning II",
+      "cost": 0.0,
+      "domain": "Air",
+      "is_logistic": false,
+      "type": "Light",
+      "speed": 1220.0,
+      "max_health": 20.0,
+      "max_supply_points": 1.0,
+      "defense_modifier": 0.4,
+      "icon": "",
+      "description": "A stealth multirole fighter with advanced sensors, electronic warfare, and internal\r\nweapons bays. Optimized for survivability and precision strike, the F-35 is lethal in both air-to-air\r\nand air-to-ground combat."
+    }
+  },
+  {
+    "model": "wargamelogic.unit",
+    "pk": 13,
+    "fields": {
+      "name": "EA-18G Growler",
+      "cost": 0.0,
+      "domain": "Air",
+      "is_logistic": false,
+      "type": "Light",
+      "speed": 1190.0,
+      "max_health": 20.0,
+      "max_supply_points": 1.0,
+      "defense_modifier": 0.0,
+      "icon": "",
+      "description": "TBD"
+    }
+  },
+  {
+    "model": "wargamelogic.unit",
+    "pk": 14,
+    "fields": {
+      "name": "USS Gerald R. Ford",
+      "cost": 0.0,
+      "domain": "Sea",
+      "is_logistic": false,
+      "type": "Light",
+      "speed": 30.0,
+      "max_health": 100.0,
+      "max_supply_points": 28.0,
+      "defense_modifier": 0.0,
+      "icon": "",
+      "description": "Advanced aircraft carrier serving as a mobile airbase for power projection and fleet command."
+    }
+  },
+  {
+    "model": "wargamelogic.unit",
+    "pk": 15,
+    "fields": {
+      "name": "C-17 Globemaster III",
+      "cost": 0.0,
+      "domain": "Air",
+      "is_logistic": true,
+      "type": "Heavy",
+      "speed": 450.0,
+      "max_health": 40.0,
+      "max_supply_points": 24.0,
+      "defense_modifier": 1.0,
+      "icon": "",
+      "description": "A heavy logistics aircraft, able to carry supplies to where they are needed most.\r\nFuel capacity / range is 2,400 miles"
+    }
+  },
+  {
+    "model": "wargamelogic.unit",
+    "pk": 16,
+    "fields": {
+      "name": "KC-46 Pegasus",
+      "cost": 0.0,
+      "domain": "Air",
+      "is_logistic": true,
+      "type": "Heavy",
+      "speed": 530.0,
+      "max_health": 40.0,
+      "max_supply_points": 8.0,
+      "defense_modifier": 1.0,
+      "icon": "",
+      "description": "A heavy logistics aircraft, able to refuel aircraft within range. Fuel capacity / range is 7,350 miles"
+    }
+  },
+  {
+    "model": "wargamelogic.unit",
+    "pk": 17,
+    "fields": {
+      "name": "CV-22 Osprey",
+      "cost": 0.0,
+      "domain": "Air",
+      "is_logistic": true,
+      "type": "Medium",
+      "speed": 275.0,
+      "max_health": 40.0,
+      "max_supply_points": 8.0,
+      "defense_modifier": 0.0,
+      "icon": "",
+      "description": "A tiltrotor logistics aircraft, able to carry supplies to where they are needed most.\r\nFuel capacity / range is 1,011 miles"
+    }
+  },
+  {
+    "model": "wargamelogic.unit",
+    "pk": 18,
+    "fields": {
+      "name": "MH-60S",
+      "cost": 0.0,
+      "domain": "Air",
+      "is_logistic": true,
+      "type": "Medium",
+      "speed": 207.0,
+      "max_health": 40.0,
+      "max_supply_points": 6.0,
+      "defense_modifier": 0.0,
+      "icon": "",
+      "description": "A tiltrotor logistics aircraft, able to carry supplies to where they are needed most.\r\nFuel capacity / range is 437 miles"
+    }
+  },
+  {
+    "model": "wargamelogic.unit",
+    "pk": 19,
+    "fields": {
+      "name": "Lewis and Clarke T-AKE Ship Group",
+      "cost": 0.0,
+      "domain": "Sea",
+      "is_logistic": true,
+      "type": "Structure",
+      "speed": 23.0,
+      "max_health": 150.0,
+      "max_supply_points": 36.0,
+      "defense_modifier": 0.0,
+      "icon": "",
+      "description": "A Group of Lewis and Clark T-AKE supply ships, operating under Military Sealift\r\nCommand. Operational range 16,000 miles."
+    }
+  },
+  {
+    "model": "wargamelogic.unit",
+    "pk": 20,
+    "fields": {
+      "name": "Landing Ship, Dock (LSD)",
+      "cost": 0.0,
+      "domain": "Sea",
+      "is_logistic": true,
+      "type": "Structure",
+      "speed": 23.0,
+      "max_health": 150.0,
+      "max_supply_points": 36.0,
+      "defense_modifier": 1.0,
+      "icon": "",
+      "description": "A USMC logistics ship, able to carry supplies to where they are needed most.\r\nOperational range is 9200 miles."
+    }
+  },
+  {
+    "model": "wargamelogic.unit",
+    "pk": 21,
+    "fields": {
+      "name": "CH-47 Chinook",
+      "cost": 0.0,
+      "domain": "Air",
+      "is_logistic": true,
+      "type": "Medium",
+      "speed": 188.0,
+      "max_health": 40.0,
+      "max_supply_points": 8.0,
+      "defense_modifier": 0.0,
+      "icon": "",
+      "description": "A heavy duty logistics helicopter, with a range of 400 miles"
+    }
+  },
+  {
+    "model": "wargamelogic.unit",
+    "pk": 22,
+    "fields": {
+      "name": "UH-60 Blackhawk",
+      "cost": 0.0,
+      "domain": "Air",
+      "is_logistic": true,
+      "type": "Medium",
+      "speed": 183.0,
+      "max_health": 40.0,
+      "max_supply_points": 6.0,
+      "defense_modifier": 1.0,
+      "icon": "",
+      "description": "A heavy duty logistics helicopter, with a range of 367 miles"
+    }
+  },
+  {
+    "model": "wargamelogic.unit",
+    "pk": 23,
+    "fields": {
+      "name": "HEMTT A4 Truck",
+      "cost": 0.0,
+      "domain": "Ground",
+      "is_logistic": true,
+      "type": "Heavy",
+      "speed": 62.0,
+      "max_health": 40.0,
+      "max_supply_points": 6.0,
+      "defense_modifier": 0.0,
+      "icon": "",
+      "description": "A heavy duty logistics truck, with a range of 300 miles"
+    }
+  },
+  {
+    "model": "wargamelogic.unit",
+    "pk": 24,
+    "fields": {
+      "name": "MTVR Truck",
+      "cost": 0.0,
+      "domain": "Ground",
+      "is_logistic": true,
+      "type": "Medium",
+      "speed": 65.0,
+      "max_health": 40.0,
+      "max_supply_points": 4.0,
+      "defense_modifier": 0.0,
+      "icon": "",
+      "description": "A logistics truck, with a range of 300 miles"
+    }
+  },
+  {
+    "model": "wargamelogic.unitbranch",
+    "pk": 1,
+    "fields": {
+      "unit": 1,
+      "branch": 2
+    }
+  },
+  {
+    "model": "wargamelogic.unitbranch",
+    "pk": 2,
+    "fields": {
+      "unit": 1,
+      "branch": 4
+    }
+  },
+  {
+    "model": "wargamelogic.unitbranch",
+    "pk": 3,
+    "fields": {
+      "unit": 2,
+      "branch": 2
+    }
+  },
+  {
+    "model": "wargamelogic.unitbranch",
+    "pk": 4,
+    "fields": {
+      "unit": 3,
+      "branch": 2
+    }
+  },
+  {
+    "model": "wargamelogic.unitbranch",
+    "pk": 5,
+    "fields": {
+      "unit": 3,
+      "branch": 4
+    }
+  },
+  {
+    "model": "wargamelogic.unitbranch",
+    "pk": 6,
+    "fields": {
+      "unit": 4,
+      "branch": 2
+    }
+  },
+  {
+    "model": "wargamelogic.unitbranch",
+    "pk": 7,
+    "fields": {
+      "unit": 4,
+      "branch": 4
+    }
+  },
+  {
+    "model": "wargamelogic.unitbranch",
+    "pk": 8,
+    "fields": {
+      "unit": 5,
+      "branch": 1
+    }
+  },
+  {
+    "model": "wargamelogic.unitbranch",
+    "pk": 9,
+    "fields": {
+      "unit": 6,
+      "branch": 1
+    }
+  },
+  {
+    "model": "wargamelogic.unitbranch",
+    "pk": 10,
+    "fields": {
+      "unit": 7,
+      "branch": 1
+    }
+  },
+  {
+    "model": "wargamelogic.unitbranch",
+    "pk": 11,
+    "fields": {
+      "unit": 8,
+      "branch": 1
+    }
+  },
+  {
+    "model": "wargamelogic.unitbranch",
+    "pk": 12,
+    "fields": {
+      "unit": 9,
+      "branch": 1
+    }
+  },
+  {
+    "model": "wargamelogic.unitbranch",
+    "pk": 13,
+    "fields": {
+      "unit": 10,
+      "branch": 3
+    }
+  },
+  {
+    "model": "wargamelogic.unitbranch",
+    "pk": 14,
+    "fields": {
+      "unit": 11,
+      "branch": 3
+    }
+  },
+  {
+    "model": "wargamelogic.unitbranch",
+    "pk": 15,
+    "fields": {
+      "unit": 12,
+      "branch": 3
+    }
+  },
+  {
+    "model": "wargamelogic.unitbranch",
+    "pk": 16,
+    "fields": {
+      "unit": 13,
+      "branch": 3
+    }
+  },
+  {
+    "model": "wargamelogic.unitbranch",
+    "pk": 17,
+    "fields": {
+      "unit": 14,
+      "branch": 3
+    }
+  },
+  {
+    "model": "wargamelogic.unitbranch",
+    "pk": 18,
+    "fields": {
+      "unit": 15,
+      "branch": 1
+    }
+  },
+  {
+    "model": "wargamelogic.unitbranch",
+    "pk": 19,
+    "fields": {
+      "unit": 16,
+      "branch": 1
+    }
+  },
+  {
+    "model": "wargamelogic.unitbranch",
+    "pk": 20,
+    "fields": {
+      "unit": 17,
+      "branch": 1
+    }
+  },
+  {
+    "model": "wargamelogic.unitbranch",
+    "pk": 21,
+    "fields": {
+      "unit": 18,
+      "branch": 3
+    }
+  },
+  {
+    "model": "wargamelogic.unitbranch",
+    "pk": 22,
+    "fields": {
+      "unit": 19,
+      "branch": 3
+    }
+  },
+  {
+    "model": "wargamelogic.unitbranch",
+    "pk": 23,
+    "fields": {
+      "unit": 20,
+      "branch": 4
+    }
+  },
+  {
+    "model": "wargamelogic.unitbranch",
+    "pk": 24,
+    "fields": {
+      "unit": 21,
+      "branch": 2
+    }
+  },
+  {
+    "model": "wargamelogic.unitbranch",
+    "pk": 25,
+    "fields": {
+      "unit": 22,
+      "branch": 2
+    }
+  },
+  {
+    "model": "wargamelogic.unitbranch",
+    "pk": 26,
+    "fields": {
+      "unit": 22,
+      "branch": 1
+    }
+  },
+  {
+    "model": "wargamelogic.unitbranch",
+    "pk": 27,
+    "fields": {
+      "unit": 22,
+      "branch": 3
+    }
+  },
+  {
+    "model": "wargamelogic.unitbranch",
+    "pk": 28,
+    "fields": {
+      "unit": 23,
+      "branch": 2
+    }
+  },
+  {
+    "model": "wargamelogic.unitbranch",
+    "pk": 29,
+    "fields": {
+      "unit": 24,
+      "branch": 4
+    }
+  },
+  {
+    "model": "wargamelogic.attack",
+    "pk": 1,
+    "fields": {
+      "unit": 1,
+      "name": "Standard",
+      "cost": 1.0,
+      "to_hit": 3.0,
+      "shots": 6,
+      "min_damage": 1.0,
+      "max_damage": 1.0,
+      "range": 2.0,
+      "type": "Light",
+      "attack_modifier": 0.0,
+      "attack_modifier_applies_to": "Light",
+      "description": "TBD"
+    }
+  },
+  {
+    "model": "wargamelogic.attack",
+    "pk": 2,
+    "fields": {
+      "unit": 1,
+      "name": "Antitank",
+      "cost": 3.0,
+      "to_hit": 3.0,
+      "shots": 1,
+      "min_damage": 1.0,
+      "max_damage": 3.0,
+      "range": 2.0,
+      "type": "Heavy",
+      "attack_modifier": 0.0,
+      "attack_modifier_applies_to": "Ground",
+      "description": "TBD"
+    }
+  },
+  {
+    "model": "wargamelogic.attack",
+    "pk": 3,
+    "fields": {
+      "unit": 2,
+      "name": "120mm Cannon",
+      "cost": 2.0,
+      "to_hit": 3.0,
+      "shots": 3,
+      "min_damage": 1.0,
+      "max_damage": 6.0,
+      "range": 2.0,
+      "type": "Heavy",
+      "attack_modifier": 0.0,
+      "attack_modifier_applies_to": "Ground",
+      "description": "TBD"
+    }
+  },
+  {
+    "model": "wargamelogic.attack",
+    "pk": 4,
+    "fields": {
+      "unit": 2,
+      "name": "Machine Guns",
+      "cost": 1.0,
+      "to_hit": 3.0,
+      "shots": 3,
+      "min_damage": 1.0,
+      "max_damage": 1.0,
+      "range": 2.0,
+      "type": "Light",
+      "attack_modifier": 0.0,
+      "attack_modifier_applies_to": "Ground",
+      "description": "TBD"
+    }
+  },
+  {
+    "model": "wargamelogic.attack",
+    "pk": 5,
+    "fields": {
+      "unit": 3,
+      "name": "Howitzer",
+      "cost": 2.0,
+      "to_hit": 3.0,
+      "shots": 6,
+      "min_damage": 1.0,
+      "max_damage": 6.0,
+      "range": 15.0,
+      "type": "Heavy",
+      "attack_modifier": 0.0,
+      "attack_modifier_applies_to": "Ground",
+      "description": "TBD"
+    }
+  },
+  {
+    "model": "wargamelogic.attack",
+    "pk": 6,
+    "fields": {
+      "unit": 4,
+      "name": "Explosive Charges",
+      "cost": 3.0,
+      "to_hit": 1.0,
+      "shots": 1,
+      "min_damage": 10.0,
+      "max_damage": 10.0,
+      "range": 0.0,
+      "type": "Structure",
+      "attack_modifier": 0.0,
+      "attack_modifier_applies_to": "Ground",
+      "description": "TBD"
+    }
+  },
+  {
+    "model": "wargamelogic.attack",
+    "pk": 7,
+    "fields": {
+      "unit": 5,
+      "name": "Bunker Buster",
+      "cost": 0.0,
+      "to_hit": 0.5,
+      "shots": 1,
+      "min_damage": 90.0,
+      "max_damage": 90.0,
+      "range": 15.0,
+      "type": "Structure",
+      "attack_modifier": -1.0,
+      "attack_modifier_applies_to": "Light",
+      "description": "A deep-penetration bomb designed to destroy hardened and underground\r\nstructures. Less effective against soft targets."
+    }
+  },
+  {
+    "model": "wargamelogic.attack",
+    "pk": 8,
+    "fields": {
+      "unit": 5,
+      "name": "AGM-158 JASSM",
+      "cost": 2.0,
+      "to_hit": 0.6,
+      "shots": 1,
+      "min_damage": 70.0,
+      "max_damage": 70.0,
+      "range": 250.0,
+      "type": "Heavy",
+      "attack_modifier": 0.0,
+      "attack_modifier_applies_to": "All",
+      "description": "Long-range stealth cruise missile designed to destroy high-value, heavily defended\r\ntargets from a safe distance."
+    }
+  },
+  {
+    "model": "wargamelogic.attack",
+    "pk": 9,
+    "fields": {
+      "unit": 6,
+      "name": "AIM-120D AMRAAM",
+      "cost": 1.0,
+      "to_hit": 0.75,
+      "shots": 1,
+      "min_damage": 50.0,
+      "max_damage": 50.0,
+      "range": 100.0,
+      "type": "Light",
+      "attack_modifier": 2.0,
+      "attack_modifier_applies_to": "Air",
+      "description": "Advanced medium-range air-to-air missile for beyond-visual-range engagements."
+    }
+  },
+  {
+    "model": "wargamelogic.attack",
+    "pk": 10,
+    "fields": {
+      "unit": 6,
+      "name": "AIM-9X Sidewinder",
+      "cost": 1.0,
+      "to_hit": 0.85,
+      "shots": 1,
+      "min_damage": 30.0,
+      "max_damage": 30.0,
+      "range": 20.0,
+      "type": "Light",
+      "attack_modifier": 3.0,
+      "attack_modifier_applies_to": "Air",
+      "description": "High agility short-range air-to-air missile, excellent for dogfight scenarios."
+    }
+  },
+  {
+    "model": "wargamelogic.attack",
+    "pk": 11,
+    "fields": {
+      "unit": 7,
+      "name": "GBU-38 JDAM",
+      "cost": 1.0,
+      "to_hit": 0.65,
+      "shots": 1,
+      "min_damage": 60.0,
+      "max_damage": 60.0,
+      "range": 15.0,
+      "type": "Heavy",
+      "attack_modifier": 1.0,
+      "attack_modifier_applies_to": "Ground",
+      "description": "GPS-guided bomb effective against stationary or slow-moving ground targets."
+    }
+  },
+  {
+    "model": "wargamelogic.attack",
+    "pk": 12,
+    "fields": {
+      "unit": 7,
+      "name": "M61 Vulcan",
+      "cost": 0.5,
+      "to_hit": 0.8,
+      "shots": 3,
+      "min_damage": 20.0,
+      "max_damage": 20.0,
+      "range": 1.0,
+      "type": "Light",
+      "attack_modifier": 2.0,
+      "attack_modifier_applies_to": "Light",
+      "description": "A 20mm rotary cannon used for close-range strafing and dogfighting."
+    }
+  },
+  {
+    "model": "wargamelogic.attack",
+    "pk": 13,
+    "fields": {
+      "unit": 8,
+      "name": "AGM-114 Hellfire",
+      "cost": 1.0,
+      "to_hit": 0.7,
+      "shots": 1,
+      "min_damage": 40.0,
+      "max_damage": 40.0,
+      "range": 5.0,
+      "type": "Light",
+      "attack_modifier": 1.0,
+      "attack_modifier_applies_to": "Light",
+      "description": "Precision air-to-ground missile, effective against light vehicles and personnel."
+    }
+  },
+  {
+    "model": "wargamelogic.attack",
+    "pk": 14,
+    "fields": {
+      "unit": 8,
+      "name": "GBU-12 Paveway II",
+      "cost": 1.0,
+      "to_hit": 0.65,
+      "shots": 1,
+      "min_damage": 50.0,
+      "max_damage": 50.0,
+      "range": 15.0,
+      "type": "Heavy",
+      "attack_modifier": 0.0,
+      "attack_modifier_applies_to": "Ground",
+      "description": "Laser-guided bomb for precision strikes on fortified or strategic ground targets."
+    }
+  },
+  {
+    "model": "wargamelogic.attack",
+    "pk": 15,
+    "fields": {
+      "unit": 10,
+      "name": "SM-2 Surface-to-Air Missile",
+      "cost": 2.0,
+      "to_hit": 0.8,
+      "shots": 2,
+      "min_damage": 18.0,
+      "max_damage": 28.0,
+      "range": 90.0,
+      "type": "Light",
+      "attack_modifier": 0.8,
+      "attack_modifier_applies_to": "Light",
+      "description": "Reliable and accurate air-defense missile with strong interception capabilities."
+    }
+  },
+  {
+    "model": "wargamelogic.attack",
+    "pk": 16,
+    "fields": {
+      "unit": 10,
+      "name": "Tomahawk Land Attack Missile (TLAM)",
+      "cost": 3.0,
+      "to_hit": 0.7,
+      "shots": 1,
+      "min_damage": 40.0,
+      "max_damage": 55.0,
+      "range": 1000.0,
+      "type": "Heavy",
+      "attack_modifier": 0.5,
+      "attack_modifier_applies_to": "Structure",
+      "description": "Precision strike missile with extreme range, ideal for high-value static targets."
+    }
+  },
+  {
+    "model": "wargamelogic.attack",
+    "pk": 17,
+    "fields": {
+      "unit": 10,
+      "name": "5-inch Naval Gun",
+      "cost": 1.0,
+      "to_hit": 0.75,
+      "shots": 4,
+      "min_damage": 5.0,
+      "max_damage": 15.0,
+      "range": 15.0,
+      "type": "Light",
+      "attack_modifier": 0.2,
+      "attack_modifier_applies_to": "Ground",
+      "description": "Rapid-fire deck gun for surface engagement and coastal bombardment."
+    }
+  },
+  {
+    "model": "wargamelogic.attack",
+    "pk": 18,
+    "fields": {
+      "unit": 11,
+      "name": "AIM-120 AMRAAM",
+      "cost": 1.0,
+      "to_hit": 0.85,
+      "shots": 1,
+      "min_damage": 18.0,
+      "max_damage": 22.0,
+      "range": 50.0,
+      "type": "Medium",
+      "attack_modifier": 0.5,
+      "attack_modifier_applies_to": "Air Force",
+      "description": "Long-range active radar missile used for beyond-visual-range air combat."
+    }
+  },
+  {
+    "model": "wargamelogic.attack",
+    "pk": 19,
+    "fields": {
+      "unit": 11,
+      "name": "AGM-65 Maverick",
+      "cost": 1.0,
+      "to_hit": 0.7,
+      "shots": 1,
+      "min_damage": 20.0,
+      "max_damage": 30.0,
+      "range": 20.0,
+      "type": "Medium",
+      "attack_modifier": 0.3,
+      "attack_modifier_applies_to": "Ground",
+      "description": "Precision-guided missile effective against armor, vehicles, and light structures."
+    }
+  },
+  {
+    "model": "wargamelogic.attack",
+    "pk": 20,
+    "fields": {
+      "unit": 11,
+      "name": "MK-82 Bombs",
+      "cost": 1.0,
+      "to_hit": 0.65,
+      "shots": 2,
+      "min_damage": 10.0,
+      "max_damage": 15.0,
+      "range": 5.0,
+      "type": "Light",
+      "attack_modifier": 0.2,
+      "attack_modifier_applies_to": "Structure",
+      "description": "Unguided bombs dropped in dive or level attacks, good for soft or fixed targets."
+    }
+  },
+  {
+    "model": "wargamelogic.attack",
+    "pk": 21,
+    "fields": {
+      "unit": 11,
+      "name": "M61 Vulcan Cannon",
+      "cost": 1.0,
+      "to_hit": 0.6,
+      "shots": 6,
+      "min_damage": 2.0,
+      "max_damage": 4.0,
+      "range": 1.0,
+      "type": "Light",
+      "attack_modifier": 0.1,
+      "attack_modifier_applies_to": "Air Force",
+      "description": "High-speed internal rotary cannon for close-range dogfights and strafing."
+    }
+  },
+  {
+    "model": "wargamelogic.attack",
+    "pk": 22,
+    "fields": {
+      "unit": 12,
+      "name": "AIM-120D AMRAAM",
+      "cost": 2.0,
+      "to_hit": 0.9,
+      "shots": 2,
+      "min_damage": 10.0,
+      "max_damage": 16.0,
+      "range": 55.0,
+      "type": "Light",
+      "attack_modifier": 0.5,
+      "attack_modifier_applies_to": "Air Force",
+      "description": "Fired from stealth-configured internal bays, this missile offers long-range precision\r\nwith high survivability."
+    }
+  },
+  {
+    "model": "wargamelogic.attack",
+    "pk": 23,
+    "fields": {
+      "unit": 12,
+      "name": "GBU-53/B StormBreaker (Smart Bomb)",
+      "cost": 3.0,
+      "to_hit": 0.75,
+      "shots": 1,
+      "min_damage": 20.0,
+      "max_damage": 30.0,
+      "range": 25.0,
+      "type": "Medium",
+      "attack_modifier": 0.4,
+      "attack_modifier_applies_to": "Ground",
+      "description": "A glide bomb with smart targeting, ideal for mobile or weather-obscured ground\r\ntargets."
+    }
+  },
+  {
+    "model": "wargamelogic.attack",
+    "pk": 24,
+    "fields": {
+      "unit": 12,
+      "name": "GBU-31 JDAM (GPS-guided Bomb)",
+      "cost": 2.0,
+      "to_hit": 0.7,
+      "shots": 1,
+      "min_damage": 25.0,
+      "max_damage": 35.0,
+      "range": 10.0,
+      "type": "Heavy",
+      "attack_modifier": 0.6,
+      "attack_modifier_applies_to": "Structure",
+      "description": "A GPS-guided bomb designed for precision strikes on buildings, bunkers, and\r\nhardened targets."
+    }
+  },
+  {
+    "model": "wargamelogic.attack",
+    "pk": 25,
+    "fields": {
+      "unit": 12,
+      "name": "GAU-22/A Cannon",
+      "cost": 1.0,
+      "to_hit": 0.6,
+      "shots": 4,
+      "min_damage": 3.0,
+      "max_damage": 5.0,
+      "range": 1.0,
+      "type": "Light",
+      "attack_modifier": 0.2,
+      "attack_modifier_applies_to": "Ground",
+      "description": "A four-barrel internal cannon for strafing soft targets or dogfighting in close quarters."
+    }
+  },
+  {
+    "model": "wargamelogic.attack",
+    "pk": 26,
+    "fields": {
+      "unit": 13,
+      "name": "AGM-88 HARM",
+      "cost": 3.0,
+      "to_hit": 0.7,
+      "shots": 1,
+      "min_damage": 18.0,
+      "max_damage": 30.0,
+      "range": 40.0,
+      "type": "Light",
+      "attack_modifier": 0.0,
+      "attack_modifier_applies_to": "TBD",
+      "description": "High-speed Anti-Radiation Missile"
+    }
+  },
+  {
+    "model": "wargamelogic.attack",
+    "pk": 27,
+    "fields": {
+      "unit": 13,
+      "name": "ALQ-99 Tactical Jamming System",
+      "cost": 2.0,
+      "to_hit": 1.0,
+      "shots": 1,
+      "min_damage": 0.0,
+      "max_damage": 0.0,
+      "range": 50.0,
+      "type": "Light",
+      "attack_modifier": 0.0,
+      "attack_modifier_applies_to": "TBD",
+      "description": "Jamming, non-damaging but disrupts enemy systems"
+    }
+  },
+  {
+    "model": "wargamelogic.attack",
+    "pk": 28,
+    "fields": {
+      "unit": 13,
+      "name": "M61 Vulcan Cannon",
+      "cost": 1.0,
+      "to_hit": 0.6,
+      "shots": 6,
+      "min_damage": 2.0,
+      "max_damage": 4.0,
+      "range": 1.0,
+      "type": "Light",
+      "attack_modifier": 0.0,
+      "attack_modifier_applies_to": "TBD",
+      "description": "TBD"
+    }
+  },
+  {
+    "model": "wargamelogic.attack",
+    "pk": 29,
+    "fields": {
+      "unit": 14,
+      "name": "Aircraft Launch",
+      "cost": 4.0,
+      "to_hit": 1.0,
+      "shots": 1,
+      "min_damage": 0.0,
+      "max_damage": 0.0,
+      "range": 0.0,
+      "type": "Light",
+      "attack_modifier": 0.0,
+      "attack_modifier_applies_to": "TBD",
+      "description": "Can launch various aircraft, including F/A-18E/F Super Hornet, EA-18G Growler, F-35C Lightning II"
+    }
+  },
+  {
+    "model": "wargamelogic.attack",
+    "pk": 30,
+    "fields": {
+      "unit": 14,
+      "name": "Close-in Weapon System",
+      "cost": 1.0,
+      "to_hit": 0.9,
+      "shots": 4,
+      "min_damage": 3.0,
+      "max_damage": 6.0,
+      "range": 2.0,
+      "type": "Light",
+      "attack_modifier": 0.0,
+      "attack_modifier_applies_to": "TBD",
+      "description": "TBD"
+    }
+  },
+  {
+    "model": "wargamelogic.attack",
+    "pk": 31,
+    "fields": {
+      "unit": 14,
+      "name": "RIM-116 Rolling Airframe Missile",
+      "cost": 1.0,
+      "to_hit": 0.95,
+      "shots": 2,
+      "min_damage": 5.0,
+      "max_damage": 8.0,
+      "range": 5.0,
+      "type": "Light",
+      "attack_modifier": 0.0,
+      "attack_modifier_applies_to": "TBD",
+      "description": "TBD"
+    }
+  },
+  {
+    "model": "wargamelogic.attack",
+    "pk": 32,
+    "fields": {
+      "unit": 17,
+      "name": "Defensive Fire",
+      "cost": 1.0,
+      "to_hit": 0.6,
+      "shots": 1,
+      "min_damage": 5.0,
+      "max_damage": 10.0,
+      "range": 1.0,
+      "type": "Light",
+      "attack_modifier": 0.0,
+      "attack_modifier_applies_to": "None",
+      "description": "Door gunner defensive fire"
+    }
+  },
+  {
+    "model": "wargamelogic.attack",
+    "pk": 33,
+    "fields": {
+      "unit": 18,
+      "name": "Defensive Fire",
+      "cost": 1.0,
+      "to_hit": 0.6,
+      "shots": 1,
+      "min_damage": 5.0,
+      "max_damage": 10.0,
+      "range": 1.0,
+      "type": "Light",
+      "attack_modifier": 0.0,
+      "attack_modifier_applies_to": "None",
+      "description": "Door gunner defensive fire"
+    }
+  },
+  {
+    "model": "wargamelogic.attack",
+    "pk": 34,
+    "fields": {
+      "unit": 20,
+      "name": "Defensive Fire",
+      "cost": 1.0,
+      "to_hit": 0.6,
+      "shots": 2,
+      "min_damage": 5.0,
+      "max_damage": 10.0,
+      "range": 4.0,
+      "type": "Medium",
+      "attack_modifier": 0.0,
+      "attack_modifier_applies_to": "None",
+      "description": "Defensive turret fire"
+    }
+  },
+  {
+    "model": "wargamelogic.attack",
+    "pk": 35,
+    "fields": {
+      "unit": 21,
+      "name": "Defensive fire",
+      "cost": 1.0,
+      "to_hit": 0.6,
+      "shots": 1,
+      "min_damage": 5.0,
+      "max_damage": 10.0,
+      "range": 1.0,
+      "type": "Light",
+      "attack_modifier": 0.0,
+      "attack_modifier_applies_to": "None",
+      "description": "Defensive fire"
+    }
+  },
+  {
+    "model": "wargamelogic.attack",
+    "pk": 36,
+    "fields": {
+      "unit": 22,
+      "name": "Defensive Fire",
+      "cost": 1.0,
+      "to_hit": 0.6,
+      "shots": 1,
+      "min_damage": 5.0,
+      "max_damage": 10.0,
+      "range": 1.0,
+      "type": "Light",
+      "attack_modifier": 0.0,
+      "attack_modifier_applies_to": "None",
+      "description": "Defensive fire"
+    }
+  },
+  {
+    "model": "wargamelogic.ability",
+    "pk": 1,
+    "fields": {
+      "unit": 5,
+      "name": "Stealth Radar Profile",
+      "description": "The B-2's radar signature is minimal, making it significantly harder to detect. Enemy\r\nunits must have detection capability of at least 25 miles to attempt targeting."
+    }
+  },
+  {
+    "model": "wargamelogic.ability",
+    "pk": 2,
+    "fields": {
+      "unit": 5,
+      "name": "Airborne Resupply Requirement",
+      "description": "The B-2 must return to an airbase or rendezvous with a tanker aircraft to replenish weapons and fuel."
+    }
+  },
+  {
+    "model": "wargamelogic.ability",
+    "pk": 3,
+    "fields": {
+      "unit": 6,
+      "name": "Advanced AESA Radar",
+      "description": "Provides detection of air targets up to 100 miles away, including low-observable\r\naircraft."
+    }
+  },
+  {
+    "model": "wargamelogic.ability",
+    "pk": 4,
+    "fields": {
+      "unit": 6,
+      "name": "In-Air Refueling",
+      "description": "The F-22 can extend its operational range indefinitely through in-air refueling from a\r\ncompatible tanker."
+    }
+  },
+  {
+    "model": "wargamelogic.ability",
+    "pk": 5,
+    "fields": {
+      "unit": 7,
+      "name": "Multi-Mode Radar",
+      "description": "Capable of detecting and engaging both air and ground targets within an 80-mile\r\nrange."
+    }
+  },
+  {
+    "model": "wargamelogic.ability",
+    "pk": 6,
+    "fields": {
+      "unit": 7,
+      "name": "Base or Tanker Resupply",
+      "description": "The F-15EX can rearm and refuel either at a friendly airbase or through in-air\r\nrefueling."
+    }
+  },
+  {
+    "model": "wargamelogic.ability",
+    "pk": 7,
+    "fields": {
+      "unit": 8,
+      "name": "ISR and Target Designation",
+      "description": "Can detect and designate targets up to 200 miles away for allied strikes."
+    }
+  },
+  {
+    "model": "wargamelogic.ability",
+    "pk": 8,
+    "fields": {
+      "unit": 8,
+      "name": "Base Resupply",
+      "description": "Must return to a base for rearming and refueling. Cannot be resupplied in-air."
+    }
+  },
+  {
+    "model": "wargamelogic.ability",
+    "pk": 9,
+    "fields": {
+      "unit": 9,
+      "name": "ISR Sweep",
+      "description": "Reveals all enemy units within a 300-mile radius regardless of stealth or cover."
+    }
+  },
+  {
+    "model": "wargamelogic.ability",
+    "pk": 10,
+    "fields": {
+      "unit": 9,
+      "name": "High Altitude Operation",
+      "description": "Difficult to intercept; attackers must have high-altitude interception capabilities."
+    }
+  },
+  {
+    "model": "wargamelogic.ability",
+    "pk": 11,
+    "fields": {
+      "unit": 13,
+      "name": "Radar",
+      "description": "Advanced electronic warfare (EW) systems for jamming enemy radar"
+    }
+  },
+  {
+    "model": "wargamelogic.ability",
+    "pk": 12,
+    "fields": {
+      "unit": 13,
+      "name": "Entrench",
+      "description": "Stealth capabilities and electronic countermeasures reduce detection"
+    }
+  },
+  {
+    "model": "wargamelogic.ability",
+    "pk": 13,
+    "fields": {
+      "unit": 13,
+      "name": "Resupply",
+      "description": "In-air refueling capability"
+    }
+  },
+  {
+    "model": "wargamelogic.ability",
+    "pk": 14,
+    "fields": {
+      "unit": 14,
+      "name": "Radar",
+      "description": "Dual Band Radar system comprising AN/SPY-3 X Band multifunction radar and\r\nAN/SPY-4 S Band volume search radar"
+    }
+  },
+  {
+    "model": "wargamelogic.ability",
+    "pk": 15,
+    "fields": {
+      "unit": 14,
+      "name": "Entrench",
+      "description": "Enhanced hull design with stealth features to reduce radar cross-section"
+    }
+  },
+  {
+    "model": "wargamelogic.ability",
+    "pk": 16,
+    "fields": {
+      "unit": 14,
+      "name": "Resupply",
+      "description": "Advanced facilities for in-port and underway replenishment of aircraft and ship\r\nsystems"
+    }
+  },
+  {
+    "model": "wargamelogic.ability",
+    "pk": 17,
+    "fields": {
+      "unit": 15,
+      "name": "Radar",
+      "description": "Basic nav radar, range 30 miles"
+    }
+  },
+  {
+    "model": "wargamelogic.ability",
+    "pk": 18,
+    "fields": {
+      "unit": 15,
+      "name": "Logistics Support",
+      "description": "Transports supplies and units in a 290-mile mile range (reduced for map size)"
+    }
+  },
+  {
+    "model": "wargamelogic.ability",
+    "pk": 19,
+    "fields": {
+      "unit": 16,
+      "name": "Radar",
+      "description": "Nav/IFF radar, range 40 miles"
+    }
+  },
+  {
+    "model": "wargamelogic.ability",
+    "pk": 20,
+    "fields": {
+      "unit": 16,
+      "name": "Logistics Support",
+      "description": "Refuels 3 air units within 30 mile range"
+    }
+  },
+  {
+    "model": "wargamelogic.ability",
+    "pk": 21,
+    "fields": {
+      "unit": 17,
+      "name": "Radar",
+      "description": "Terrain-following radar, range 25 miles"
+    }
+  },
+  {
+    "model": "wargamelogic.ability",
+    "pk": 22,
+    "fields": {
+      "unit": 17,
+      "name": "Logistics Support",
+      "description": "Transports supplies and units in a 120-mile mile range (reduced for map size)"
+    }
+  },
+  {
+    "model": "wargamelogic.ability",
+    "pk": 23,
+    "fields": {
+      "unit": 18,
+      "name": "Radar",
+      "description": "Surface Search Radar, range 160 miles"
+    }
+  },
+  {
+    "model": "wargamelogic.ability",
+    "pk": 24,
+    "fields": {
+      "unit": 18,
+      "name": "Logistics Support",
+      "description": "Transports supplies and units in a 95 -mile mile range (reduced for map size)"
+    }
+  },
+  {
+    "model": "wargamelogic.ability",
+    "pk": 25,
+    "fields": {
+      "unit": 19,
+      "name": "Radar",
+      "description": "Navigation radar, range 25 miles"
+    }
+  },
+  {
+    "model": "wargamelogic.ability",
+    "pk": 26,
+    "fields": {
+      "unit": 19,
+      "name": "Logistics Support",
+      "description": "May act as a supply node when adjacent to a port landmark tile. May transport\r\nsupplies and units between ports within a 150-mile mile range"
+    }
+  },
+  {
+    "model": "wargamelogic.ability",
+    "pk": 27,
+    "fields": {
+      "unit": 20,
+      "name": "Radar",
+      "description": "Basic navigation radar, range 25 miles"
+    }
+  },
+  {
+    "model": "wargamelogic.ability",
+    "pk": 28,
+    "fields": {
+      "unit": 20,
+      "name": "Logistics Support",
+      "description": "Port tiles act as a supply node if this unit is adjacent. transports units up to the\r\nsupply space available anywhere along a coastline within 150 mile range."
+    }
+  },
+  {
+    "model": "wargamelogic.ability",
+    "pk": 29,
+    "fields": {
+      "unit": 21,
+      "name": "Radar",
+      "description": "Navigation/terrain-following"
+    }
+  },
+  {
+    "model": "wargamelogic.ability",
+    "pk": 30,
+    "fields": {
+      "unit": 21,
+      "name": "Logistics Support",
+      "description": "Transports supplies and units up to the supply space available within 50 mile range"
+    }
+  },
+  {
+    "model": "wargamelogic.ability",
+    "pk": 31,
+    "fields": {
+      "unit": 22,
+      "name": "Radar",
+      "description": "Navigation/terrain-following"
+    }
+  },
+  {
+    "model": "wargamelogic.ability",
+    "pk": 32,
+    "fields": {
+      "unit": 22,
+      "name": "Logistics Support",
+      "description": "Transports supplies and units up to the supply space available within 95 mile range"
+    }
+  },
+  {
+    "model": "wargamelogic.ability",
+    "pk": 33,
+    "fields": {
+      "unit": 23,
+      "name": "Logistics Support",
+      "description": "Transports supplies and units up to the supply space available within 35 mile range"
+    }
+  },
+  {
+    "model": "wargamelogic.ability",
+    "pk": 34,
+    "fields": {
+      "unit": 24,
+      "name": "Logistics Support",
+      "description": "Transports supplies and units up to the supply space available within 35 mile range"
+    }
+  },
+  {
+    "model": "wargamelogic.landmark",
+    "pk": 1,
+    "fields": {
+      "name": "City",
+      "max_victory_points": 100.0,
+      "can_repair": false,
+      "description": "A population center worth the highest amounts of victory points. \r\nTo capture, any ground unit must move through a tile using its own movement, and not via a logistic unit."
+    }
+  },
+  {
+    "model": "wargamelogic.landmark",
+    "pk": 2,
+    "fields": {
+      "name": "Port",
+      "max_victory_points": 100.0,
+      "can_repair": false,
+      "description": "A city with a port terminal. If a Sealift Command Ship Group (SCSG) is docked (adjacent) to it, then it can act as a Supply Node.\r\nTo capture, any ground unit must move through a tile using its own movement, and not via a logistic unit."
+    }
+  },
+  {
+    "model": "wargamelogic.landmark",
+    "pk": 3,
+    "fields": {
+      "name": "Ground Base",
+      "max_victory_points": 50.0,
+      "can_repair": true,
+      "description": "A strategically significant landmark where ground units may restore their health once captured.\r\nTo capture, any ground unit must move through a tile using its own movement, and not via a logistic unit."
+    }
+  },
+  {
+    "model": "wargamelogic.landmark",
+    "pk": 4,
+    "fields": {
+      "name": "Airfield",
+      "max_victory_points": 50.0,
+      "can_repair": true,
+      "description": "A landmark with significant air facilities.\r\nTo capture, any ground unit must move through a tile using its own movement, and not via a logistic unit."
+    }
+  },
+  {
+    "model": "wargamelogic.landmark",
+    "pk": 5,
+    "fields": {
+      "name": "Supply Node",
+      "max_victory_points": 50.0,
+      "can_repair": true,
+      "description": "An industrial center where supply points are generated.\r\nTo capture, any ground unit must move through a tile using its own movement, and not via a logistic unit."
+    }
+  },
+  {
+    "model": "wargamelogic.landmark",
+    "pk": 6,
+    "fields": {
+      "name": "Stockpile",
+      "max_victory_points": 0.0,
+      "can_repair": false,
+      "description": "Created when a Logistic Group unit deposits supplies on the ground. Any number of supplies can be stored in this landmark.\r\nStockpiles can be depleted by adjacent units taking supplies, destroyed by an attack, or captured through occupation. The health of the stockpile is equal to the number of supplies * 5. \r\nTo capture, any ground unit must move through a tile using its own movement, and not via a logistic unit."
+    }
+  }
+]

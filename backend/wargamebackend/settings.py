@@ -83,33 +83,6 @@ TEMPLATES = [
 ASGI_APPLICATION = 'wargamebackend.asgi.application'
 WSGI_APPLICATION = 'wargamebackend.wsgi.application'
 
-# Database
-# https://docs.djangoproject.com/en/5.1/ref/settings/#databases
-# I use Postgres for our real DB and sqlite when testing,
-# to save compute and because testing with a sqlite DB is much faster
-TESTING = "test" in sys.argv or "PYTEST_VERSION" in os.environ
-
-if TESTING:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
-            'NAME': ':memory:',  # fully in-memory for speed
-        }
-    }
-else:
-    tmpPostgres = urlparse(os.getenv("DATABASE_URL"))
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': tmpPostgres.path.replace('/', ''),
-            'USER': tmpPostgres.username,
-            'PASSWORD': tmpPostgres.password,
-            'HOST': tmpPostgres.hostname,
-            'PORT': 5432,
-            'OPTIONS': dict(parse_qsl(tmpPostgres.query)),
-        }
-    }
-
 REST_FRAMEWORK = {
     "DEFAULT_AUTHENTICATION_CLASSES": [
         "auth.authentication.CookieJWTAuthentication",
@@ -184,6 +157,23 @@ CORS_ALLOW_CREDENTIALS = True
 
 # Development-specific settings
 if DEBUG:
+    TESTING = "test" in sys.argv or "PYTEST_VERSION" in os.environ
+
+    if TESTING:
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': ':memory:',  # fully in-memory for speed. Data doesn't persist between executions.
+            }
+        }
+    else:
+        DATABASES = {
+            'default': {
+                'ENGINE': 'django.db.backends.sqlite3',
+                'NAME': BASE_DIR / 'db.sqlite3',
+            }
+        }
+
     ALLOWED_HOSTS = [
         "localhost",
         "127.0.0.1"
@@ -207,6 +197,19 @@ if DEBUG:
 
 # Production-specific settings
 else:
+    tmpPostgres = urlparse(os.getenv("DATABASE_URL"))
+    DATABASES = {
+        'default': {
+            'ENGINE': 'django.db.backends.postgresql',
+            'NAME': tmpPostgres.path.replace('/', ''),
+            'USER': tmpPostgres.username,
+            'PASSWORD': tmpPostgres.password,
+            'HOST': tmpPostgres.hostname,
+            'PORT': 5432,
+            'OPTIONS': dict(parse_qsl(tmpPostgres.query)),
+        }
+    }
+
     BACKEND_URL = os.getenv("NEXT_PUBLIC_BACKEND_URL", "")
     FRONTEND_URL = os.getenv("NEXT_PUBLIC_FRONTEND_URL", "")
 

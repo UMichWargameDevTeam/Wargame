@@ -8,10 +8,13 @@ class WargamelogicConfig(AppConfig):
     def ready(self):
         from wargamelogic.consumers import get_redis_client
 
-        redis_client = get_redis_client()
-        keys = redis_client.keys("game_*")
 
-        if keys:
-            redis_client.delete(*keys)
+        try:
+            redis_client = get_redis_client()
+            redis_client.ping()
 
-        print("Redis game_ keys cleared on startup")
+            redis_client.flushdb()
+            print("Redis database cleared on startup")
+
+        except Exception as e:
+            print("Did not clear Redis keys because Redis isn't running: %s", e)
