@@ -1,9 +1,7 @@
-export const BACKEND_URL = process.env.DEBUG
-    ? "http://localhost:8000"
-    : process.env.NEXT_PUBLIC_BACKEND_URL;
-export const WS_URL = process.env.DEBUG
-    ? "ws://localhost:8000"
-    : process.env.NEXT_PUBLIC_WS_URL;
+// Next.js can only access environment variables whose names are prefixed by NEXT_PUBLIC_
+// and when the .env file is in the same directory as next.config.ts
+export const BACKEND_URL = process.env.NEXT_PUBLIC_BACKEND_URL || "http://localhost:8000";
+export const WS_URL = process.env.NEXT_PUBLIC_WS_URL || "ws://localhost:8000";
 
 
 export async function getCsrfToken(): Promise<string> {
