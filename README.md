@@ -84,22 +84,22 @@ To get the connection string to be pasted in the ``.env file Setup``:
 In the root of the project (i.e. ``Wargame/``), create a file named .env with the following structure:
 
 ```
+# Should be True in development, False in production
+DEBUG=True
 # Generate with $ openssl rand -base64 48
 SECRET_KEY='your Django secret key here'
 # See Database Setup for how to obtain this URL
-DATABASE_URL='your Neon database connection URL here'
-# Should be True in development, False in production
-DEBUG=True
-# The rest of the keys are only for use in production
-NEXT_PUBLIC_BACKEND_URL='your backend server URL here'
-NEXT_PUBLIC_WS_URL='your public WebSocket URL here'
-NEXT_PUBLIC_FRONTEND_URL='your frontend URL here'
+DATABASE_URL='your Neon database connection url here'
+# The rest of the environment variables should only be included in production, when DEBUG is False
 # See WebSocket Server Setup for how to obtain this URL
 REDIS_URL='your Redis Cloud WebSocket connection URL here'
+NEXT_PUBLIC_WS_URL='your public WebSocket URL here'
+NEXT_PUBLIC_BACKEND_URL='your backend server URL here'
+NEXT_PUBLIC_FRONTEND_URL='your frontend URL here'
 # Will be emailed in production when there are internal server errors
 ADMINS='example:example@gmail.com'
 # Credentials of the email that will be used to send emails to admins when there are internal server errors
-EMAIL_HOST_USER='example@gmail.com'
+EMAIL_HOST_USER='example:example@gmail.com'
 # Obtained by generating an app password in google account settings
 EMAIL_HOST_PASSWORD='your password here'
 ```

@@ -1,18 +1,19 @@
-.PHONY: frontend backend both
+.PHONY: check-venv redis backend frontend all
 
-front:
-	cd frontend && npm run dev
-
-back:
-	cd backend && daphne -b 127.0.0.1 -p 8000 wargamebackend.asgi:application
+check-venv:
+	@if [ -z "$$VIRTUAL_ENV" ]; then \
+		echo "❌ No virtual environment detected. Please activate one first."; \
+		exit 1; \
+	fi
 
 redis:
-	redis-server --daemonize yes
+	redis-server --loglevel notice
 
-server:
-	daphne -b 0.0.0.0 -p 8000 backend.wargamebackend.asgi:application
+backend: check-venv	
+	cd backend && python -u -m daphne -b 127.0.0.1 -p 8000 wargamebackend.asgi:application
 
-both:
-	make redis
-	make front & \
-	make back
+frontend:
+	cd frontend && npm run dev
+
+all: check-venv
+	npx concurrently "make redis" "make backend" "make frontend"

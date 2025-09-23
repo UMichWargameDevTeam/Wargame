@@ -10,6 +10,9 @@ env/
 # Environment variables file
 .env
 
+# Redis dump
+dump.rdb
+
 # Python cache and compiled files
 *__pycache__/
 *.pyc
