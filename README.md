@@ -37,10 +37,15 @@ Wargame/
 - Python 3.10+ with virtualenv
 - Node.js 18+ and npm
 - Make (preinstalled on macOS and most Linux systems)
+- redis-server
+
+These can be installed using package managers such as ``apt`` on Ubuntu or ``brew`` on MacOS.
 
 ---
 
-## 🛢 Database Setup
+## Setup
+
+### 🛢 Database Setup (production only)
 
 We used Neon to host a PostgreSQL database for our project. Here are instructions on how to set it up:
 
@@ -59,7 +64,7 @@ To get the connection string to be pasted in the ``.env file Setup``:
 
 ---
 
-## 🔌 WebSocket Server Setup (production only)
+### 🔌 WebSocket Server Setup (production only)
 
 We used Redis Cloud to host a WebSocket server for our project. Here are instructions on how to set it up:
 
@@ -79,7 +84,7 @@ To get the connection string to be pasted in the ``.env file Setup``:
 
 ---
 
-## 🗝️ .env file Setup
+### 🗝️ .env file Setup
 
 In the root of the project (i.e. ``Wargame/``), create a file named .env with the following structure:
 
@@ -88,9 +93,9 @@ In the root of the project (i.e. ``Wargame/``), create a file named .env with th
 DEBUG=True
 # Generate with $ openssl rand -base64 48
 SECRET_KEY='your Django secret key here'
-# See Database Setup for how to obtain this URL
-DATABASE_URL='your Neon database connection url here'
 # The rest of the environment variables should only be included in production, when DEBUG is False
+# See Database Setup for how to obtain this URL
+DATABASE_URL='your Neon database connection URL here'
 # See WebSocket Server Setup for how to obtain this URL
 REDIS_URL='your Redis Cloud WebSocket connection URL here'
 NEXT_PUBLIC_WS_URL='your public WebSocket URL here'
@@ -106,7 +111,7 @@ EMAIL_HOST_PASSWORD='your password here'
 
 ---
 
-## 🐍 Backend Setup
+### 🐍 Backend Setup
 
 In the root of the project, run:
 
@@ -114,14 +119,18 @@ In the root of the project, run:
 python3 -m venv env     # create a virtual environment
 source env/bin/activate  # or env\Scripts\activate on Windows. This is how to activate your virtual environment
 cd backend
+touch db.sqlite3    # create a SQLite database for development
 pip install -r requirements.txt
 python3 manage.py collectstatic
-python3 manage.py migrate   # you need to complete the Database Setup and .env file Setup for this to work
+python3 manage.py migrate
+python3 manage.py populate_data seed_data.json
 ```
+
+For production, re-run the last two commands with DEBUG set to False to populate the production database as well.
 
 ---
 
-## 🌐 Frontend Setup
+### 🌐 Frontend Setup
 
 In the root of the project, run:
 
@@ -132,15 +141,20 @@ npm install
 
 ---
 
-## 🧪 Running the project- Makefile Commands
+## 🧪 Running the project
 
 First, make sure the virtual environment is activated (see ``Backend setup`` for how to do this).
 
 Then in the root of the project, run
 
 ```bash
-make both
+make all
 ```
+
+Go to http://localhost:3000 to access the frontend during development.
+The backend will be located at http://localhost:8000.
+
+Press Ctrl + C to stop running the project.
 
 See the Makefile for more options.
 

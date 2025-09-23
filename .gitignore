@@ -14,13 +14,16 @@ env/
 dump.rdb
 
 # Python cache and compiled files
-*__pycache__/
+backend/*/__pycache__/
 *.pyc
 *.pyo
 *.pyd
 
 # SQLite DB
-*.sqlite3
+backend/db.sqlite3
+
+# static files
+backend/staticfiles/
 
 # typescript
 frontend/next-env.d.ts
@@ -31,5 +34,3 @@ frontend/node_modules/
 # Next files
 frontend/.next/
 
-# static files
-backend/staticfiles/
