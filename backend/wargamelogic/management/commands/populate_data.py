@@ -1,6 +1,6 @@
 # Read data from seed_data.json in the same directory, and populate the database.
 # The seed data was obtained by running $ python3 manage.py dumpdata myapp.MyModel --indent 2 > seed_data.json
-# for every static model in the production database's
+# for every static model in the production database
 
 import os
 import json

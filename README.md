@@ -1,6 +1,6 @@
 # Wargame
 
-A real-time web-based wargame map viewer and command tool. Built with:
+A real-time web-based wargame map-viewer and command tool. Built with:
 
 - **PostgreSQL** database, hosted on Neon
 - **Redis** WebSocket backend, hosted on Redis Cloud
@@ -24,15 +24,15 @@ cd Wargame
 
 ```
 Wargame/
-├── backend/              # Django project (ASGI-enabled with Channels)
+├── backend/              # Django project backend (ASGI-enabled with Channels)
 ├── frontend/             # Next.js frontend
 ├── Makefile              # Easy commands for running dev servers
-└── .env                  # gitignore'd. Info on what it contains below
+└── .env                  # gitignore'd file containing environment variables. More specific information below.
 ```
 
 ---
 
-## ⚙️ Prerequisites
+## 📋 Prerequisites
 
 - Python 3.10+ with virtualenv
 - Node.js 18+ and npm
@@ -43,7 +43,7 @@ These can be installed using package managers such as ``apt`` on Ubuntu or ``bre
 
 ---
 
-## Setup
+## ⚙️ Setup
 
 ### 🛢 Database Setup (production only)
 
@@ -53,7 +53,7 @@ We used Neon to host a PostgreSQL database for our project. Here are instruction
 2. In the dashboard’s ``Projects`` tab, click ``New project``.
 3. Choose a ``Project name``
 4. Select the ``Region`` closest to where you live
-5. Click ``Create`
+5. Click ``Create``
 
 To get the connection string to be pasted in the ``.env file Setup``:
 
@@ -61,8 +61,6 @@ To get the connection string to be pasted in the ``.env file Setup``:
 7. In the dropdown whose default value is ``psql``, select ``Django``
 8. Click ``Show password``
 9. Click ``Copy snippet``
-
----
 
 ### 🔌 WebSocket Server Setup (production only)
 
@@ -82,8 +80,6 @@ To get the connection string to be pasted in the ``.env file Setup``:
 9. Click ``Copy``
 10. When pasting, only include the part that starts with ``redis://``
 
----
-
 ### 🗝️ .env file Setup
 
 In the root of the project (i.e. ``Wargame/``), create a file named .env with the following structure:
@@ -93,6 +89,7 @@ In the root of the project (i.e. ``Wargame/``), create a file named .env with th
 DEBUG=True
 # Generate with $ openssl rand -base64 48
 SECRET_KEY='your Django secret key here'
+
 # The rest of the environment variables should only be included in production, when DEBUG is False
 # See Database Setup for how to obtain this URL
 DATABASE_URL='your Neon database connection URL here'
@@ -104,12 +101,10 @@ NEXT_PUBLIC_FRONTEND_URL='your frontend URL here'
 # Will be emailed in production when there are internal server errors
 ADMINS='example:example@gmail.com'
 # Credentials of the email that will be used to send emails to admins when there are internal server errors
-EMAIL_HOST_USER='example:example@gmail.com'
+EMAIL_HOST_USER='example@gmail.com'
 # Obtained by generating an app password in google account settings
 EMAIL_HOST_PASSWORD='your password here'
 ```
-
----
 
 ### 🐍 Backend Setup
 
@@ -127,8 +122,6 @@ python3 manage.py populate_data seed_data.json
 ```
 
 For production, re-run the last two commands with DEBUG set to False to populate the production database as well.
-
----
 
 ### 🌐 Frontend Setup
 
@@ -152,7 +145,7 @@ make all
 ```
 
 Go to http://localhost:3000 to access the frontend during development.
-The backend will be located at http://localhost:8000.
+Go to http://localhost:8000 to access the backend during development.
 
 Press Ctrl + C to stop running the project.
 
